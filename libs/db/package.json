@@ -1,5 +1,5 @@
 {
-  "name": "@repo/db",
+  "name": "@ys/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,16 +7,20 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "clean": "rm -rf .turbo",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
-    "@prisma/client": "^6.19.0"
+    "@prisma/adapter-pg": "catalog:",
+    "@prisma/client": "catalog:",
+    "pg": "catalog:"
   },
   "devDependencies": {
-    "@repo/tsconfig": "workspace:*",
-    "prisma": "^6.19.0",
-    "typescript": "^5.7.3"
+    "@ys/tsconfig": "workspace:*",
+    "dotenv": "catalog:",
+    "prisma": "catalog:",
+    "typescript": "catalog:"
   }
 }

@@ -1,16 +1,23 @@
 {
-  "extends": "@repo/tsconfig/react.json",
+  "extends": "@ys/tsconfig/react.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     },
-    "types": ["vite/client"],
+    "types": [
+      "vite/client"
+    ],
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

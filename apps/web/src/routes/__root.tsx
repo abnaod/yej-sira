@@ -1,5 +1,7 @@
 import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
 
+import { RootLayout } from "@/components/layouts/root-layout";
+
 import appCss from "../styles/app.css?url";
 
 export const Route = createRootRoute({
@@ -24,7 +26,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="min-h-dvh antialiased">
-        {children}
+        <RootLayout>{children}</RootLayout>
         <Scripts />
       </body>
     </html>

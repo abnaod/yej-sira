@@ -28,13 +28,13 @@ pnpm + Turborepo monorepo: **TanStack Start** (`apps/web`), **Hono** API (`apps/
 4. Apply schema (development):
 
    ```bash
-   pnpm --filter @repo/db db:push
+   pnpm --filter @ys/db db:push
    ```
 
    Or use migrations:
 
    ```bash
-   pnpm --filter @repo/db db:migrate
+   pnpm --filter @ys/db db:migrate
    ```
 
 ## Scripts
