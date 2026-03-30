@@ -1,0 +1,11 @@
+node_modules
+dist
+.output
+.env
+.env.local
+.turbo
+*.log
+.DS_Store
+
+# Prisma
+libs/db/node_modules/.prisma
