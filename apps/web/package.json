@@ -10,16 +10,16 @@
     "clean": "rm -rf dist .output .turbo"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "catalog:",
     "@tailwindcss/vite": "catalog:",
+    "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
     "@tanstack/react-start": "catalog:",
-    "@radix-ui/react-slot": "catalog:",
     "better-auth": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "jotai": "catalog:",
     "lucide-react": "catalog:",
-    "@tanstack/react-query": "catalog:",
     "nitro": "npm:nitro-nightly@latest",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -27,11 +27,11 @@
     "tailwindcss": "catalog:"
   },
   "devDependencies": {
-    "@ys/tsconfig": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
+    "@ys/tsconfig": "workspace:*",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-tsconfig-paths": "catalog:"

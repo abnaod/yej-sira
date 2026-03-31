@@ -1,0 +1,56 @@
+import { cn } from "@/lib/utils";
+import { StarRating } from "@/components/ui/star-rating";
+
+interface ProductListItemProps {
+  name: string;
+  price: number;
+  originalPrice?: number;
+  imageUrl: string;
+  rating: number;
+  reviewCount: number;
+  className?: string;
+}
+
+export function ProductListItem({
+  name,
+  price,
+  originalPrice,
+  imageUrl,
+  rating,
+  reviewCount,
+  className,
+}: ProductListItemProps) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-4 rounded-lg border border-border bg-white px-4 py-3 transition-colors hover:bg-neutral-50",
+        className,
+      )}
+    >
+      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-neutral-100">
+        <img
+          src={imageUrl}
+          alt={name}
+          className="h-full w-full object-contain"
+        />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <h4 className="truncate text-sm font-medium text-foreground">
+          {name}
+        </h4>
+      </div>
+
+      <StarRating rating={rating} reviewCount={reviewCount} />
+
+      <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+        <span className="text-sm font-semibold">${price.toFixed(2)}</span>
+        {originalPrice && (
+          <span className="text-xs text-muted-foreground line-through">
+            ${originalPrice.toFixed(2)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}

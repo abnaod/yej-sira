@@ -4,7 +4,7 @@ import { ShopByCategorySection } from "./components/shop-by-category-section";
 
 export function StorefrontPage() {
   return (
-    <main className="flex flex-col gap-0">
+    <main className="flex flex-col gap-12 lg:gap-16">
       <HeroSection />
       <ShopByCategorySection />
       <FeaturedSection />

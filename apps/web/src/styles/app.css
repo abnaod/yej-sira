@@ -3,8 +3,24 @@
 @theme inline {
   --color-background: oklch(100% 0 0);
   --color-foreground: oklch(14.5% 0 0);
+  --color-muted: oklch(96.7% 0 0);
   --color-muted-foreground: oklch(45.5% 0 0);
+  --color-border: oklch(91.7% 0 0);
+
+  --color-primary: oklch(30.6% 0.056 160);
+  --color-primary-foreground: oklch(100% 0 0);
+  --color-primary-hover: oklch(25% 0.05 160);
+
+  --color-accent: oklch(96% 0.02 160);
+  --color-accent-foreground: oklch(30.6% 0.056 160);
+
+  --color-rating: oklch(79.5% 0.17 75);
+
+  --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
 }
 
 body {
