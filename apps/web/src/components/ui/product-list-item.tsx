@@ -1,7 +1,10 @@
+import { Link } from "@tanstack/react-router";
+
 import { cn } from "@/lib/utils";
 import { StarRating } from "@/components/ui/star-rating";
 
 interface ProductListItemProps {
+  id?: string;
   name: string;
   price: number;
   originalPrice?: number;
@@ -12,6 +15,7 @@ interface ProductListItemProps {
 }
 
 export function ProductListItem({
+  id,
   name,
   price,
   originalPrice,
@@ -20,14 +24,9 @@ export function ProductListItem({
   reviewCount,
   className,
 }: ProductListItemProps) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-4 rounded-lg border border-border bg-white px-4 py-3 transition-colors hover:bg-neutral-50",
-        className,
-      )}
-    >
-      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-neutral-100">
+  const content = (
+    <>
+      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-neutral-100">
         <img
           src={imageUrl}
           alt={name}
@@ -51,6 +50,25 @@ export function ProductListItem({
           </span>
         )}
       </div>
-    </div>
+    </>
   );
+
+  const sharedClassName = cn(
+    "flex items-center gap-4 rounded-lg border border-border bg-white px-4 py-3 transition-colors hover:bg-neutral-50",
+    className,
+  );
+
+  if (id) {
+    return (
+      <Link
+        to="/products/$productId"
+        params={{ productId: id }}
+        className={sharedClassName}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={sharedClassName}>{content}</div>;
 }

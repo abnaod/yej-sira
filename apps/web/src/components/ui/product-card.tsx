@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -38,7 +39,11 @@ export function ProductCard({
         className,
       )}
     >
-      <div className="relative aspect-4/3 overflow-hidden rounded-t-lg bg-neutral-50">
+      <Link
+        to="/products/$productId"
+        params={{ productId: id }}
+        className="relative aspect-4/3 overflow-hidden rounded-t-lg bg-neutral-50"
+      >
         <img
           src={imageUrl}
           alt={name}
@@ -46,19 +51,29 @@ export function ProductCard({
         />
         <button
           type="button"
-          onClick={() => onToggleWishlist?.(id)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleWishlist?.(id);
+          }}
           aria-label="Add to wishlist"
           className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white text-neutral-500 transition-colors hover:bg-neutral-50 hover:text-red-500"
         >
           <Heart className="h-4 w-4" strokeWidth={1.75} />
         </button>
-      </div>
+      </Link>
 
       <div className="flex min-w-0 flex-1 flex-col gap-1 pt-3">
         <div className="flex min-w-0 items-start justify-between gap-2">
-          <h3 className="min-w-0 flex-1 truncate text-sm font-medium leading-tight text-foreground">
-            {name}
-          </h3>
+          <Link
+            to="/products/$productId"
+            params={{ productId: id }}
+            className="min-w-0 flex-1"
+          >
+            <h3 className="truncate text-sm font-medium leading-tight text-foreground transition-colors hover:text-primary">
+              {name}
+            </h3>
+          </Link>
           <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
             <span className="text-sm font-semibold">
               ${price.toFixed(2)}
