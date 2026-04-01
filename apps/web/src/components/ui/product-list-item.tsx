@@ -30,7 +30,7 @@ export function ProductListItem({
         <img
           src={imageUrl}
           alt={name}
-          className="h-full w-full object-contain"
+          className="h-full w-full object-cover"
         />
       </div>
 

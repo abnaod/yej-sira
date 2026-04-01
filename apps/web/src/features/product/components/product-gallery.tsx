@@ -18,11 +18,11 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-hidden rounded-xl bg-linear-to-br from-stone-100 via-amber-50/50 to-neutral-50">
+      <div className="relative h-80 w-full overflow-hidden rounded-xl bg-linear-to-br from-stone-100 via-amber-50/50 to-neutral-50 md:h-[420px]">
         <img
           src={displayImages[selectedIndex]}
           alt={productName}
-          className="mx-auto h-80 w-full object-contain p-8 md:h-[420px]"
+          className="h-full w-full object-cover"
         />
       </div>
 
@@ -34,7 +34,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
               type="button"
               onClick={() => setSelectedIndex(i)}
               className={cn(
-                "h-16 w-16 overflow-hidden rounded-lg border-2 bg-neutral-50 p-1 transition-colors",
+                "h-16 w-16 overflow-hidden rounded-lg border-2 bg-neutral-50 transition-colors",
                 i === selectedIndex
                   ? "border-primary"
                   : "border-border hover:border-neutral-300",
@@ -43,7 +43,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
               <img
                 src={img}
                 alt={`${productName} view ${i + 1}`}
-                className="h-full w-full object-contain"
+                className="h-full w-full object-cover"
               />
             </button>
           ))}
