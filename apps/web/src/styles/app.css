@@ -3,6 +3,8 @@
 @theme inline {
   --color-background: oklch(100% 0 0);
   --color-foreground: oklch(14.5% 0 0);
+  --color-popover: oklch(100% 0 0);
+  --color-popover-foreground: oklch(14.5% 0 0);
   --color-muted: oklch(96.7% 0 0);
   --color-muted-foreground: oklch(45.5% 0 0);
   --color-border: oklch(91.7% 0 0);

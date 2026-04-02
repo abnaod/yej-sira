@@ -1,31 +1,94 @@
-import { SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 
-import { FilterChip } from "@/components/ui/filter-chip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
-const filters = [
-  { label: "Style" },
-  { label: "Price" },
-  { label: "Ships from" },
-  { label: "Material" },
-  { label: "Occasion" },
-  { label: "Gift ready" },
-];
+import { CategoryFilterDrawer } from "./category-filter-drawer";
 
-export function CategoryToolbar() {
+const sortOptions = [
+  { value: "relevancy", label: "Relevancy" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+  { value: "newest", label: "Newest" },
+] as const;
+
+type SortValue = (typeof sortOptions)[number]["value"];
+
+function formatCategoryLabel(categoryId: string) {
+  return categoryId
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+export function CategoryToolbar({ categoryId }: { categoryId: string }) {
+  const categoryLabel = formatCategoryLabel(categoryId);
+  const [sort, setSort] = useState<SortValue>("relevancy");
+  const sortLabel =
+    sortOptions.find((o) => o.value === sort)?.label ?? "Relevancy";
+
   return (
-    <div className="flex flex-wrap items-center gap-2 py-4">
-      {filters.map((filter) => (
-        <FilterChip key={filter.label} label={filter.label} />
-      ))}
-
-      <FilterChip
-        label="All Filters"
-        hasDropdown={false}
+    <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+      <CategoryFilterDrawer
+        categoryLabel={categoryLabel}
+        trigger={
+          <button
+            type="button"
+            className={cn(
+              "inline-flex w-fit items-center gap-2 rounded-full bg-neutral-100 px-4 py-2 text-sm font-medium text-foreground",
+              "transition-colors hover:bg-neutral-200/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
+            )}
+          >
+            All Filters
+            <SlidersHorizontal
+              className="h-4 w-4 shrink-0 text-foreground/80"
+              aria-hidden
+            />
+          </button>
+        }
       />
 
-      <div className="ml-auto flex items-center gap-1.5 text-sm text-muted-foreground">
-        <SlidersHorizontal className="h-4 w-4" />
-        <span>Sort by</span>
+      <div className="w-fit max-w-full sm:ml-auto">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border bg-white py-2 pl-4 pr-3 text-sm text-foreground",
+                "transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
+              )}
+              aria-label="Sort products"
+            >
+              <span className="shrink-0 text-muted-foreground">Sort by:</span>
+              <span className="min-w-0 max-w-48 truncate font-semibold sm:max-w-none">
+                {sortLabel}
+              </span>
+              <ChevronDown
+                className="h-4 w-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuRadioGroup
+              value={sort}
+              onValueChange={(v) => setSort(v as SortValue)}
+            >
+              {sortOptions.map((opt) => (
+                <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

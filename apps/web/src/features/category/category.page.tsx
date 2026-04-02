@@ -46,6 +46,46 @@ const categoryProducts = [
     rating: 4.5,
     reviewCount: 72,
   },
+  {
+    id: "5",
+    name: "Macramé wall hanging",
+    price: 78.0,
+    description: "100% cotton cord · Handwoven to order",
+    imageUrl:
+      "https://images.unsplash.com/photo-1622372738946-62e02505feb3?w=300&q=80",
+    rating: 4.5,
+    reviewCount: 134,
+  },
+  {
+    id: "6",
+    name: "Ceramic speckled vase",
+    price: 44.0,
+    description: "Hand-thrown stoneware · Matte finish",
+    imageUrl:
+      "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=300&q=80",
+    rating: 5,
+    reviewCount: 98,
+  },
+  {
+    id: "7",
+    name: "Woven rattan basket set",
+    price: 56.0,
+    description: "Set of 3 · Natural rattan · Fair trade",
+    imageUrl:
+      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=300&q=80",
+    rating: 4,
+    reviewCount: 63,
+  },
+  {
+    id: "8",
+    name: "Hand-poured soy candle",
+    price: 28.0,
+    description: "Lavender & sage · 50-hour burn time",
+    imageUrl:
+      "https://images.unsplash.com/photo-1602607451009-3d341120aa72?w=300&q=80",
+    rating: 5,
+    reviewCount: 312,
+  },
 ];
 
 export function CategoryPage() {
@@ -53,11 +93,16 @@ export function CategoryPage() {
 
   return (
     <main>
-      <h1 className="text-2xl font-semibold tracking-tight capitalize">
-        {categoryId.replace(/-/g, " ")}
-      </h1>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight capitalize">
+          {categoryId.replace(/-/g, " ")}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {categoryProducts.length} results
+        </p>
+      </div>
 
-      <CategoryToolbar />
+      <CategoryToolbar categoryId={categoryId} />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         {categoryProducts.map((product) => (

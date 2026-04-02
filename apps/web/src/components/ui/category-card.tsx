@@ -1,21 +1,26 @@
+import { Link } from "@tanstack/react-router";
+
 import { cn } from "@/lib/utils";
 
 interface CategoryCardProps {
   name: string;
   imageUrl: string;
-  href?: string;
+  slug: string;
   className?: string;
 }
 
 export function CategoryCard({
   name,
   imageUrl,
+  slug,
   className,
 }: CategoryCardProps) {
   return (
-    <div
+    <Link
+      to="/categories/$categoryId"
+      params={{ categoryId: slug }}
       className={cn(
-        "group relative aspect-3/4 overflow-hidden rounded-xl",
+        "group relative aspect-2/3 overflow-hidden rounded-lg",
         className,
       )}
     >
@@ -28,6 +33,6 @@ export function CategoryCard({
       <h3 className="absolute left-4 top-4 text-base font-bold text-white drop-shadow-md">
         {name}
       </h3>
-    </div>
+    </Link>
   );
 }
