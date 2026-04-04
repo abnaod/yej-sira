@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 
 import {
@@ -8,36 +8,43 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { CATEGORY_SORT_OPTIONS } from "@/features/category/category.queries";
+import { tagsQuery } from "@/features/storefront";
 import { cn } from "@/lib/utils";
 
+import type { CategoryApplyFilters } from "./category-filter-drawer";
 import { CategoryFilterDrawer } from "./category-filter-drawer";
 
-const sortOptions = [
-  { value: "relevancy", label: "Relevancy" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "newest", label: "Newest" },
-] as const;
+type SortValue = (typeof CATEGORY_SORT_OPTIONS)[number]["value"];
 
-type SortValue = (typeof sortOptions)[number]["value"];
-
-function formatCategoryLabel(categoryId: string) {
-  return categoryId
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-}
-
-export function CategoryToolbar({ categoryId }: { categoryId: string }) {
-  const categoryLabel = formatCategoryLabel(categoryId);
-  const [sort, setSort] = useState<SortValue>("relevancy");
+export function CategoryToolbar({
+  categoryId,
+  sort,
+  selectedTagSlugs,
+  selectedPromotionSlug,
+  onSortChange,
+  onApplyFilters,
+}: {
+  categoryId: string;
+  sort: SortValue;
+  selectedTagSlugs: string[];
+  selectedPromotionSlug?: string;
+  onSortChange: (sort: SortValue) => void;
+  onApplyFilters: (opts: CategoryApplyFilters) => void;
+}) {
+  const { data: tagsData } = useSuspenseQuery(tagsQuery());
   const sortLabel =
-    sortOptions.find((o) => o.value === sort)?.label ?? "Relevancy";
+    CATEGORY_SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Relevancy";
 
   return (
     <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <CategoryFilterDrawer
-        categoryLabel={categoryLabel}
+        currentCategorySlug={categoryId}
+        sort={sort}
+        tags={tagsData.tags}
+        selectedTagSlugs={selectedTagSlugs}
+        selectedPromotionSlug={selectedPromotionSlug}
+        onApplyFilters={onApplyFilters}
         trigger={
           <button
             type="button"
@@ -61,7 +68,7 @@ export function CategoryToolbar({ categoryId }: { categoryId: string }) {
             <button
               type="button"
               className={cn(
-                "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-border bg-white py-2 pl-4 pr-3 text-sm text-foreground",
+                "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full bg-white py-2 pl-4 pr-3 text-sm text-foreground shadow-sm",
                 "transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
               )}
               aria-label="Sort products"
@@ -76,12 +83,12 @@ export function CategoryToolbar({ categoryId }: { categoryId: string }) {
               />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent align="end" className="w-56 border-none shadow-sm">
             <DropdownMenuRadioGroup
               value={sort}
-              onValueChange={(v) => setSort(v as SortValue)}
+              onValueChange={(v) => onSortChange(v as SortValue)}
             >
-              {sortOptions.map((opt) => (
+              {CATEGORY_SORT_OPTIONS.map((opt) => (
                 <DropdownMenuRadioItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </DropdownMenuRadioItem>

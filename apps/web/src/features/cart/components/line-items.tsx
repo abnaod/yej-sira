@@ -1,4 +1,4 @@
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -20,8 +20,16 @@ interface LineItemsProps {
 export function LineItems({ items, onUpdateQuantity, onRemove }: LineItemsProps) {
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-white p-8 text-center">
-        <p className="text-muted-foreground">Your cart is empty.</p>
+      <div className="flex min-h-[min(40vh,320px)] flex-col items-center justify-center gap-4 px-4 py-12 text-center">
+        <div
+          className="flex size-14 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          aria-hidden
+        >
+          <ShoppingCart className="size-7" strokeWidth={1.5} />
+        </div>
+        <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
+          Your cart is empty. Browse the shop and add products to see them here.
+        </p>
       </div>
     );
   }
@@ -37,7 +45,7 @@ export function LineItems({ items, onUpdateQuantity, onRemove }: LineItemsProps)
             <img
               src={item.imageUrl}
               alt={item.name}
-              className="h-full w-full object-contain"
+              className="h-full w-full object-cover object-center"
             />
           </div>
 

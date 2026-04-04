@@ -23,10 +23,13 @@
     "db:generate": {
       "cache": false
     },
-    "db:push": {
+    "db:migrate": {
       "cache": false
     },
-    "db:migrate": {
+    "db:migrate:deploy": {
+      "cache": false
+    },
+    "db:seed": {
       "cache": false
     }
   }

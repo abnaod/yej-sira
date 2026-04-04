@@ -19,6 +19,7 @@ export function CategoryCard({
     <Link
       to="/categories/$categoryId"
       params={{ categoryId: slug }}
+      search={{ sort: "relevancy", tagSlugs: "", promotionSlug: undefined }}
       className={cn(
         "group relative aspect-2/3 overflow-hidden rounded-lg",
         className,

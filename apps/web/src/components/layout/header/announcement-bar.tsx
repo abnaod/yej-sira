@@ -8,7 +8,7 @@ export function AnnouncementBar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 text-xs">
         <div className="flex items-center gap-1.5">
           <Phone className="h-3 w-3" />
-          <span>+001234567890</span>
+          <span>+251911223344</span>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 text-center">

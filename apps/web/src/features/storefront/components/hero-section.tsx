@@ -1,45 +1,55 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
+import { promotionsListQuery } from "@/features/promotions/promotions.queries";
 
-/** Handwoven textiles / craft materials — reads as artisan work */
-const primaryCraftImage =
-  "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=1200&q=80";
-/** Ethiopian coffee ceremony — jebena, cups, cultural context */
-const coffeeCeremonyImage =
-  "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=900&q=80";
+/** Small business / retail — seller-focused hero */
+const sellerHeroImage =
+  "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80";
+/** Fallback when no active promotion from API */
+const fallbackDealImage =
+  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&q=80";
 
 export function HeroSection() {
+  const { data } = useQuery({ ...promotionsListQuery(), staleTime: 60_000 });
+  const promo = data?.promotions[0];
+
   return (
     <section className="grid gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] lg:items-stretch">
       {/* Primary: split text + image */}
-      <div className="flex min-h-[min(14rem,40vh)] flex-col overflow-hidden rounded-2xl bg-white shadow-sm sm:min-h-56 sm:flex-row md:min-h-60">
-        <div className="flex w-full flex-col items-center justify-center bg-linear-to-r from-neutral-100 to-neutral-50 px-6 py-6 text-center sm:w-3/5 sm:py-8 md:px-10">
-          <h1 className="max-w-[20ch] font-serif text-2xl font-normal leading-snug tracking-tight text-foreground sm:max-w-[26ch] sm:text-3xl md:text-4xl">
-            Give gifts crafted in Ethiopia
+      <div className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm sm:flex-row">
+        <div className="flex w-full flex-col items-center justify-center bg-linear-to-r from-neutral-100 to-neutral-50 px-6 py-5 text-center sm:w-3/5 sm:py-6 md:px-10">
+          <h1 className="max-w-[22ch] font-serif text-2xl font-normal leading-snug tracking-tight text-foreground sm:max-w-[26ch] sm:text-3xl md:text-4xl">
+            Sell your craft on Yej Sira
           </h1>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-            Handwoven tibs, pottery, leather goods & more—sold by makers from
-            Addis Mercato to towns across the country.
+            List handmade goods, coffee, textiles & more—reach buyers from Addis
+            Mercato to shoppers everywhere.
           </p>
-          <Button asChild variant="default" size="xl" className="mt-4 rounded-full px-8 text-sm font-normal sm:mt-5">
-            <Link to="/">Meet the makers</Link>
+          <Button
+            asChild
+            variant="default"
+            size="lg"
+            className="mt-4 rounded-full px-8 text-sm font-normal sm:mt-5"
+          >
+            <Link to="/sell">Open a shop</Link>
           </Button>
         </div>
-        <div className="relative min-h-40 w-full min-w-0 sm:w-2/5 sm:min-h-0">
+        <div className="relative min-h-32 w-full min-w-0 sm:min-h-0 sm:w-2/5">
           <img
-            src={primaryCraftImage}
-            alt="Colorful handwoven textiles and craft fibers"
+            src={sellerHeroImage}
+            alt="Shop owner at a counter with a tablet, ready to sell"
             className="absolute inset-0 h-full w-full object-cover"
           />
         </div>
       </div>
 
-      {/* Secondary: full-bleed image + overlay copy */}
-      <div className="relative min-h-[min(14rem,40vh)] overflow-hidden rounded-2xl shadow-sm sm:min-h-56 md:min-h-60">
+      {/* Secondary: active promotion from API, or search fallback */}
+      <div className="relative min-h-32 overflow-hidden rounded-2xl shadow-sm sm:min-h-0">
         <img
-          src={coffeeCeremonyImage}
-          alt="Traditional Ethiopian coffee ceremony with jebena and cups"
+          src={promo?.heroImageUrl ?? fallbackDealImage}
+          alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div
@@ -47,15 +57,37 @@ export function HeroSection() {
           aria-hidden
         />
         <div className="absolute bottom-0 left-0 max-w-[95%] p-4 text-white sm:p-5">
-          <p className="text-base font-semibold leading-snug sm:text-lg">
-            Coffee ceremony sets & gifts from Ethiopian artisans
+          <p className="text-xs font-medium uppercase tracking-wide text-white/90">
+            {promo?.badgeLabel ?? "Discover"}
           </p>
-          <Link
-            to="/"
-            className="mt-2 inline-block text-sm font-medium text-white underline underline-offset-4 transition-opacity hover:opacity-90"
-          >
-            Shop now
-          </Link>
+          <p className="mt-1 text-base font-semibold leading-snug sm:text-lg">
+            {promo?.title ?? "Find handmade gifts, décor & more"}
+          </p>
+          {promo?.subtitle && (
+            <p className="mt-1 text-sm text-white/90">{promo.subtitle}</p>
+          )}
+          {promo ? (
+            <Link
+              to="/promotions/$slug"
+              params={{ slug: promo.slug }}
+              className="mt-2 inline-block text-sm font-medium text-white underline underline-offset-4 transition-opacity hover:opacity-90"
+            >
+              Shop the promotion
+            </Link>
+          ) : (
+            <Link
+              to="/search"
+              search={{
+                q: "handmade",
+                sort: "relevancy",
+                tagSlugs: "",
+                promotionSlug: undefined,
+              }}
+              className="mt-2 inline-block text-sm font-medium text-white underline underline-offset-4 transition-opacity hover:opacity-90"
+            >
+              Browse handmade
+            </Link>
+          )}
         </div>
       </div>
     </section>

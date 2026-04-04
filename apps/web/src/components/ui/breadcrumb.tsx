@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils";
 
 export interface BreadcrumbItem {
   label: string;
-  href?: string;
+  /** TanStack Router path, e.g. `/categories/$categoryId` */
+  to?: string;
+  params?: Record<string, string>;
+  search?: Record<string, string | undefined>;
 }
 
 interface BreadcrumbProps {
@@ -24,9 +27,11 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
             {i > 0 && (
               <ChevronRight className="h-3 w-3 shrink-0" />
             )}
-            {item.href && !isLast ? (
+            {item.to && !isLast ? (
               <Link
-                to={item.href}
+                to={item.to}
+                params={item.params}
+                search={item.search}
                 className="transition-colors hover:text-primary"
               >
                 {item.label}

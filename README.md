@@ -25,16 +25,22 @@ pnpm + Turborepo monorepo: **TanStack Start** (`apps/web`), **Hono** API (`apps/
    pnpm db:generate
    ```
 
-4. Apply schema (development):
-
-   ```bash
-   pnpm --filter @ys/db db:push
-   ```
-
-   Or use migrations:
+4. Apply migrations (development):
 
    ```bash
    pnpm --filter @ys/db db:migrate
+   ```
+
+   For production / CI, apply committed migrations without prompts:
+
+   ```bash
+   pnpm --filter @ys/db db:migrate:deploy
+   ```
+
+5. Seed catalog data (optional, for local dev):
+
+   ```bash
+   pnpm db:seed
    ```
 
 ## Scripts
@@ -45,13 +51,14 @@ pnpm + Turborepo monorepo: **TanStack Start** (`apps/web`), **Hono** API (`apps/
 | `pnpm build`   | Build all packages                   |
 | `pnpm lint`    | Typecheck across workspaces (where configured) |
 | `pnpm db:generate` | `prisma generate` in `libs/db`   |
-| `pnpm db:push` | `prisma db push`                     |
-| `pnpm db:migrate` | `prisma migrate dev`            |
+| `pnpm db:migrate` | `prisma migrate dev` in `libs/db`   |
+| `pnpm db:migrate:deploy` | `prisma migrate deploy` in `libs/db` |
+| `pnpm db:seed` | Run `prisma/seed.ts` in `libs/db` |
 
 ## Workspace layout
 
 - `apps/web` — TanStack Start, Tailwind v4, shadcn-style UI (`src/components/ui`), `auth-client` for Better Auth.
-- `apps/api` — Hono on port **3001**; Better Auth at `/api/auth/*`, example route `GET /api/users/me`.
+- `apps/api` — Hono on port **3001**; Better Auth at `/api/auth/*`; storefront JSON API under `/api` (categories, products, cart, checkout, orders).
 - `libs/db` — Prisma schema (PostgreSQL) and shared `PrismaClient`.
 - `libs/tsconfig` — Shared `tsconfig` JSON presets.
 

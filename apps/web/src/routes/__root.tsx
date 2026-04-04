@@ -1,10 +1,17 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router";
+import {
+  HeadContent,
+  Scripts,
+  createRootRouteWithContext,
+} from "@tanstack/react-router";
 
-import { RootLayout } from "@/components/layouts/root-layout";
+import { RootLayout } from "@/components/layouts";
+import { NotFoundPage } from "@/components/shared";
+import type { RouterContext } from "@/lib/router-context";
 
 import appCss from "../styles/app.css?url";
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<RouterContext>()({
+  notFoundComponent: NotFoundPage,
   head: () => ({
     meta: [
       { charSet: "utf-8" },

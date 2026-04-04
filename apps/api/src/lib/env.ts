@@ -7,6 +7,9 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z.string().url(),
   PORT: z.coerce.number().default(3001),
   CORS_ORIGIN: z.string().url().default("http://localhost:3000"),
+  /** Google OAuth (optional). Enable when both are set. */
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

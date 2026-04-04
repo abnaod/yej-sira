@@ -8,5 +8,7 @@ export function createUserAbility(userId: string) {
   const { can, build } = new AbilityBuilder(createPrismaAbility);
   can("read", "User", { id: userId });
   can("update", "User", { id: userId });
+  can("read", "Order", { userId });
+  can("read", "Cart", { userId });
   return build();
 }

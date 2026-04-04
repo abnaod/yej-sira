@@ -1,46 +1,112 @@
 import { Link } from "@tanstack/react-router";
-import { Search, ShoppingCart, User } from "lucide-react";
+import { ChevronDown, Heart, ShoppingCart, User } from "lucide-react";
 
-import { Input } from "@/components/ui/input";
+import { useAuthDialog } from "@/components/auth";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { authClient } from "@/lib/auth-client";
 import { AnnouncementBar } from "./announcement-bar";
+import { HeaderFilter } from "./header-filter";
+import { HeaderSearch } from "./header-search";
 import { HeaderNav } from "./header-nav";
 
 export function Header() {
+  const { openAuth } = useAuthDialog();
+  const { data: session, isPending } = authClient.useSession();
+
+  const displayName =
+    session?.user?.name?.trim() || session?.user?.email?.split("@")[0] || "Account";
+
   return (
     <header className="border-b border-border bg-white">
       <AnnouncementBar />
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
-        <Link to="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
+        <Link
+          to="/"
+          className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
+        >
           <span className="text-xl" aria-hidden>
             ✦
           </span>
           <span className="text-primary">Yej Sira</span>
         </Link>
 
-        <HeaderNav />
-
-        <div className="relative ml-auto flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search for handmade, vintage, supplies…"
-            className="pl-9 pr-3 shadow-none"
-          />
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+          <HeaderNav />
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <HeaderFilter />
+            <HeaderSearch />
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Link
-            to="/"
-            className="flex items-center gap-1.5 text-sm text-foreground transition-colors hover:text-primary"
-          >
-            <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Account</span>
-          </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          {isPending ? (
+            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">…</span>
+            </span>
+          ) : session?.user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="h-auto gap-1.5 px-1.5 py-1 text-sm font-normal text-foreground hover:text-primary"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="hidden max-w-40 truncate sm:inline">
+                    {displayName}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/orders">Orders</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    void authClient.signOut();
+                  }}
+                >
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-auto gap-1.5 px-1.5 py-1 text-sm font-normal text-foreground hover:text-primary"
+              onClick={() => openAuth()}
+            >
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Account</span>
+            </Button>
+          )}
+          {!isPending && session?.user && (
+            <Link
+              to="/favorites"
+              className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
+              aria-label="Favorites"
+            >
+              <Heart className="h-4 w-4" aria-hidden />
+            </Link>
+          )}
           <Link
             to="/cart"
-            className="flex items-center gap-1.5 text-sm text-foreground transition-colors hover:text-primary"
+            className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
+            aria-label="Cart"
           >
-            <ShoppingCart className="h-4 w-4" />
-            <span className="hidden sm:inline">Cart</span>
+            <ShoppingCart className="h-4 w-4" aria-hidden />
           </Link>
         </div>
       </div>

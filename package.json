@@ -8,8 +8,9 @@
     "lint": "turbo lint",
     "clean": "turbo clean",
     "db:generate": "turbo db:generate",
-    "db:push": "turbo db:push",
-    "db:migrate": "turbo db:migrate"
+    "db:migrate": "turbo db:migrate",
+    "db:migrate:deploy": "turbo db:migrate:deploy",
+    "db:seed": "turbo db:seed"
   },
   "devDependencies": {
     "turbo": "catalog:",
