@@ -2,15 +2,18 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import { onError } from "./lib/error.js";
-import { getEnv } from "./lib/env.js";
-import { authRouter } from "./modules/auth/auth.routes.js";
-import { cartRouter } from "./modules/cart/cart.routes.js";
-import { catalogRouter } from "./modules/catalog/catalog.routes.js";
-import { ordersRouter } from "./modules/orders/orders.routes.js";
-import { userRouter } from "./modules/user/user.routes.js";
-import { favoritesRouter } from "./modules/favorites/favorites.routes.js";
-import { promotionsRouter } from "./modules/promotions/promotions.routes.js";
+import { onError } from "./lib/error";
+import { getEnv } from "./lib/env";
+import { localeMiddleware } from "./middleware/locale";
+import { authRouter } from "./modules/auth/auth.routes";
+import { cartRouter } from "./modules/cart/cart.routes";
+import { catalogRouter } from "./modules/catalog/catalog.routes";
+import { ordersRouter } from "./modules/orders/orders.routes";
+import { userRouter } from "./modules/user/user.routes";
+import { favoritesRouter } from "./modules/favorites/favorites.routes";
+import { promotionsRouter } from "./modules/promotions/promotions.routes";
+import { shopsRouter } from "./modules/shops/shops.routes";
+import { sellerRouter } from "./modules/seller/seller.routes";
 
 // Validate env early
 getEnv();
@@ -23,7 +26,7 @@ app.use(
   "*",
   cors({
     origin: getEnv().CORS_ORIGIN,
-    allowHeaders: ["Content-Type", "Authorization", "Cookie", "X-Cart-Token"],
+    allowHeaders: ["Content-Type", "Authorization", "Cookie", "X-Cart-Token", "X-Locale"],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   }),
@@ -32,6 +35,7 @@ app.use(
 app.get("/health", (c) => c.json({ ok: true }));
 
 const api = new Hono();
+api.use("*", localeMiddleware);
 api.route("/", authRouter);
 api.route("/", userRouter);
 api.route("/", catalogRouter);
@@ -39,6 +43,8 @@ api.route("/", promotionsRouter);
 api.route("/", cartRouter);
 api.route("/", ordersRouter);
 api.route("/", favoritesRouter);
+api.route("/", shopsRouter);
+api.route("/", sellerRouter);
 
 app.route("/api", api);
 

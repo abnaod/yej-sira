@@ -1,6 +1,10 @@
+import type { Locale } from "@ys/intl";
+
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
 
 const CART_TOKEN_KEY = "ys_cart_token";
+
+export type ApiFetchInit = RequestInit & { locale?: Locale };
 
 export function getStoredCartToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -21,21 +25,26 @@ export function apiUrl(path: string) {
   return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-export async function apiFetch(path: string, init?: RequestInit) {
+export async function apiFetch(path: string, init?: ApiFetchInit) {
+  const { locale, ...rest } = init ?? {};
   const url = apiUrl(path);
   const cartToken = getStoredCartToken();
+  const headers = new Headers(rest.headers);
+  if (locale) {
+    headers.set("X-Locale", locale);
+  }
   return fetch(url, {
-    ...init,
+    ...rest,
     credentials: "include",
     headers: {
-      ...(init?.body ? { "Content-Type": "application/json" } : {}),
+      ...(rest.body ? { "Content-Type": "application/json" } : {}),
       ...(cartToken ? { "X-Cart-Token": cartToken } : {}),
-      ...(init?.headers ?? {}),
+      ...headers,
     },
   });
 }
 
-export async function apiFetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+export async function apiFetchJson<T>(path: string, init?: ApiFetchInit): Promise<T> {
   const res = await apiFetch(path, init);
   const text = await res.text();
   let data: unknown = null;

@@ -1,15 +1,42 @@
+import type { ContentLocale } from "@prisma/client";
+import type { Locale } from "@ys/intl";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { auth } from "../auth/auth.js";
-import { prisma } from "../../lib/db.js";
-import { toNumber } from "../../lib/money.js";
-import { getOrCreateCart } from "../cart/cart.service.js";
-import { checkoutBodySchema } from "./orders.schema.js";
+import { pickProductName, pickVariantLabel } from "../../lib/localized-catalog";
+import { auth } from "../auth/auth";
+import { prisma } from "../../lib/db";
+import { toNumber } from "../../lib/money";
+import { getOrCreateCart } from "../cart/cart.service";
+import { checkoutBodySchema } from "./orders.schema";
+
+function orderLineInclude(locale: Locale) {
+  const tr =
+    locale === "en"
+      ? null
+      : ({
+          where: { locale: locale as ContentLocale },
+        } as const);
+
+  return {
+    variant: {
+      include: {
+        ...(tr ? { translations: tr } : {}),
+        product: {
+          include: {
+            ...(tr ? { translations: tr } : {}),
+            images: { orderBy: { sortOrder: "asc" } },
+          },
+        },
+      },
+    },
+  } as const;
+}
 
 export const ordersRouter = new Hono();
 
 ordersRouter.post("/checkout", async (c) => {
+  const locale = c.get("locale");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Sign in required to checkout" });
@@ -26,17 +53,7 @@ ordersRouter.post("/checkout", async (c) => {
 
   const itemsPreview = await prisma.cartItem.findMany({
     where: { cartId: cart.id },
-    include: {
-      variant: {
-        include: {
-          product: {
-            include: {
-              images: { orderBy: { sortOrder: "asc" } },
-            },
-          },
-        },
-      },
-    },
+    include: orderLineInclude(locale),
   });
 
   if (itemsPreview.length === 0) {
@@ -45,8 +62,15 @@ ordersRouter.post("/checkout", async (c) => {
 
   for (const line of itemsPreview) {
     if (line.quantity > line.variant.stock) {
+      const pname = pickProductName(
+        {
+          name: line.variant.product.name,
+          translations: line.variant.product.translations ?? [],
+        },
+        locale,
+      );
       throw new HTTPException(400, {
-        message: `Insufficient stock for ${line.variant.product.name}`,
+        message: `Insufficient stock for ${pname}`,
       });
     }
   }
@@ -54,17 +78,7 @@ ordersRouter.post("/checkout", async (c) => {
   const result = await prisma.$transaction(async (tx) => {
     const items = await tx.cartItem.findMany({
       where: { cartId: cart.id },
-      include: {
-        variant: {
-          include: {
-            product: {
-              include: {
-                images: { orderBy: { sortOrder: "asc" } },
-              },
-            },
-          },
-        },
-      },
+      include: orderLineInclude(locale),
     });
 
     let subtotal = 0;
@@ -92,8 +106,20 @@ ordersRouter.post("/checkout", async (c) => {
           create: items.map((line) => {
             const imageUrl = line.variant.product.images[0]?.url ?? "";
             return {
-              productName: line.variant.product.name,
-              variantLabel: line.variant.label,
+              productName: pickProductName(
+                {
+                  name: line.variant.product.name,
+                  translations: line.variant.product.translations ?? [],
+                },
+                locale,
+              ),
+              variantLabel: pickVariantLabel(
+                {
+                  label: line.variant.label,
+                  translations: line.variant.translations ?? [],
+                },
+                locale,
+              ),
               unitPrice: line.variant.price,
               quantity: line.quantity,
               imageUrl,

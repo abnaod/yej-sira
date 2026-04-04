@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
 
@@ -6,14 +7,15 @@ import { addToCartMutationOptions } from "@/features/cart/cart.queries";
 
 import { promotionDetailQuery } from "./promotions.queries";
 
-const routeApi = getRouteApi("/promotions/$slug");
+const routeApi = getRouteApi("/$locale/promotions/$slug");
 
 export function PromotionPage() {
-  const { slug } = routeApi.useParams();
+  const { slug, locale: localeParam } = routeApi.useParams();
+  const locale = localeParam as Locale;
   const queryClient = useQueryClient();
-  const addToCart = useMutation(addToCartMutationOptions(queryClient));
+  const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
 
-  const { data } = useSuspenseQuery(promotionDetailQuery(slug));
+  const { data } = useSuspenseQuery(promotionDetailQuery(locale, slug));
   const { promotion, products, total } = data;
 
   return (
@@ -55,6 +57,7 @@ export function PromotionPage() {
             imageUrl={product.imageUrl}
             rating={product.rating}
             reviewCount={product.reviewCount}
+            shop={product.shop}
             promotion={product.promotion}
             onAddToCart={
               product.defaultVariantId
@@ -70,7 +73,11 @@ export function PromotionPage() {
       </div>
 
       <p className="mt-10 text-center text-sm text-muted-foreground">
-        <Link to="/" className="font-medium text-primary underline underline-offset-4">
+        <Link
+          to="/$locale"
+          params={{ locale }}
+          className="font-medium text-primary underline underline-offset-4"
+        >
           Back to home
         </Link>
       </p>

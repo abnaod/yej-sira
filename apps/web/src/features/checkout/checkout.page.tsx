@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { OrderSummary } from "@/features/orders";
 import { cartQuery } from "@/features/cart/cart.queries";
+import { useLocale } from "@/lib/locale-path";
 
 import { ShippingStep, type ShippingFormValues } from "./components/shipping-step";
 import { checkoutMutationOptions } from "./checkout.queries";
@@ -17,19 +18,20 @@ const emptyAddr: ShippingFormValues = {
 };
 
 export function CheckoutPage() {
+  const locale = useLocale();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [addr, setAddr] = useState<ShippingFormValues>(emptyAddr);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { data: cartData } = useSuspenseQuery(cartQuery());
+  const { data: cartData } = useSuspenseQuery(cartQuery(locale));
 
   const checkout = useMutation({
-    ...checkoutMutationOptions(queryClient, {
+    ...checkoutMutationOptions(queryClient, locale, {
       onSuccess: (data) => {
         void navigate({
-          to: "/orders/$orderId",
-          params: { orderId: data.order.id },
+          to: "/$locale/orders/$orderId",
+          params: { locale, orderId: data.order.id },
         });
       },
       onError: (err) => {

@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import { queryOptions } from "@tanstack/react-query";
 
 import type { ProductCardDto } from "@/features/storefront";
@@ -30,13 +31,24 @@ export function parseTagSlugsParam(raw: string | undefined): string[] {
 }
 
 export const productsForCategoryQuery = (
+  locale: Locale,
   categorySlug: string,
   sort: CategorySort,
   tagSlugs: string[] = [],
   promotionSlug?: string,
+  attributeFacet?: { definitionKey: string; allowedValueKey: string },
 ) =>
   queryOptions({
-    queryKey: ["products", categorySlug, sort, tagSlugs, promotionSlug ?? null] as const,
+    queryKey: [
+      "products",
+      categorySlug,
+      locale,
+      sort,
+      tagSlugs,
+      promotionSlug ?? null,
+      attributeFacet?.definitionKey ?? null,
+      attributeFacet?.allowedValueKey ?? null,
+    ] as const,
     queryFn: () => {
       const params = new URLSearchParams({
         categorySlug,
@@ -50,6 +62,12 @@ export const productsForCategoryQuery = (
       if (promotionSlug) {
         params.set("promotionSlug", promotionSlug);
       }
-      return apiFetchJson<ProductsListResponse>(`/api/products?${params.toString()}`);
+      if (attributeFacet) {
+        params.set("attributeDefinitionKey", attributeFacet.definitionKey);
+        params.set("allowedValueKey", attributeFacet.allowedValueKey);
+      }
+      return apiFetchJson<ProductsListResponse>(`/api/products?${params.toString()}`, {
+        locale,
+      });
     },
   });

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 
-import { auth } from "./auth.js";
+import { auth } from "./auth";
 
 export const authRouter = new Hono();
 

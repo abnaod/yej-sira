@@ -2,8 +2,8 @@ import { getCookie, setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import { randomUUID } from "node:crypto";
 
-import { auth } from "../auth/auth.js";
-import { prisma } from "../../lib/db.js";
+import { auth } from "../auth/auth";
+import { prisma } from "../../lib/db";
 
 const CART_COOKIE = "ys_cart_token";
 const CART_TOKEN_HEADER = "x-cart-token";

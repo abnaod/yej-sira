@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme inline {
@@ -23,9 +24,20 @@
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-full: 9999px;
+
+  /* Avenir (system on many platforms); use `font-logo` (not `font-*-logo` or Tailwind treats it as a bad font name) */
+  --font-logo:
+    Avenir, "Avenir Next", "Helvetica Neue", Helvetica, ui-sans-serif, sans-serif;
 }
 
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
+  font-family:
+    "Noto Sans",
+    "Noto Sans Ethiopic",
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
 }
+

@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/components/ui/product-card";
 import { addToCartMutationOptions } from "@/features/cart/cart.queries";
 import { authClient } from "@/lib/auth-client";
+import { useLocale } from "@/lib/locale-path";
 
 import { favoritesQuery } from "./favorites.queries";
 
 export function FavoritesPage() {
   const { data: session, isPending } = authClient.useSession();
   const { openAuth } = useAuthDialog();
+  const locale = useLocale();
 
   if (isPending) {
     return (
@@ -34,7 +36,9 @@ export function FavoritesPage() {
             Sign in
           </Button>
           <Button variant="outline" asChild>
-            <Link to="/">Continue shopping</Link>
+            <Link to="/$locale" params={{ locale }}>
+              Continue shopping
+            </Link>
           </Button>
         </div>
       </main>
@@ -45,9 +49,10 @@ export function FavoritesPage() {
 }
 
 function FavoritesSignedIn() {
+  const locale = useLocale();
   const queryClient = useQueryClient();
-  const { data, isPending, isError, error } = useQuery(favoritesQuery(true));
-  const addToCart = useMutation(addToCartMutationOptions(queryClient));
+  const { data, isPending, isError, error } = useQuery(favoritesQuery(locale, true));
+  const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
 
   if (isPending) {
     return (
@@ -109,6 +114,7 @@ function FavoritesSignedIn() {
               imageUrl={product.imageUrl}
               rating={product.rating}
               reviewCount={product.reviewCount}
+              shop={product.shop}
               promotion={product.promotion}
               onAddToCart={
                 product.defaultVariantId

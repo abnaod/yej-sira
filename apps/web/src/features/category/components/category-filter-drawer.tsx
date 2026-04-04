@@ -29,6 +29,7 @@ import {
 } from "@/features/category/category.queries";
 import { promotionsListQuery } from "@/features/promotions/promotions.queries";
 import { categoriesQuery } from "@/features/storefront";
+import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -63,8 +64,9 @@ export function CategoryFilterDrawer({
   sort: CategorySort;
   onApplyFilters: (filters: CategoryApplyFilters) => void;
 }) {
-  const { data: categoriesData } = useQuery(categoriesQuery());
-  const { data: promotionsData } = useQuery(promotionsListQuery());
+  const locale = useLocale();
+  const { data: categoriesData } = useQuery(categoriesQuery(locale));
+  const { data: promotionsData } = useQuery(promotionsListQuery(locale));
   const categories = categoriesData?.categories ?? [];
   const [draftCategorySlug, setDraftCategorySlug] = useState(currentCategorySlug);
   const draftCategory = categories.find((c) => c.slug === draftCategorySlug);

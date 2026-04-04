@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CATEGORY_SORT_OPTIONS } from "@/features/category/category.queries";
 import { tagsQuery } from "@/features/storefront";
+import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 
 import type { CategoryApplyFilters } from "./category-filter-drawer";
@@ -32,7 +33,8 @@ export function CategoryToolbar({
   onSortChange: (sort: SortValue) => void;
   onApplyFilters: (opts: CategoryApplyFilters) => void;
 }) {
-  const { data: tagsData } = useSuspenseQuery(tagsQuery());
+  const locale = useLocale();
+  const { data: tagsData } = useSuspenseQuery(tagsQuery(locale));
   const sortLabel =
     CATEGORY_SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Relevancy";
 

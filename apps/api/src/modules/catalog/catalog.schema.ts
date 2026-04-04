@@ -32,17 +32,32 @@ const optionalSearchQ = z.preprocess(
   z.string().min(2).max(80).optional(),
 );
 
-export const productListQuerySchema = z.object({
-  categorySlug: z.string().optional(),
-  q: optionalSearchQ,
-  /** Comma-separated or repeated query keys; AND semantics (product must have every tag). */
-  tagSlugs: optionalTagSlugs,
-  /** Filter to products enrolled in this promotion while it is active. */
-  promotionSlug: z.string().trim().min(1).max(80).optional(),
-  sort: z.enum(["relevancy", "price-asc", "price-desc", "newest"]).default("relevancy"),
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(50).default(24),
-});
+export const productListQuerySchema = z
+  .object({
+    categorySlug: z.string().optional(),
+    q: optionalSearchQ,
+    /** Comma-separated or repeated query keys; AND semantics (product must have every tag). */
+    tagSlugs: optionalTagSlugs,
+    /** Filter to products enrolled in this promotion while it is active. */
+    promotionSlug: z.string().trim().min(1).max(80).optional(),
+    /** Facet: definition key within category (requires categorySlug + allowedValueKey). */
+    attributeDefinitionKey: z.string().trim().min(1).max(80).optional(),
+    allowedValueKey: z.string().trim().min(1).max(80).optional(),
+    sort: z.enum(["relevancy", "price-asc", "price-desc", "newest"]).default("relevancy"),
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(50).default(24),
+  })
+  .refine(
+    (d) =>
+      !(
+        (d.attributeDefinitionKey != null || d.allowedValueKey != null) &&
+        (d.attributeDefinitionKey == null || d.allowedValueKey == null || !d.categorySlug)
+      ),
+    {
+      message:
+        "attributeDefinitionKey and allowedValueKey require each other and categorySlug",
+    },
+  );
 
 export const featuredQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(48).default(12),

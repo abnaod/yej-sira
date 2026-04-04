@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Heart, Minus, Plus, RotateCcw, Truck } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
+import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/star-rating";
@@ -16,6 +19,7 @@ export interface ProductVariantOption {
 interface BuyBoxProps {
   name: string;
   description?: string;
+  shop?: { slug: string; name: string; imageUrl: string | null };
   monthlyPrice?: number;
   financingNote?: string;
   rating: number;
@@ -33,6 +37,7 @@ interface BuyBoxProps {
 export function BuyBox({
   name,
   description,
+  shop,
   monthlyPrice,
   financingNote,
   rating,
@@ -45,6 +50,8 @@ export function BuyBox({
   favoritePending,
   promotion,
 }: BuyBoxProps) {
+  const { t } = useTranslation("common");
+  const locale = useLocale();
   const [selected, setSelected] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
@@ -94,6 +101,19 @@ export function BuyBox({
       </div>
 
       <StarRating rating={rating} reviewCount={reviewCount} size="md" />
+
+      {shop && (
+        <p className="text-sm text-muted-foreground">
+          {t("soldBy")}{" "}
+          <Link
+            to="/$locale/shops/$shopSlug"
+            params={{ locale, shopSlug: shop.slug }}
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            {shop.name}
+          </Link>
+        </p>
+      )}
 
       {promotion && (
         <p className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm text-foreground">

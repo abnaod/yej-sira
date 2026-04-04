@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { promotionsListQuery } from "@/features/promotions/promotions.queries";
+import { useLocale } from "@/lib/locale-path";
 
 /** Small business / retail — seller-focused hero */
 const sellerHeroImage =
@@ -12,7 +14,9 @@ const fallbackDealImage =
   "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&q=80";
 
 export function HeroSection() {
-  const { data } = useQuery({ ...promotionsListQuery(), staleTime: 60_000 });
+  const { t } = useTranslation("common");
+  const locale = useLocale();
+  const { data } = useQuery({ ...promotionsListQuery(locale), staleTime: 60_000 });
   const promo = data?.promotions[0];
 
   return (
@@ -21,11 +25,10 @@ export function HeroSection() {
       <div className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm sm:flex-row">
         <div className="flex w-full flex-col items-center justify-center bg-linear-to-r from-neutral-100 to-neutral-50 px-6 py-5 text-center sm:w-3/5 sm:py-6 md:px-10">
           <h1 className="max-w-[22ch] font-serif text-2xl font-normal leading-snug tracking-tight text-foreground sm:max-w-[26ch] sm:text-3xl md:text-4xl">
-            Sell your craft on Yej Sira
+            {t("heroSellerTitle")}
           </h1>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-            List handmade goods, coffee, textiles & more—reach buyers from Addis
-            Mercato to shoppers everywhere.
+            {t("heroSellerSubtitle")}
           </p>
           <Button
             asChild
@@ -33,7 +36,9 @@ export function HeroSection() {
             size="lg"
             className="mt-4 rounded-full px-8 text-sm font-normal sm:mt-5"
           >
-            <Link to="/sell">Open a shop</Link>
+            <Link to="/$locale/sell" params={{ locale }}>
+              {t("openShop")}
+            </Link>
           </Button>
         </div>
         <div className="relative min-h-32 w-full min-w-0 sm:min-h-0 sm:w-2/5">
@@ -58,25 +63,26 @@ export function HeroSection() {
         />
         <div className="absolute bottom-0 left-0 max-w-[95%] p-4 text-white sm:p-5">
           <p className="text-xs font-medium uppercase tracking-wide text-white/90">
-            {promo?.badgeLabel ?? "Discover"}
+            {promo?.badgeLabel ?? t("heroDiscoverBadge")}
           </p>
           <p className="mt-1 text-base font-semibold leading-snug sm:text-lg">
-            {promo?.title ?? "Find handmade gifts, décor & more"}
+            {promo?.title ?? t("heroDiscoverFallbackTitle")}
           </p>
           {promo?.subtitle && (
             <p className="mt-1 text-sm text-white/90">{promo.subtitle}</p>
           )}
           {promo ? (
             <Link
-              to="/promotions/$slug"
-              params={{ slug: promo.slug }}
+              to="/$locale/promotions/$slug"
+              params={{ locale, slug: promo.slug }}
               className="mt-2 inline-block text-sm font-medium text-white underline underline-offset-4 transition-opacity hover:opacity-90"
             >
-              Shop the promotion
+              {t("heroShopPromotion")}
             </Link>
           ) : (
             <Link
-              to="/search"
+              to="/$locale/search"
+              params={{ locale }}
               search={{
                 q: "handmade",
                 sort: "relevancy",
@@ -85,7 +91,7 @@ export function HeroSection() {
               }}
               className="mt-2 inline-block text-sm font-medium text-white underline underline-offset-4 transition-opacity hover:opacity-90"
             >
-              Browse handmade
+              {t("heroBrowseHandmade")}
             </Link>
           )}
         </div>

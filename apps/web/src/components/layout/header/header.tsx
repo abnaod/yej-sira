@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Heart, ShoppingCart, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import { useAuthDialog } from "@/components/auth";
 import { Button } from "@/components/ui/button";
@@ -10,31 +12,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { userMeQueryOptions } from "@/features/user/user.queries";
 import { authClient } from "@/lib/auth-client";
+import { useLocale } from "@/lib/locale-path";
+import { BrandLogo } from "../brand-logo";
 import { AnnouncementBar } from "./announcement-bar";
 import { HeaderFilter } from "./header-filter";
 import { HeaderSearch } from "./header-search";
 import { HeaderNav } from "./header-nav";
 
 export function Header() {
+  const { t } = useTranslation("common");
+  const locale = useLocale();
   const { openAuth } = useAuthDialog();
   const { data: session, isPending } = authClient.useSession();
+  const { data: userMe } = useQuery({
+    ...userMeQueryOptions,
+    enabled: !!session?.user,
+  });
 
   const displayName =
-    session?.user?.name?.trim() || session?.user?.email?.split("@")[0] || "Account";
+    session?.user?.name?.trim() ||
+    session?.user?.email?.split("@")[0] ||
+    t("account");
 
   return (
     <header className="border-b border-border bg-white">
       <AnnouncementBar />
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
         <Link
-          to="/"
-          className="flex shrink-0 items-center gap-2 text-lg font-bold tracking-tight"
+          to="/$locale"
+          params={{ locale }}
+          className="flex shrink-0 items-center"
         >
-          <span className="text-xl" aria-hidden>
-            ✦
-          </span>
-          <span className="text-primary">Yej Sira</span>
+          <BrandLogo className="text-primary" />
         </Link>
 
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -45,7 +56,7 @@ export function Header() {
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
           {isPending ? (
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
@@ -67,8 +78,22 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-48">
                 <DropdownMenuItem asChild>
-                  <Link to="/orders">Orders</Link>
+                  <Link to="/$locale/orders" params={{ locale }}>
+                    {t("orders")}
+                  </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/$locale/sell" params={{ locale }}>
+                    {t("openShop")}
+                  </Link>
+                </DropdownMenuItem>
+                {userMe?.user.role === "admin" ? (
+                  <DropdownMenuItem asChild>
+                    <Link to="/$locale/admin/shops" params={{ locale }}>
+                      {t("adminShops")}
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   variant="destructive"
@@ -77,7 +102,7 @@ export function Header() {
                     void authClient.signOut();
                   }}
                 >
-                  Sign out
+                  {t("signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -89,22 +114,24 @@ export function Header() {
               onClick={() => openAuth()}
             >
               <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Account</span>
+              <span className="hidden sm:inline">{t("account")}</span>
             </Button>
           )}
           {!isPending && session?.user && (
             <Link
-              to="/favorites"
+              to="/$locale/favorites"
+              params={{ locale }}
               className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-              aria-label="Favorites"
+              aria-label={t("favorites")}
             >
               <Heart className="h-4 w-4" aria-hidden />
             </Link>
           )}
           <Link
-            to="/cart"
+            to="/$locale/cart"
+            params={{ locale }}
             className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-            aria-label="Cart"
+            aria-label={t("cart")}
           >
             <ShoppingCart className="h-4 w-4" aria-hidden />
           </Link>

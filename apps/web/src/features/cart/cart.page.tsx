@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import { OrderSummary } from "@/features/orders";
+import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 
 import {
@@ -12,13 +13,14 @@ import {
 import { LineItems, type LineItemData } from "./components/line-items";
 
 export function CartPage() {
+  const locale = useLocale();
   const queryClient = useQueryClient();
 
-  const { data: cartData } = useSuspenseQuery(cartQuery());
+  const { data: cartData } = useSuspenseQuery(cartQuery(locale));
 
-  const updateQty = useMutation(updateCartItemMutationOptions(queryClient));
+  const updateQty = useMutation(updateCartItemMutationOptions(queryClient, locale));
 
-  const removeItem = useMutation(removeCartItemMutationOptions(queryClient));
+  const removeItem = useMutation(removeCartItemMutationOptions(queryClient, locale));
 
   const { items, subtotal, shipping, tax, total } = cartData;
 

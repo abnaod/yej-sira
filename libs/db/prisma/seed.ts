@@ -1,5 +1,10 @@
 import { config } from "dotenv";
-import { Prisma } from "@prisma/client";
+import {
+  CategoryAttributeInputType,
+  ContentLocale,
+  Prisma,
+  type PrismaClient,
+} from "@prisma/client";
 
 config({ path: "../../.env" });
 
@@ -60,8 +65,6 @@ type SeedProduct = {
   categorySlug: (typeof categories)[number]["slug"];
   name: string;
   description: string;
-  rating: Prisma.Decimal;
-  reviewCount: number;
   featured: boolean;
   tagSlugs: (typeof tagDefinitions)[number]["slug"][];
   images: string[];
@@ -108,14 +111,41 @@ const promotionSeeds = [
   },
 ] as const;
 
+const SEED_REVIEWER_USERS = [
+  { id: "seed-reviewer-1", name: "Alex M.", email: "alex.m@example.test" },
+  { id: "seed-reviewer-2", name: "Sam K.", email: "sam.k@example.test" },
+  { id: "seed-reviewer-3", name: "Jordan R.", email: "jordan.r@example.test" },
+] as const;
+
+const SEED_REVIEW_COMMENTS = [
+  "Exceeded expectations — would buy again.",
+  "Beautiful quality and fast shipping.",
+  "Great value; the product itself is lovely.",
+] as const;
+
+async function recalculateProductRatingAggregate(prisma: PrismaClient, productId: string) {
+  const agg = await prisma.productRating.aggregate({
+    where: { productId },
+    _avg: { stars: true },
+    _count: true,
+  });
+  const avg = agg._avg.stars ?? 0;
+  const count = agg._count;
+  await prisma.product.update({
+    where: { id: productId },
+    data: {
+      rating: new Prisma.Decimal(count === 0 ? "0.00" : avg.toFixed(2)),
+      reviewCount: count,
+    },
+  });
+}
+
 const products: SeedProduct[] = [
   {
     slug: "hand-glazed-stoneware-mug",
     categorySlug: "home-living",
     name: "Hand-glazed stoneware mug",
     description: "Wheel-thrown, food-safe glaze · Made in Vermont",
-    rating: new Prisma.Decimal("5.0"),
-    reviewCount: 214,
     featured: true,
     tagSlugs: ["handmade", "new"],
     images: [
@@ -132,8 +162,6 @@ const products: SeedProduct[] = [
     categorySlug: "home-living",
     name: "Block-print linen pillow cover",
     description: "Natural linen · Hand block printed in small batches",
-    rating: new Prisma.Decimal("4.5"),
-    reviewCount: 89,
     featured: true,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
@@ -148,8 +176,6 @@ const products: SeedProduct[] = [
     categorySlug: "jewelry-accessories",
     name: "Hammered sterling silver earrings",
     description: "Solid sterling · Each pair slightly unique",
-    rating: new Prisma.Decimal("5.0"),
-    reviewCount: 156,
     featured: true,
     tagSlugs: ["handmade", "editors-pick"],
     images: [
@@ -164,8 +190,6 @@ const products: SeedProduct[] = [
     categorySlug: "home-living",
     name: "Olive wood serving board",
     description: "Single piece of olive wood, hand oiled",
-    rating: new Prisma.Decimal("4.5"),
-    reviewCount: 72,
     featured: true,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
@@ -180,8 +204,6 @@ const products: SeedProduct[] = [
     categorySlug: "art-collectibles",
     name: "Botanical embroidery hoop art",
     description: "Cotton floss on linen · 8\" hoop, ready to hang",
-    rating: new Prisma.Decimal("5.0"),
-    reviewCount: 203,
     featured: true,
     tagSlugs: ["handmade", "new"],
     images: [
@@ -202,8 +224,6 @@ const products: SeedProduct[] = [
     categorySlug: "art-collectibles",
     name: "Original watercolor mini",
     description: "Signed by the artist · Archival paper",
-    rating: new Prisma.Decimal("4.5"),
-    reviewCount: 41,
     featured: true,
     tagSlugs: ["new", "editors-pick"],
     images: [
@@ -218,8 +238,6 @@ const products: SeedProduct[] = [
     categorySlug: "clothing",
     name: "Handwoven cotton market tote",
     description: "Heavyweight cotton · Reinforced straps",
-    rating: new Prisma.Decimal("4.5"),
-    reviewCount: 128,
     featured: true,
     tagSlugs: ["handmade"],
     images: [
@@ -234,8 +252,6 @@ const products: SeedProduct[] = [
     categorySlug: "paper-party",
     name: "Soy wax candle trio, gift set",
     description: "Three 4 oz tins · Essential oil blends",
-    rating: new Prisma.Decimal("5.0"),
-    reviewCount: 95,
     featured: true,
     tagSlugs: ["gift-ready", "handmade"],
     images: [
@@ -250,8 +266,6 @@ const products: SeedProduct[] = [
     categorySlug: "home-living",
     name: "Hand-carved wooden coffee scoop",
     description: "Olive wood · For your jebena ritual",
-    rating: new Prisma.Decimal("4.5"),
-    reviewCount: 67,
     featured: true,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
@@ -266,8 +280,6 @@ const products: SeedProduct[] = [
     categorySlug: "paper-party",
     name: "Natural beeswax taper pair",
     description: "Dipped by hand · Unscented",
-    rating: new Prisma.Decimal("5.0"),
-    reviewCount: 54,
     featured: true,
     tagSlugs: ["handmade"],
     images: [
@@ -282,8 +294,6 @@ const products: SeedProduct[] = [
     categorySlug: "home-living",
     name: "Woven grass storage basket",
     description: "Fair trade · Natural dye accents",
-    rating: new Prisma.Decimal("4.5"),
-    reviewCount: 112,
     featured: true,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
@@ -298,8 +308,6 @@ const products: SeedProduct[] = [
     categorySlug: "paper-party",
     name: "Screen-printed cotton tea towel",
     description: "Ethiopian motifs · Machine washable",
-    rating: new Prisma.Decimal("4.5"),
-    reviewCount: 88,
     featured: true,
     tagSlugs: ["handmade"],
     images: [
@@ -314,8 +322,6 @@ const products: SeedProduct[] = [
     categorySlug: "home-living",
     name: "Macramé wall hanging",
     description: "100% cotton cord · Handwoven to order",
-    rating: new Prisma.Decimal("4.5"),
-    reviewCount: 134,
     featured: false,
     tagSlugs: ["handmade", "new"],
     images: [
@@ -330,8 +336,6 @@ const products: SeedProduct[] = [
     categorySlug: "home-living",
     name: "Ceramic speckled vase",
     description: "Hand-thrown stoneware · Matte finish",
-    rating: new Prisma.Decimal("5.0"),
-    reviewCount: 98,
     featured: false,
     tagSlugs: ["handmade"],
     images: [
@@ -346,8 +350,6 @@ const products: SeedProduct[] = [
     categorySlug: "home-living",
     name: "Woven rattan basket set",
     description: "Set of 3 · Natural rattan · Fair trade",
-    rating: new Prisma.Decimal("4.0"),
-    reviewCount: 63,
     featured: false,
     tagSlugs: ["gift-ready", "handmade"],
     images: [
@@ -362,8 +364,6 @@ const products: SeedProduct[] = [
     categorySlug: "paper-party",
     name: "Hand-poured soy candle",
     description: "Lavender & sage · 50-hour burn time",
-    rating: new Prisma.Decimal("5.0"),
-    reviewCount: 312,
     featured: false,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
@@ -379,8 +379,6 @@ const products: SeedProduct[] = [
     name: "Airpods Max",
     description:
       "A perfect balance of exhilarating high-fidelity audio and the effortless magic of AirPods.",
-    rating: new Prisma.Decimal("5.0"),
-    reviewCount: 121,
     featured: false,
     tagSlugs: ["new", "editors-pick"],
     images: [
@@ -424,10 +422,259 @@ const products: SeedProduct[] = [
   },
 ];
 
+/**
+ * New categories: add rows in `categories`, then extend `seedCategoryAttributeDefinitions`
+ * with definitions + option keys; run `pnpm db:seed`.
+ */
+async function seedCategoryAttributeDefinitions(
+  prisma: PrismaClient,
+  slugToCategoryId: Record<string, string>,
+) {
+  type Opt = { key: string; labels: { en: string; am: string } };
+  type Def = {
+    key: string;
+    inputType: CategoryAttributeInputType;
+    sortOrder: number;
+    isRequired: boolean;
+    labels: { en: string; am: string };
+    options?: Opt[];
+  };
+
+  const byCategory: Array<{ slug: (typeof categories)[number]["slug"]; defs: Def[] }> = [
+    {
+      slug: "jewelry-accessories",
+      defs: [
+        {
+          key: "material",
+          inputType: CategoryAttributeInputType.select,
+          sortOrder: 0,
+          isRequired: true,
+          labels: { en: "Material", am: "ቁስ" },
+          options: [
+            { key: "gold", labels: { en: "Gold", am: "ወርቅ" } },
+            { key: "silver", labels: { en: "Silver", am: "ብር" } },
+            { key: "brass", labels: { en: "Brass", am: "ናስ" } },
+          ],
+        },
+        {
+          key: "care_instructions",
+          inputType: CategoryAttributeInputType.text,
+          sortOrder: 1,
+          isRequired: false,
+          labels: { en: "Care instructions", am: "የአጠባበቅ መመሪያ" },
+        },
+      ],
+    },
+    {
+      slug: "home-living",
+      defs: [
+        {
+          key: "room",
+          inputType: CategoryAttributeInputType.select,
+          sortOrder: 0,
+          isRequired: false,
+          labels: { en: "Room", am: "ክፍል" },
+          options: [
+            { key: "kitchen", labels: { en: "Kitchen", am: "ማዕድ" } },
+            { key: "living", labels: { en: "Living room", am: "መኖሪያ" } },
+            { key: "bedroom", labels: { en: "Bedroom", am: "መኝታ" } },
+          ],
+        },
+        {
+          key: "dimensions_note",
+          inputType: CategoryAttributeInputType.text,
+          sortOrder: 1,
+          isRequired: false,
+          labels: { en: "Dimensions", am: "ልኬቶች" },
+        },
+      ],
+    },
+    {
+      slug: "art-collectibles",
+      defs: [
+        {
+          key: "medium",
+          inputType: CategoryAttributeInputType.select,
+          sortOrder: 0,
+          isRequired: true,
+          labels: { en: "Medium", am: "መስመር" },
+          options: [
+            { key: "paper", labels: { en: "Paper", am: "ወረቀት" } },
+            { key: "canvas", labels: { en: "Canvas", am: "ካንቫስ" } },
+            { key: "digital", labels: { en: "Digital", am: "ዲጂታል" } },
+          ],
+        },
+      ],
+    },
+    {
+      slug: "paper-party",
+      defs: [
+        {
+          key: "occasion",
+          inputType: CategoryAttributeInputType.select,
+          sortOrder: 0,
+          isRequired: false,
+          labels: { en: "Occasion", am: "ዝግጅት" },
+          options: [
+            { key: "wedding", labels: { en: "Wedding", am: "ሰርግ" } },
+            { key: "birthday", labels: { en: "Birthday", am: "የልደት" } },
+            { key: "holiday", labels: { en: "Holiday", am: "በዓል" } },
+          ],
+        },
+      ],
+    },
+    {
+      slug: "vintage",
+      defs: [
+        {
+          key: "era",
+          inputType: CategoryAttributeInputType.select,
+          sortOrder: 0,
+          isRequired: false,
+          labels: { en: "Era", am: "ዘመን" },
+          options: [
+            { key: "pre1950", labels: { en: "Pre-1950", am: "ከ1950 በፊት" } },
+            { key: "1950-1990", labels: { en: "1950–1990", am: "1950–1990" } },
+            { key: "1990plus", labels: { en: "1990+", am: "1990+" } },
+          ],
+        },
+      ],
+    },
+    {
+      slug: "clothing",
+      defs: [
+        {
+          key: "size_label",
+          inputType: CategoryAttributeInputType.select,
+          sortOrder: 0,
+          isRequired: true,
+          labels: { en: "Size", am: "መጠን" },
+          options: [
+            { key: "xs", labels: { en: "XS", am: "XS" } },
+            { key: "s", labels: { en: "S", am: "S" } },
+            { key: "m", labels: { en: "M", am: "M" } },
+            { key: "l", labels: { en: "L", am: "L" } },
+            { key: "xl", labels: { en: "XL", am: "XL" } },
+          ],
+        },
+        {
+          key: "fabric",
+          inputType: CategoryAttributeInputType.text,
+          sortOrder: 1,
+          isRequired: false,
+          labels: { en: "Fabric", am: "ጨርቅ" },
+        },
+      ],
+    },
+  ];
+
+  for (const { slug, defs } of byCategory) {
+    const categoryId = slugToCategoryId[slug];
+    if (!categoryId) continue;
+    for (const def of defs) {
+      await prisma.categoryAttributeDefinition.create({
+        data: {
+          categoryId,
+          key: def.key,
+          inputType: def.inputType,
+          sortOrder: def.sortOrder,
+          isRequired: def.isRequired,
+          translations: {
+            create: [
+              { locale: ContentLocale.en, label: def.labels.en },
+              { locale: ContentLocale.am, label: def.labels.am },
+            ],
+          },
+          ...(def.options?.length
+            ? {
+                allowedValues: {
+                  create: def.options.map((o, i) => ({
+                    key: o.key,
+                    sortOrder: i,
+                    translations: {
+                      create: [
+                        { locale: ContentLocale.en, label: o.labels.en },
+                        { locale: ContentLocale.am, label: o.labels.am },
+                      ],
+                    },
+                  })),
+                },
+              }
+            : {}),
+        },
+      });
+    }
+  }
+}
+
+async function seedSampleProductAttributes(
+  prisma: PrismaClient,
+  slugToProductId: Record<string, string>,
+  slugToCategoryId: Record<string, string>,
+) {
+  const jewelryId = slugToCategoryId["jewelry-accessories"];
+  const earringsId = slugToProductId["hammered-sterling-silver-earrings"];
+  if (!jewelryId || !earringsId) return;
+
+  const matDef = await prisma.categoryAttributeDefinition.findFirst({
+    where: { categoryId: jewelryId, key: "material" },
+    include: { allowedValues: true },
+  });
+  const silver = matDef?.allowedValues.find((v) => v.key === "silver");
+  if (matDef && silver) {
+    await prisma.productAttributeValue.create({
+      data: {
+        productId: earringsId,
+        definitionId: matDef.id,
+        allowedValueId: silver.id,
+      },
+    });
+  }
+
+  const careDef = await prisma.categoryAttributeDefinition.findFirst({
+    where: { categoryId: jewelryId, key: "care_instructions" },
+  });
+  if (careDef) {
+    await prisma.productAttributeValue.create({
+      data: {
+        productId: earringsId,
+        definitionId: careDef.id,
+        textValue: "Store in a dry place; polish with a soft cloth.",
+      },
+    });
+  }
+}
+
 async function main() {
   const { prisma } = await import("../src/index.js");
 
   await prisma.$transaction([
+    prisma.session.deleteMany({
+      where: {
+        userId: {
+          startsWith: "seed-",
+        },
+      },
+    }),
+    prisma.account.deleteMany({
+      where: {
+        userId: {
+          startsWith: "seed-",
+        },
+      },
+    }),
+    prisma.favorite.deleteMany({
+      where: {
+        userId: {
+          startsWith: "seed-",
+        },
+      },
+    }),
+    prisma.user.deleteMany({
+      where: {
+        OR: [{ id: { startsWith: "seed-reviewer-" } }, { id: { startsWith: "seed-admin-" } }],
+      },
+    }),
     prisma.orderItem.deleteMany(),
     prisma.order.deleteMany(),
     prisma.cartItem.deleteMany(),
@@ -436,6 +683,7 @@ async function main() {
     prisma.productImage.deleteMany(),
     prisma.productVariant.deleteMany(),
     prisma.product.deleteMany(),
+    prisma.shop.deleteMany(),
     prisma.tag.deleteMany(),
     prisma.category.deleteMany(),
   ]);
@@ -455,6 +703,18 @@ async function main() {
 
   const slugToCategoryId = Object.fromEntries(categoryRows.map((row) => [row.slug, row.id]));
 
+  await seedCategoryAttributeDefinitions(prisma, slugToCategoryId);
+
+  const platformShop = await prisma.shop.create({
+    data: {
+      slug: "yej-sira",
+      name: "Yej Sira",
+      description: "Curated marketplace catalog",
+      status: "active",
+      ownerUserId: null,
+    },
+  });
+
   await prisma.tag.createMany({
     data: tagDefinitions.map((t) => ({ slug: t.slug, name: t.name })),
   });
@@ -466,12 +726,14 @@ async function main() {
     await prisma.product.create({
       data: {
         slug: p.slug,
+        shopId: platformShop.id,
         categoryId,
         name: p.name,
         description: p.description,
-        rating: p.rating,
-        reviewCount: p.reviewCount,
+        rating: new Prisma.Decimal("0"),
+        reviewCount: 0,
         featured: p.featured,
+        isPublished: true,
         images: {
           create: p.images.map((url, i) => ({
             url,
@@ -506,6 +768,50 @@ async function main() {
     if (row) slugToProductId[p.slug] = row.id;
   }
 
+  await seedSampleProductAttributes(prisma, slugToProductId, slugToCategoryId);
+
+  const now = new Date();
+  await prisma.user.createMany({
+    data: SEED_REVIEWER_USERS.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      emailVerified: true,
+      createdAt: now,
+      updatedAt: now,
+    })),
+  });
+
+  await prisma.user.create({
+    data: {
+      id: "seed-admin-1",
+      name: "Seed Admin",
+      email: "admin@yej-sira.test",
+      emailVerified: true,
+      role: "admin",
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
+
+  for (let pi = 0; pi < products.length; pi++) {
+    const p = products[pi];
+    const productId = slugToProductId[p.slug];
+    if (!productId) continue;
+    for (let ui = 0; ui < SEED_REVIEWER_USERS.length; ui++) {
+      const stars = 4 + ((pi + ui) % 2);
+      await prisma.productRating.create({
+        data: {
+          userId: SEED_REVIEWER_USERS[ui].id,
+          productId,
+          stars,
+          comment: SEED_REVIEW_COMMENTS[ui],
+        },
+      });
+    }
+    await recalculateProductRatingAggregate(prisma, productId);
+  }
+
   for (const promo of promotionSeeds) {
     const created = await prisma.promotion.create({
       data: {
@@ -529,6 +835,115 @@ async function main() {
     });
   }
 
+  const categoryAmharic: Partial<Record<(typeof categories)[number]["slug"], string>> = {
+    "jewelry-accessories": "ጌ ውላጅ እና ማስዋቢያዎች",
+    "home-living": "ቤት እና ህይወት",
+    "art-collectibles": "ጥበብ እና ስብስቦች",
+    "paper-party": "ወረቀት እና ድግስ",
+    vintage: "ቬንቴጅ",
+    clothing: "ልብስ",
+  };
+
+  await prisma.categoryTranslation.createMany({
+    data: categoryRows
+      .map((row) => {
+        const name = categoryAmharic[row.slug as keyof typeof categoryAmharic];
+        if (!name) return null;
+        return {
+          categoryId: row.id,
+          locale: ContentLocale.am,
+          name,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x != null),
+  });
+
+  const tagAmharic: Partial<Record<(typeof tagDefinitions)[number]["slug"], string>> = {
+    handmade: "በእጅ የተሰራ",
+    new: "አዲስ",
+    "gift-ready": "ለስጦታ",
+    "editors-pick": "የአርታዒ ምርጫ",
+  };
+
+  for (const t of tagDefinitions) {
+    const name = tagAmharic[t.slug];
+    if (!name) continue;
+    const row = await prisma.tag.findUnique({ where: { slug: t.slug } });
+    if (!row) continue;
+    await prisma.tagTranslation.create({
+      data: {
+        tagId: row.id,
+        locale: ContentLocale.am,
+        name,
+      },
+    });
+  }
+
+  const productAmharic: Partial<
+    Record<
+      SeedProduct["slug"],
+      { name: string; description: string; variants?: Record<string, string> }
+    >
+  > = {
+    "hand-glazed-stoneware-mug": {
+      name: "በእጅ የተነከረ የድንጋይ ሸክራ ማንኪያ",
+      description: "ከመኪና የወጣ ጥራት · በቬርሞንት የተሰራ",
+      variants: { Celadon: "ሴላዶን", Rust: "ድንጋይ ቀለም" },
+    },
+    "hammered-sterling-silver-earrings": {
+      name: "የተመታ የስተርሊንግ ብር ጉንድሮች",
+      description: "ጠንካራ ብር · እያንዳንዱ ጥንድ ትንሽ የተለየ",
+    },
+    "hand-carved-wooden-coffee-scoop": {
+      name: "በእጅ የተቀረጸ የእንጨት የቡና ማንኪያ",
+      description: "የወይራ እንጨት · ለጀበና ሥርዓትዎ",
+    },
+  };
+
+  for (const [slug, am] of Object.entries(productAmharic)) {
+    const product = await prisma.product.findUnique({
+      where: { slug },
+      include: { variants: true },
+    });
+    if (!product) continue;
+    await prisma.productTranslation.create({
+      data: {
+        productId: product.id,
+        locale: ContentLocale.am,
+        name: am.name,
+        description: am.description,
+      },
+    });
+    if (am.variants) {
+      for (const v of product.variants) {
+        const labelAm = am.variants[v.label];
+        if (!labelAm) continue;
+        await prisma.productVariantTranslation.create({
+          data: {
+            variantId: v.id,
+            locale: ContentLocale.am,
+            label: labelAm,
+          },
+        });
+      }
+    }
+  }
+
+  const springPromo = await prisma.promotion.findUnique({
+    where: { slug: "spring-home-edit" },
+  });
+  if (springPromo) {
+    await prisma.promotionTranslation.create({
+      data: {
+        promotionId: springPromo.id,
+        locale: ContentLocale.am,
+        title: "የጸየቀ ወቅት የቤት ምርጫ",
+        subtitle: "ለሞቀው ቀን የተመረጡ ዕቃዎች",
+        badgeLabel: "የጸየቀ ቅናሽ",
+      },
+    });
+  }
+
   console.log(
     `Seeded ${categories.length} categories, ${products.length} products, ${promotionSeeds.length} promotions.`,
   );
@@ -540,5 +955,6 @@ main()
     process.exit(1);
   })
   .finally(async () => {
+    const { prisma } = await import("../src/index.js");
     await prisma.$disconnect();
   });

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { Loader2, Search } from "lucide-react";
 
 import {
@@ -19,11 +20,14 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/ui/star-rating";
 import { productSearchQuery } from "@/features/storefront/storefront.queries";
+import { useLocale } from "@/lib/locale-path";
 
 const DEBOUNCE_MS = 280;
 const MIN_CHARS = 2;
 
 export function HeaderSearch() {
+  const { t } = useTranslation("common");
+  const locale = useLocale();
   const navigate = useNavigate();
   const [q, setQ] = React.useState("");
   const [debouncedQ, setDebouncedQ] = React.useState("");
@@ -41,7 +45,7 @@ export function HeaderSearch() {
   }, [canSearch, debouncedQ]);
 
   const { data, isPending, isError, error } = useQuery({
-    ...productSearchQuery(debouncedQ),
+    ...productSearchQuery(locale, debouncedQ),
     enabled: canSearch,
     staleTime: 30_000,
   });
@@ -61,7 +65,8 @@ export function HeaderSearch() {
     if (term.length < MIN_CHARS) return;
     setPopoverOpen(false);
     void navigate({
-      to: "/search",
+      to: "/$locale/search",
+      params: { locale },
       search: {
         q: term,
         sort: "relevancy",
@@ -69,7 +74,7 @@ export function HeaderSearch() {
         promotionSlug: undefined,
       },
     });
-  }, [navigate, q]);
+  }, [navigate, q, locale]);
 
   return (
     <div className="flex min-w-0 flex-1">
@@ -78,7 +83,7 @@ export function HeaderSearch() {
           <div className="relative min-w-0 w-full">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search for handmade, vintage, supplies…"
+              placeholder={t("searchPlaceholder")}
               className="pl-9 pr-3 shadow-none"
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -137,8 +142,8 @@ export function HeaderSearch() {
                         setQ("");
                         setDebouncedQ("");
                         void navigate({
-                          to: "/products/$productId",
-                          params: { productId: product.slug },
+                          to: "/$locale/products/$productId",
+                          params: { locale, productId: product.slug },
                         });
                       }}
                     >
@@ -184,7 +189,8 @@ export function HeaderSearch() {
             >
               <Separator />
               <Link
-                to="/search"
+                to="/$locale/search"
+                params={{ locale }}
                 search={{
                   q: debouncedQ,
                   sort: "relevancy",

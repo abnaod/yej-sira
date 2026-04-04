@@ -1,13 +1,38 @@
+import type { ContentLocale } from "@prisma/client";
+import type { Locale } from "@ys/intl";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { z } from "zod";
 
-import { prisma } from "../../lib/db.js";
-import { toNumber } from "../../lib/money.js";
-import { getOrCreateCart } from "./cart.service.js";
-import { cartItemBodySchema, cartItemPatchSchema } from "./cart.schema.js";
+import { pickProductName, pickVariantLabel } from "../../lib/localized-catalog";
+import { prisma } from "../../lib/db";
+import { toNumber } from "../../lib/money";
+import { getOrCreateCart } from "./cart.service";
+import { cartItemBodySchema, cartItemPatchSchema } from "./cart.schema";
 
 export const cartRouter = new Hono();
+
+function cartItemInclude(locale: Locale) {
+  const tr =
+    locale === "en"
+      ? null
+      : ({
+          where: { locale: locale as ContentLocale },
+        } as const);
+
+  return {
+    variant: {
+      include: {
+        ...(tr ? { translations: tr } : {}),
+        product: {
+          include: {
+            ...(tr ? { translations: tr } : {}),
+            images: true,
+          },
+        },
+      },
+    },
+  } as const;
+}
 
 function mapCartResponse(
   items: {
@@ -18,12 +43,15 @@ function mapCartResponse(
       label: string;
       price: unknown;
       stock: number;
+      translations?: { label: string }[];
       product: {
         name: string;
+        translations?: { name: string; description: string }[];
         images: { url: string; sortOrder: number }[];
       };
     };
   }[],
+  locale: Locale,
 ) {
   return items.map((line) => {
     const imageUrl =
@@ -31,8 +59,20 @@ function mapCartResponse(
     return {
       id: line.id,
       variantId: line.variant.id,
-      name: line.variant.product.name,
-      variant: line.variant.label,
+      name: pickProductName(
+        {
+          name: line.variant.product.name,
+          translations: line.variant.product.translations ?? [],
+        },
+        locale,
+      ),
+      variant: pickVariantLabel(
+        {
+          label: line.variant.label,
+          translations: line.variant.translations ?? [],
+        },
+        locale,
+      ),
       price: toNumber(line.variant.price),
       quantity: line.quantity,
       imageUrl,
@@ -42,24 +82,15 @@ function mapCartResponse(
 }
 
 cartRouter.get("/cart", async (c) => {
+  const locale = c.get("locale");
   const { cart } = await getOrCreateCart(c);
 
   const items = await prisma.cartItem.findMany({
     where: { cartId: cart.id },
-    include: {
-      variant: {
-        include: {
-          product: {
-            include: {
-              images: true,
-            },
-          },
-        },
-      },
-    },
+    include: cartItemInclude(locale),
   });
 
-  const lines = mapCartResponse(items);
+  const lines = mapCartResponse(items, locale);
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
   const shipping = 0;
   const tax = Math.round(subtotal * 0.08 * 100) / 100;

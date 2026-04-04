@@ -1,37 +1,61 @@
+import type { ContentLocale } from "@prisma/client";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { prisma } from "../../lib/db.js";
+import { pickPromotionCopy } from "../../lib/localized-catalog";
+import { prisma, publicProductVisibilityWhere } from "../../lib/db";
 import {
   getProductCardInclude,
   mapProductCard,
   minVariantPrice,
-} from "../catalog/product-card.mapper.js";
-import { activePromotionWhere, isPromotionActive } from "./promotion.utils.js";
-import { promotionDetailQuerySchema } from "./promotions.schema.js";
+} from "../catalog/product-card.mapper";
+import { activePromotionWhere, isPromotionActive } from "./promotion.utils";
+import { promotionDetailQuerySchema } from "./promotions.schema";
 
 export const promotionsRouter = new Hono();
 
 promotionsRouter.get("/promotions", async (c) => {
+  const locale = c.get("locale");
   const now = new Date();
+  const tr =
+    locale === "en"
+      ? null
+      : ({
+          where: { locale: locale as ContentLocale },
+        } as const);
+
   const rows = await prisma.promotion.findMany({
     where: { ...activePromotionWhere(now) },
     orderBy: [{ sortOrder: "asc" }, { endsAt: "asc" }],
+    ...(tr ? { include: { translations: tr } } : {}),
   });
 
   return c.json({
-    promotions: rows.map((p) => ({
-      slug: p.slug,
-      title: p.title,
-      subtitle: p.subtitle ?? undefined,
-      badgeLabel: p.badgeLabel,
-      endsAt: p.endsAt.toISOString(),
-      heroImageUrl: p.heroImageUrl ?? undefined,
-    })),
+    promotions: rows.map((p) => {
+      const copy = pickPromotionCopy(
+        {
+          title: p.title,
+          subtitle: p.subtitle,
+          badgeLabel: p.badgeLabel,
+          translations: (p as { translations?: { title: string; subtitle: string | null; badgeLabel: string }[] })
+            .translations ?? [],
+        },
+        locale,
+      );
+      return {
+        slug: p.slug,
+        title: copy.title,
+        subtitle: copy.subtitle,
+        badgeLabel: copy.badgeLabel,
+        endsAt: p.endsAt.toISOString(),
+        heroImageUrl: p.heroImageUrl ?? undefined,
+      };
+    }),
   });
 });
 
 promotionsRouter.get("/promotions/:slug", async (c) => {
+  const locale = c.get("locale");
   const slug = c.req.param("slug");
   const query = promotionDetailQuerySchema.safeParse({
     page: c.req.query("page"),
@@ -42,8 +66,16 @@ promotionsRouter.get("/promotions/:slug", async (c) => {
   }
   const { page, pageSize } = query.data;
 
+  const tr =
+    locale === "en"
+      ? null
+      : ({
+          where: { locale: locale as ContentLocale },
+        } as const);
+
   const promotion = await prisma.promotion.findUnique({
     where: { slug },
+    ...(tr ? { include: { translations: tr } } : {}),
   });
   if (!promotion) {
     throw new HTTPException(404, { message: "Promotion not found" });
@@ -51,10 +83,13 @@ promotionsRouter.get("/promotions/:slug", async (c) => {
 
   const now = new Date();
   const active = isPromotionActive(promotion, now);
-  const cardInclude = getProductCardInclude(now);
+  const cardInclude = getProductCardInclude(now, locale);
 
   const enrollment = await prisma.promotionProduct.findMany({
-    where: { promotionId: promotion.id },
+    where: {
+      promotionId: promotion.id,
+      product: publicProductVisibilityWhere,
+    },
     include: {
       product: {
         include: cardInclude,
@@ -71,19 +106,31 @@ promotionsRouter.get("/promotions/:slug", async (c) => {
   const total = withPrice.length;
   const slice = withPrice.slice((page - 1) * pageSize, page * pageSize);
 
+  const promoCopy = pickPromotionCopy(
+    {
+      title: promotion.title,
+      subtitle: promotion.subtitle,
+      badgeLabel: promotion.badgeLabel,
+      translations:
+        (promotion as { translations?: { title: string; subtitle: string | null; badgeLabel: string }[] })
+          .translations ?? [],
+    },
+    locale,
+  );
+
   return c.json({
     promotion: {
       slug: promotion.slug,
-      title: promotion.title,
-      subtitle: promotion.subtitle ?? undefined,
-      badgeLabel: promotion.badgeLabel,
+      title: promoCopy.title,
+      subtitle: promoCopy.subtitle,
+      badgeLabel: promoCopy.badgeLabel,
       startsAt: promotion.startsAt.toISOString(),
       endsAt: promotion.endsAt.toISOString(),
       heroImageUrl: promotion.heroImageUrl ?? undefined,
       active,
     },
     products: slice.map((x) => {
-      const card = mapProductCard(x.enrollment.product);
+      const card = mapProductCard(x.enrollment.product, locale);
       if (!active) {
         return card;
       }
@@ -91,7 +138,7 @@ promotionsRouter.get("/promotions/:slug", async (c) => {
         ...card,
         promotion: {
           slug: promotion.slug,
-          badgeLabel: promotion.badgeLabel,
+          badgeLabel: promoCopy.badgeLabel,
           endsAt: promotion.endsAt.toISOString(),
         },
       };

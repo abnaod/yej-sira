@@ -2,10 +2,13 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Package } from "lucide-react";
 
+import { useLocale } from "@/lib/locale-path";
+
 import { ordersListQuery } from "../orders.queries";
 
 export function OrderHistoryPage() {
-  const { data } = useSuspenseQuery(ordersListQuery());
+  const locale = useLocale();
+  const { data } = useSuspenseQuery(ordersListQuery(locale));
 
   const { orders } = data;
 
@@ -35,8 +38,8 @@ export function OrderHistoryPage() {
           {orders.map((o) => (
             <li key={o.id}>
               <Link
-                to="/orders/$orderId"
-                params={{ orderId: o.id }}
+                to="/$locale/orders/$orderId"
+                params={{ locale, orderId: o.id }}
                 className="flex items-center justify-between rounded-lg border border-border bg-white px-4 py-3 text-sm transition-colors hover:bg-neutral-50"
               >
                 <span className="font-medium">{o.id.slice(0, 8)}…</span>

@@ -9,172 +9,254 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SellIndexRouteImport } from './routes/sell/index'
-import { Route as SearchIndexRouteImport } from './routes/search/index'
-import { Route as OrdersIndexRouteImport } from './routes/orders/index'
-import { Route as FavoritesIndexRouteImport } from './routes/favorites/index'
-import { Route as CheckoutIndexRouteImport } from './routes/checkout/index'
-import { Route as CartIndexRouteImport } from './routes/cart/index'
-import { Route as PromotionsSlugRouteImport } from './routes/promotions/$slug'
-import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
-import { Route as OrdersOrderIdRouteImport } from './routes/orders/$orderId'
-import { Route as CategoriesCategoryIdRouteImport } from './routes/categories/$categoryId'
+import { Route as LocaleIndexRouteImport } from './routes/$locale/index'
+import { Route as LocaleSellIndexRouteImport } from './routes/$locale/sell/index'
+import { Route as LocaleSearchIndexRouteImport } from './routes/$locale/search/index'
+import { Route as LocaleOrdersIndexRouteImport } from './routes/$locale/orders/index'
+import { Route as LocaleFavoritesIndexRouteImport } from './routes/$locale/favorites/index'
+import { Route as LocaleCheckoutIndexRouteImport } from './routes/$locale/checkout/index'
+import { Route as LocaleCartIndexRouteImport } from './routes/$locale/cart/index'
+import { Route as LocaleShopsShopSlugRouteImport } from './routes/$locale/shops/$shopSlug'
+import { Route as LocaleSellDashboardRouteImport } from './routes/$locale/sell/dashboard'
+import { Route as LocalePromotionsSlugRouteImport } from './routes/$locale/promotions/$slug'
+import { Route as LocaleProductsProductIdRouteImport } from './routes/$locale/products/$productId'
+import { Route as LocaleOrdersOrderIdRouteImport } from './routes/$locale/orders/$orderId'
+import { Route as LocaleCategoriesCategoryIdRouteImport } from './routes/$locale/categories/$categoryId'
+import { Route as LocaleAdminShopsRouteImport } from './routes/$locale/admin/shops'
+import { Route as LocaleSellProductsNewRouteImport } from './routes/$locale/sell/products/new'
+import { Route as LocaleSellProductsProductIdRouteImport } from './routes/$locale/sell/products/$productId'
 
+const LocaleRoute = LocaleRouteImport.update({
+  id: '/$locale',
+  path: '/$locale',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SellIndexRoute = SellIndexRouteImport.update({
+const LocaleIndexRoute = LocaleIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleSellIndexRoute = LocaleSellIndexRouteImport.update({
   id: '/sell/',
   path: '/sell/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRoute,
 } as any)
-const SearchIndexRoute = SearchIndexRouteImport.update({
+const LocaleSearchIndexRoute = LocaleSearchIndexRouteImport.update({
   id: '/search/',
   path: '/search/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRoute,
 } as any)
-const OrdersIndexRoute = OrdersIndexRouteImport.update({
+const LocaleOrdersIndexRoute = LocaleOrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRoute,
 } as any)
-const FavoritesIndexRoute = FavoritesIndexRouteImport.update({
+const LocaleFavoritesIndexRoute = LocaleFavoritesIndexRouteImport.update({
   id: '/favorites/',
   path: '/favorites/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRoute,
 } as any)
-const CheckoutIndexRoute = CheckoutIndexRouteImport.update({
+const LocaleCheckoutIndexRoute = LocaleCheckoutIndexRouteImport.update({
   id: '/checkout/',
   path: '/checkout/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRoute,
 } as any)
-const CartIndexRoute = CartIndexRouteImport.update({
+const LocaleCartIndexRoute = LocaleCartIndexRouteImport.update({
   id: '/cart/',
   path: '/cart/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRoute,
 } as any)
-const PromotionsSlugRoute = PromotionsSlugRouteImport.update({
+const LocaleShopsShopSlugRoute = LocaleShopsShopSlugRouteImport.update({
+  id: '/shops/$shopSlug',
+  path: '/shops/$shopSlug',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleSellDashboardRoute = LocaleSellDashboardRouteImport.update({
+  id: '/sell/dashboard',
+  path: '/sell/dashboard',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocalePromotionsSlugRoute = LocalePromotionsSlugRouteImport.update({
   id: '/promotions/$slug',
   path: '/promotions/$slug',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRoute,
 } as any)
-const ProductsProductIdRoute = ProductsProductIdRouteImport.update({
+const LocaleProductsProductIdRoute = LocaleProductsProductIdRouteImport.update({
   id: '/products/$productId',
   path: '/products/$productId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRoute,
 } as any)
-const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
+const LocaleOrdersOrderIdRoute = LocaleOrdersOrderIdRouteImport.update({
   id: '/orders/$orderId',
   path: '/orders/$orderId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => LocaleRoute,
 } as any)
-const CategoriesCategoryIdRoute = CategoriesCategoryIdRouteImport.update({
-  id: '/categories/$categoryId',
-  path: '/categories/$categoryId',
-  getParentRoute: () => rootRouteImport,
+const LocaleCategoriesCategoryIdRoute =
+  LocaleCategoriesCategoryIdRouteImport.update({
+    id: '/categories/$categoryId',
+    path: '/categories/$categoryId',
+    getParentRoute: () => LocaleRoute,
+  } as any)
+const LocaleAdminShopsRoute = LocaleAdminShopsRouteImport.update({
+  id: '/admin/shops',
+  path: '/admin/shops',
+  getParentRoute: () => LocaleRoute,
 } as any)
+const LocaleSellProductsNewRoute = LocaleSellProductsNewRouteImport.update({
+  id: '/sell/products/new',
+  path: '/sell/products/new',
+  getParentRoute: () => LocaleRoute,
+} as any)
+const LocaleSellProductsProductIdRoute =
+  LocaleSellProductsProductIdRouteImport.update({
+    id: '/sell/products/$productId',
+    path: '/sell/products/$productId',
+    getParentRoute: () => LocaleRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/categories/$categoryId': typeof CategoriesCategoryIdRoute
-  '/orders/$orderId': typeof OrdersOrderIdRoute
-  '/products/$productId': typeof ProductsProductIdRoute
-  '/promotions/$slug': typeof PromotionsSlugRoute
-  '/cart/': typeof CartIndexRoute
-  '/checkout/': typeof CheckoutIndexRoute
-  '/favorites/': typeof FavoritesIndexRoute
-  '/orders/': typeof OrdersIndexRoute
-  '/search/': typeof SearchIndexRoute
-  '/sell/': typeof SellIndexRoute
+  '/$locale': typeof LocaleRouteWithChildren
+  '/$locale/': typeof LocaleIndexRoute
+  '/$locale/admin/shops': typeof LocaleAdminShopsRoute
+  '/$locale/categories/$categoryId': typeof LocaleCategoriesCategoryIdRoute
+  '/$locale/orders/$orderId': typeof LocaleOrdersOrderIdRoute
+  '/$locale/products/$productId': typeof LocaleProductsProductIdRoute
+  '/$locale/promotions/$slug': typeof LocalePromotionsSlugRoute
+  '/$locale/sell/dashboard': typeof LocaleSellDashboardRoute
+  '/$locale/shops/$shopSlug': typeof LocaleShopsShopSlugRoute
+  '/$locale/cart/': typeof LocaleCartIndexRoute
+  '/$locale/checkout/': typeof LocaleCheckoutIndexRoute
+  '/$locale/favorites/': typeof LocaleFavoritesIndexRoute
+  '/$locale/orders/': typeof LocaleOrdersIndexRoute
+  '/$locale/search/': typeof LocaleSearchIndexRoute
+  '/$locale/sell/': typeof LocaleSellIndexRoute
+  '/$locale/sell/products/$productId': typeof LocaleSellProductsProductIdRoute
+  '/$locale/sell/products/new': typeof LocaleSellProductsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/categories/$categoryId': typeof CategoriesCategoryIdRoute
-  '/orders/$orderId': typeof OrdersOrderIdRoute
-  '/products/$productId': typeof ProductsProductIdRoute
-  '/promotions/$slug': typeof PromotionsSlugRoute
-  '/cart': typeof CartIndexRoute
-  '/checkout': typeof CheckoutIndexRoute
-  '/favorites': typeof FavoritesIndexRoute
-  '/orders': typeof OrdersIndexRoute
-  '/search': typeof SearchIndexRoute
-  '/sell': typeof SellIndexRoute
+  '/$locale': typeof LocaleIndexRoute
+  '/$locale/admin/shops': typeof LocaleAdminShopsRoute
+  '/$locale/categories/$categoryId': typeof LocaleCategoriesCategoryIdRoute
+  '/$locale/orders/$orderId': typeof LocaleOrdersOrderIdRoute
+  '/$locale/products/$productId': typeof LocaleProductsProductIdRoute
+  '/$locale/promotions/$slug': typeof LocalePromotionsSlugRoute
+  '/$locale/sell/dashboard': typeof LocaleSellDashboardRoute
+  '/$locale/shops/$shopSlug': typeof LocaleShopsShopSlugRoute
+  '/$locale/cart': typeof LocaleCartIndexRoute
+  '/$locale/checkout': typeof LocaleCheckoutIndexRoute
+  '/$locale/favorites': typeof LocaleFavoritesIndexRoute
+  '/$locale/orders': typeof LocaleOrdersIndexRoute
+  '/$locale/search': typeof LocaleSearchIndexRoute
+  '/$locale/sell': typeof LocaleSellIndexRoute
+  '/$locale/sell/products/$productId': typeof LocaleSellProductsProductIdRoute
+  '/$locale/sell/products/new': typeof LocaleSellProductsNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/categories/$categoryId': typeof CategoriesCategoryIdRoute
-  '/orders/$orderId': typeof OrdersOrderIdRoute
-  '/products/$productId': typeof ProductsProductIdRoute
-  '/promotions/$slug': typeof PromotionsSlugRoute
-  '/cart/': typeof CartIndexRoute
-  '/checkout/': typeof CheckoutIndexRoute
-  '/favorites/': typeof FavoritesIndexRoute
-  '/orders/': typeof OrdersIndexRoute
-  '/search/': typeof SearchIndexRoute
-  '/sell/': typeof SellIndexRoute
+  '/$locale': typeof LocaleRouteWithChildren
+  '/$locale/': typeof LocaleIndexRoute
+  '/$locale/admin/shops': typeof LocaleAdminShopsRoute
+  '/$locale/categories/$categoryId': typeof LocaleCategoriesCategoryIdRoute
+  '/$locale/orders/$orderId': typeof LocaleOrdersOrderIdRoute
+  '/$locale/products/$productId': typeof LocaleProductsProductIdRoute
+  '/$locale/promotions/$slug': typeof LocalePromotionsSlugRoute
+  '/$locale/sell/dashboard': typeof LocaleSellDashboardRoute
+  '/$locale/shops/$shopSlug': typeof LocaleShopsShopSlugRoute
+  '/$locale/cart/': typeof LocaleCartIndexRoute
+  '/$locale/checkout/': typeof LocaleCheckoutIndexRoute
+  '/$locale/favorites/': typeof LocaleFavoritesIndexRoute
+  '/$locale/orders/': typeof LocaleOrdersIndexRoute
+  '/$locale/search/': typeof LocaleSearchIndexRoute
+  '/$locale/sell/': typeof LocaleSellIndexRoute
+  '/$locale/sell/products/$productId': typeof LocaleSellProductsProductIdRoute
+  '/$locale/sell/products/new': typeof LocaleSellProductsNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/categories/$categoryId'
-    | '/orders/$orderId'
-    | '/products/$productId'
-    | '/promotions/$slug'
-    | '/cart/'
-    | '/checkout/'
-    | '/favorites/'
-    | '/orders/'
-    | '/search/'
-    | '/sell/'
+    | '/$locale'
+    | '/$locale/'
+    | '/$locale/admin/shops'
+    | '/$locale/categories/$categoryId'
+    | '/$locale/orders/$orderId'
+    | '/$locale/products/$productId'
+    | '/$locale/promotions/$slug'
+    | '/$locale/sell/dashboard'
+    | '/$locale/shops/$shopSlug'
+    | '/$locale/cart/'
+    | '/$locale/checkout/'
+    | '/$locale/favorites/'
+    | '/$locale/orders/'
+    | '/$locale/search/'
+    | '/$locale/sell/'
+    | '/$locale/sell/products/$productId'
+    | '/$locale/sell/products/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/categories/$categoryId'
-    | '/orders/$orderId'
-    | '/products/$productId'
-    | '/promotions/$slug'
-    | '/cart'
-    | '/checkout'
-    | '/favorites'
-    | '/orders'
-    | '/search'
-    | '/sell'
+    | '/$locale'
+    | '/$locale/admin/shops'
+    | '/$locale/categories/$categoryId'
+    | '/$locale/orders/$orderId'
+    | '/$locale/products/$productId'
+    | '/$locale/promotions/$slug'
+    | '/$locale/sell/dashboard'
+    | '/$locale/shops/$shopSlug'
+    | '/$locale/cart'
+    | '/$locale/checkout'
+    | '/$locale/favorites'
+    | '/$locale/orders'
+    | '/$locale/search'
+    | '/$locale/sell'
+    | '/$locale/sell/products/$productId'
+    | '/$locale/sell/products/new'
   id:
     | '__root__'
     | '/'
-    | '/categories/$categoryId'
-    | '/orders/$orderId'
-    | '/products/$productId'
-    | '/promotions/$slug'
-    | '/cart/'
-    | '/checkout/'
-    | '/favorites/'
-    | '/orders/'
-    | '/search/'
-    | '/sell/'
+    | '/$locale'
+    | '/$locale/'
+    | '/$locale/admin/shops'
+    | '/$locale/categories/$categoryId'
+    | '/$locale/orders/$orderId'
+    | '/$locale/products/$productId'
+    | '/$locale/promotions/$slug'
+    | '/$locale/sell/dashboard'
+    | '/$locale/shops/$shopSlug'
+    | '/$locale/cart/'
+    | '/$locale/checkout/'
+    | '/$locale/favorites/'
+    | '/$locale/orders/'
+    | '/$locale/search/'
+    | '/$locale/sell/'
+    | '/$locale/sell/products/$productId'
+    | '/$locale/sell/products/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CategoriesCategoryIdRoute: typeof CategoriesCategoryIdRoute
-  OrdersOrderIdRoute: typeof OrdersOrderIdRoute
-  ProductsProductIdRoute: typeof ProductsProductIdRoute
-  PromotionsSlugRoute: typeof PromotionsSlugRoute
-  CartIndexRoute: typeof CartIndexRoute
-  CheckoutIndexRoute: typeof CheckoutIndexRoute
-  FavoritesIndexRoute: typeof FavoritesIndexRoute
-  OrdersIndexRoute: typeof OrdersIndexRoute
-  SearchIndexRoute: typeof SearchIndexRoute
-  SellIndexRoute: typeof SellIndexRoute
+  LocaleRoute: typeof LocaleRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/$locale': {
+      id: '/$locale'
+      path: '/$locale'
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -182,91 +264,165 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sell/': {
-      id: '/sell/'
+    '/$locale/': {
+      id: '/$locale/'
+      path: '/'
+      fullPath: '/$locale/'
+      preLoaderRoute: typeof LocaleIndexRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/sell/': {
+      id: '/$locale/sell/'
       path: '/sell'
-      fullPath: '/sell/'
-      preLoaderRoute: typeof SellIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/sell/'
+      preLoaderRoute: typeof LocaleSellIndexRouteImport
+      parentRoute: typeof LocaleRoute
     }
-    '/search/': {
-      id: '/search/'
+    '/$locale/search/': {
+      id: '/$locale/search/'
       path: '/search'
-      fullPath: '/search/'
-      preLoaderRoute: typeof SearchIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/search/'
+      preLoaderRoute: typeof LocaleSearchIndexRouteImport
+      parentRoute: typeof LocaleRoute
     }
-    '/orders/': {
-      id: '/orders/'
+    '/$locale/orders/': {
+      id: '/$locale/orders/'
       path: '/orders'
-      fullPath: '/orders/'
-      preLoaderRoute: typeof OrdersIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/orders/'
+      preLoaderRoute: typeof LocaleOrdersIndexRouteImport
+      parentRoute: typeof LocaleRoute
     }
-    '/favorites/': {
-      id: '/favorites/'
+    '/$locale/favorites/': {
+      id: '/$locale/favorites/'
       path: '/favorites'
-      fullPath: '/favorites/'
-      preLoaderRoute: typeof FavoritesIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/favorites/'
+      preLoaderRoute: typeof LocaleFavoritesIndexRouteImport
+      parentRoute: typeof LocaleRoute
     }
-    '/checkout/': {
-      id: '/checkout/'
+    '/$locale/checkout/': {
+      id: '/$locale/checkout/'
       path: '/checkout'
-      fullPath: '/checkout/'
-      preLoaderRoute: typeof CheckoutIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/checkout/'
+      preLoaderRoute: typeof LocaleCheckoutIndexRouteImport
+      parentRoute: typeof LocaleRoute
     }
-    '/cart/': {
-      id: '/cart/'
+    '/$locale/cart/': {
+      id: '/$locale/cart/'
       path: '/cart'
-      fullPath: '/cart/'
-      preLoaderRoute: typeof CartIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/cart/'
+      preLoaderRoute: typeof LocaleCartIndexRouteImport
+      parentRoute: typeof LocaleRoute
     }
-    '/promotions/$slug': {
-      id: '/promotions/$slug'
+    '/$locale/shops/$shopSlug': {
+      id: '/$locale/shops/$shopSlug'
+      path: '/shops/$shopSlug'
+      fullPath: '/$locale/shops/$shopSlug'
+      preLoaderRoute: typeof LocaleShopsShopSlugRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/sell/dashboard': {
+      id: '/$locale/sell/dashboard'
+      path: '/sell/dashboard'
+      fullPath: '/$locale/sell/dashboard'
+      preLoaderRoute: typeof LocaleSellDashboardRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/promotions/$slug': {
+      id: '/$locale/promotions/$slug'
       path: '/promotions/$slug'
-      fullPath: '/promotions/$slug'
-      preLoaderRoute: typeof PromotionsSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/promotions/$slug'
+      preLoaderRoute: typeof LocalePromotionsSlugRouteImport
+      parentRoute: typeof LocaleRoute
     }
-    '/products/$productId': {
-      id: '/products/$productId'
+    '/$locale/products/$productId': {
+      id: '/$locale/products/$productId'
       path: '/products/$productId'
-      fullPath: '/products/$productId'
-      preLoaderRoute: typeof ProductsProductIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/products/$productId'
+      preLoaderRoute: typeof LocaleProductsProductIdRouteImport
+      parentRoute: typeof LocaleRoute
     }
-    '/orders/$orderId': {
-      id: '/orders/$orderId'
+    '/$locale/orders/$orderId': {
+      id: '/$locale/orders/$orderId'
       path: '/orders/$orderId'
-      fullPath: '/orders/$orderId'
-      preLoaderRoute: typeof OrdersOrderIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/orders/$orderId'
+      preLoaderRoute: typeof LocaleOrdersOrderIdRouteImport
+      parentRoute: typeof LocaleRoute
     }
-    '/categories/$categoryId': {
-      id: '/categories/$categoryId'
+    '/$locale/categories/$categoryId': {
+      id: '/$locale/categories/$categoryId'
       path: '/categories/$categoryId'
-      fullPath: '/categories/$categoryId'
-      preLoaderRoute: typeof CategoriesCategoryIdRouteImport
-      parentRoute: typeof rootRouteImport
+      fullPath: '/$locale/categories/$categoryId'
+      preLoaderRoute: typeof LocaleCategoriesCategoryIdRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/admin/shops': {
+      id: '/$locale/admin/shops'
+      path: '/admin/shops'
+      fullPath: '/$locale/admin/shops'
+      preLoaderRoute: typeof LocaleAdminShopsRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/sell/products/new': {
+      id: '/$locale/sell/products/new'
+      path: '/sell/products/new'
+      fullPath: '/$locale/sell/products/new'
+      preLoaderRoute: typeof LocaleSellProductsNewRouteImport
+      parentRoute: typeof LocaleRoute
+    }
+    '/$locale/sell/products/$productId': {
+      id: '/$locale/sell/products/$productId'
+      path: '/sell/products/$productId'
+      fullPath: '/$locale/sell/products/$productId'
+      preLoaderRoute: typeof LocaleSellProductsProductIdRouteImport
+      parentRoute: typeof LocaleRoute
     }
   }
 }
 
+interface LocaleRouteChildren {
+  LocaleIndexRoute: typeof LocaleIndexRoute
+  LocaleAdminShopsRoute: typeof LocaleAdminShopsRoute
+  LocaleCategoriesCategoryIdRoute: typeof LocaleCategoriesCategoryIdRoute
+  LocaleOrdersOrderIdRoute: typeof LocaleOrdersOrderIdRoute
+  LocaleProductsProductIdRoute: typeof LocaleProductsProductIdRoute
+  LocalePromotionsSlugRoute: typeof LocalePromotionsSlugRoute
+  LocaleSellDashboardRoute: typeof LocaleSellDashboardRoute
+  LocaleShopsShopSlugRoute: typeof LocaleShopsShopSlugRoute
+  LocaleCartIndexRoute: typeof LocaleCartIndexRoute
+  LocaleCheckoutIndexRoute: typeof LocaleCheckoutIndexRoute
+  LocaleFavoritesIndexRoute: typeof LocaleFavoritesIndexRoute
+  LocaleOrdersIndexRoute: typeof LocaleOrdersIndexRoute
+  LocaleSearchIndexRoute: typeof LocaleSearchIndexRoute
+  LocaleSellIndexRoute: typeof LocaleSellIndexRoute
+  LocaleSellProductsProductIdRoute: typeof LocaleSellProductsProductIdRoute
+  LocaleSellProductsNewRoute: typeof LocaleSellProductsNewRoute
+}
+
+const LocaleRouteChildren: LocaleRouteChildren = {
+  LocaleIndexRoute: LocaleIndexRoute,
+  LocaleAdminShopsRoute: LocaleAdminShopsRoute,
+  LocaleCategoriesCategoryIdRoute: LocaleCategoriesCategoryIdRoute,
+  LocaleOrdersOrderIdRoute: LocaleOrdersOrderIdRoute,
+  LocaleProductsProductIdRoute: LocaleProductsProductIdRoute,
+  LocalePromotionsSlugRoute: LocalePromotionsSlugRoute,
+  LocaleSellDashboardRoute: LocaleSellDashboardRoute,
+  LocaleShopsShopSlugRoute: LocaleShopsShopSlugRoute,
+  LocaleCartIndexRoute: LocaleCartIndexRoute,
+  LocaleCheckoutIndexRoute: LocaleCheckoutIndexRoute,
+  LocaleFavoritesIndexRoute: LocaleFavoritesIndexRoute,
+  LocaleOrdersIndexRoute: LocaleOrdersIndexRoute,
+  LocaleSearchIndexRoute: LocaleSearchIndexRoute,
+  LocaleSellIndexRoute: LocaleSellIndexRoute,
+  LocaleSellProductsProductIdRoute: LocaleSellProductsProductIdRoute,
+  LocaleSellProductsNewRoute: LocaleSellProductsNewRoute,
+}
+
+const LocaleRouteWithChildren =
+  LocaleRoute._addFileChildren(LocaleRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CategoriesCategoryIdRoute: CategoriesCategoryIdRoute,
-  OrdersOrderIdRoute: OrdersOrderIdRoute,
-  ProductsProductIdRoute: ProductsProductIdRoute,
-  PromotionsSlugRoute: PromotionsSlugRoute,
-  CartIndexRoute: CartIndexRoute,
-  CheckoutIndexRoute: CheckoutIndexRoute,
-  FavoritesIndexRoute: FavoritesIndexRoute,
-  OrdersIndexRoute: OrdersIndexRoute,
-  SearchIndexRoute: SearchIndexRoute,
-  SellIndexRoute: SellIndexRoute,
+  LocaleRoute: LocaleRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

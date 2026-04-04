@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { StarRating } from "@/components/ui/star-rating";
 
@@ -24,6 +25,7 @@ export function ProductListItem({
   reviewCount,
   className,
 }: ProductListItemProps) {
+  const locale = useLocale();
   const content = (
     <>
       <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-neutral-100">
@@ -61,8 +63,8 @@ export function ProductListItem({
   if (id) {
     return (
       <Link
-        to="/products/$productId"
-        params={{ productId: id }}
+        to="/$locale/products/$productId"
+        params={{ locale, productId: id }}
         className={sharedClassName}
       >
         {content}

@@ -1,8 +1,8 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 
-import { getEnv } from "../../lib/env.js";
-import { prisma } from "../../lib/db.js";
+import { getEnv } from "../../lib/env";
+import { prisma } from "../../lib/db";
 
 const env = getEnv();
 

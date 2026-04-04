@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
@@ -7,18 +8,36 @@ import { parseTagSlugsParam, productsForCategoryQuery } from "./category.queries
 
 import { CategoryToolbar } from "./components/category-toolbar";
 
-const routeApi = getRouteApi("/categories/$categoryId");
+const routeApi = getRouteApi("/$locale/categories/$categoryId");
 
 export function CategoryPage() {
-  const { categoryId } = routeApi.useParams();
-  const { sort, tagSlugs: tagSlugsRaw, promotionSlug } = routeApi.useSearch();
+  const { categoryId, locale: localeParam } = routeApi.useParams();
+  const locale = localeParam as Locale;
+  const {
+    sort,
+    tagSlugs: tagSlugsRaw,
+    promotionSlug,
+    attributeDefinitionKey,
+    allowedValueKey,
+  } = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
   const queryClient = useQueryClient();
-  const addToCart = useMutation(addToCartMutationOptions(queryClient));
+  const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
 
   const tagSlugs = parseTagSlugsParam(tagSlugsRaw);
+  const attributeFacet =
+    attributeDefinitionKey && allowedValueKey
+      ? { definitionKey: attributeDefinitionKey, allowedValueKey }
+      : undefined;
   const { data } = useSuspenseQuery(
-    productsForCategoryQuery(categoryId, sort, tagSlugs, promotionSlug),
+    productsForCategoryQuery(
+      locale,
+      categoryId,
+      sort,
+      tagSlugs,
+      promotionSlug,
+      attributeFacet,
+    ),
   );
 
   const { products, total } = data;
@@ -30,6 +49,29 @@ export function CategoryPage() {
           {categoryId.replace(/-/g, " ")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">{total} results</p>
+        {attributeFacet && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Filtered by listing attribute ({attributeFacet.definitionKey} ={" "}
+            {attributeFacet.allowedValueKey}).{" "}
+            <button
+              type="button"
+              className="font-medium text-foreground underline underline-offset-2"
+              onClick={() => {
+                void navigate({
+                  search: {
+                    sort,
+                    tagSlugs: tagSlugsRaw,
+                    promotionSlug,
+                    attributeDefinitionKey: undefined,
+                    allowedValueKey: undefined,
+                  },
+                });
+              }}
+            >
+              Clear
+            </button>
+          </p>
+        )}
       </div>
 
       <CategoryToolbar
@@ -39,18 +81,26 @@ export function CategoryPage() {
         selectedPromotionSlug={promotionSlug}
         onSortChange={(next) => {
           void navigate({
-            search: { sort: next, tagSlugs: tagSlugsRaw, promotionSlug },
+            search: {
+              sort: next,
+              tagSlugs: tagSlugsRaw,
+              promotionSlug,
+              attributeDefinitionKey,
+              allowedValueKey,
+            },
           });
         }}
         onApplyFilters={(opts) => {
           void navigate({
-            to: "/categories/$categoryId",
-            params: { categoryId: opts.categorySlug || categoryId },
+            to: "/$locale/categories/$categoryId",
+            params: { locale, categoryId: opts.categorySlug || categoryId },
             search: {
               sort: opts.sort,
               tagSlugs:
                 opts.tagSlugs.length > 0 ? opts.tagSlugs.join(",") : "",
               promotionSlug: opts.promotionSlug,
+              attributeDefinitionKey,
+              allowedValueKey,
             },
           });
         }}
@@ -69,6 +119,7 @@ export function CategoryPage() {
             imageUrl={product.imageUrl}
             rating={product.rating}
             reviewCount={product.reviewCount}
+            shop={product.shop}
             promotion={product.promotion}
             onAddToCart={
               product.defaultVariantId

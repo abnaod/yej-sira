@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import { queryOptions } from "@tanstack/react-query";
 
 import { apiFetchJson } from "@/lib/api";
@@ -11,10 +12,10 @@ export type OrdersListResponse = {
   }[];
 };
 
-export const ordersListQuery = () =>
+export const ordersListQuery = (locale: Locale) =>
   queryOptions({
-    queryKey: ["orders"] as const,
-    queryFn: () => apiFetchJson<OrdersListResponse>("/api/orders"),
+    queryKey: ["orders", locale] as const,
+    queryFn: () => apiFetchJson<OrdersListResponse>("/api/orders", { locale }),
   });
 
 export type OrderDetailResponse = {
@@ -44,11 +45,12 @@ export type OrderDetailResponse = {
   };
 };
 
-export const orderDetailQuery = (orderId: string) =>
+export const orderDetailQuery = (locale: Locale, orderId: string) =>
   queryOptions({
-    queryKey: ["orders", orderId] as const,
+    queryKey: ["orders", locale, orderId] as const,
     queryFn: () =>
       apiFetchJson<OrderDetailResponse>(
         `/api/orders/${encodeURIComponent(orderId)}`,
+        { locale },
       ),
   });

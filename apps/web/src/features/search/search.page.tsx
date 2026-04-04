@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
@@ -10,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { SearchSortToolbar } from "./components/search-sort-toolbar";
 import { productsSearchQuery } from "./search.queries";
 
-const routeApi = getRouteApi("/search/");
+const routeApi = getRouteApi("/$locale/search/");
 
 function toggleSlug(slugs: string[], slug: string): string[] {
   if (slugs.includes(slug)) return slugs.filter((s) => s !== slug);
@@ -18,15 +19,17 @@ function toggleSlug(slugs: string[], slug: string): string[] {
 }
 
 export function SearchPage() {
+  const { locale: localeParam } = routeApi.useParams();
+  const locale = localeParam as Locale;
   const { q, sort, tagSlugs: tagSlugsRaw, promotionSlug } = routeApi.useSearch();
   const navigate = routeApi.useNavigate();
   const queryClient = useQueryClient();
-  const addToCart = useMutation(addToCartMutationOptions(queryClient));
+  const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
 
   const tagSlugs = parseTagSlugsParam(tagSlugsRaw);
-  const { data: tagsData } = useSuspenseQuery(tagsQuery());
+  const { data: tagsData } = useSuspenseQuery(tagsQuery(locale));
   const { data } = useSuspenseQuery(
-    productsSearchQuery(q, sort, tagSlugs, promotionSlug),
+    productsSearchQuery(locale, q, sort, tagSlugs, promotionSlug),
   );
 
   const { products, total } = data;
@@ -115,6 +118,7 @@ export function SearchPage() {
             imageUrl={product.imageUrl}
             rating={product.rating}
             reviewCount={product.reviewCount}
+            shop={product.shop}
             promotion={product.promotion}
             onAddToCart={
               product.defaultVariantId

@@ -7,19 +7,29 @@ import { CategoryFilterDrawer } from "@/features/category/components/category-fi
 import type { CategorySort } from "@/features/category/category.queries";
 import { parseTagSlugsParam } from "@/features/category/category.queries";
 import { categoriesQuery, tagsQuery } from "@/features/storefront";
+import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 
 export function HeaderFilter() {
+  const locale = useLocale();
   const navigate = useNavigate();
   const searchMatch = useRouterState({
-    select: (s) => s.matches.find((m) => m.routeId === "/search/"),
+    select: (s) =>
+      s.matches.find((m) => {
+        const search = m.search as { q?: string } | undefined;
+        return Boolean(search && "q" in search && m.pathname.includes("/search"));
+      }),
   });
   const categoryMatch = useRouterState({
-    select: (s) => s.matches.find((m) => m.routeId === "/categories/$categoryId"),
+    select: (s) =>
+      s.matches.find((m) => {
+        const p = m.params as { categoryId?: string };
+        return Boolean(p.categoryId && m.pathname.includes("/categories/"));
+      }),
   });
 
-  const { data: tagsData } = useQuery(tagsQuery());
-  const { data: categoriesData } = useQuery(categoriesQuery());
+  const { data: tagsData } = useQuery(tagsQuery(locale));
+  const { data: categoriesData } = useQuery(categoriesQuery(locale));
 
   const tags = tagsData?.tags ?? [];
 
@@ -44,7 +54,7 @@ export function HeaderFilter() {
       sort: CategorySort;
       promotionSlug?: string;
     };
-    currentCategorySlug = categoryMatch.params.categoryId;
+    currentCategorySlug = (categoryMatch.params as { categoryId: string }).categoryId;
     selectedTagSlugs = parseTagSlugsParam(s.tagSlugs);
     sort = s.sort ?? "relevancy";
     promotionSlug = s.promotionSlug;
@@ -54,24 +64,34 @@ export function HeaderFilter() {
     const nextTagSlugs =
       filters.tagSlugs.length > 0 ? filters.tagSlugs.join(",") : "";
 
+    const facetFromCategory =
+      categoryMatch &&
+      (categoryMatch.search as {
+        attributeDefinitionKey?: string;
+        allowedValueKey?: string;
+      });
+
     const categorySearch = {
       sort: filters.sort,
       tagSlugs: nextTagSlugs,
       promotionSlug: filters.promotionSlug,
+      attributeDefinitionKey: facetFromCategory?.attributeDefinitionKey,
+      allowedValueKey: facetFromCategory?.allowedValueKey,
     };
 
     if (searchMatch) {
       const s = searchMatch.search as { q: string };
       if (filters.categorySlug) {
         void navigate({
-          to: "/categories/$categoryId",
-          params: { categoryId: filters.categorySlug },
+          to: "/$locale/categories/$categoryId",
+          params: { locale, categoryId: filters.categorySlug },
           search: categorySearch,
         });
         return;
       }
       void navigate({
-        to: "/search",
+        to: "/$locale/search",
+        params: { locale },
         search: {
           q: s.q,
           sort: filters.sort,
@@ -85,15 +105,16 @@ export function HeaderFilter() {
     if (!searchMatch && !categoryMatch) {
       if (filters.categorySlug) {
         void navigate({
-          to: "/categories/$categoryId",
-          params: { categoryId: filters.categorySlug },
+          to: "/$locale/categories/$categoryId",
+          params: { locale, categoryId: filters.categorySlug },
           search: categorySearch,
         });
         return;
       }
       if (filters.tagSlugs.length > 0) {
         void navigate({
-          to: "/search",
+          to: "/$locale/search",
+          params: { locale },
           search: {
             q: "",
             sort: filters.sort,
@@ -107,12 +128,14 @@ export function HeaderFilter() {
         const firstSlug = categoriesData?.categories[0]?.slug;
         if (firstSlug) {
           void navigate({
-            to: "/categories/$categoryId",
-            params: { categoryId: firstSlug },
+            to: "/$locale/categories/$categoryId",
+            params: { locale, categoryId: firstSlug },
             search: {
               sort: filters.sort,
               tagSlugs: "",
               promotionSlug: filters.promotionSlug,
+              attributeDefinitionKey: undefined,
+              allowedValueKey: undefined,
             },
           });
         }
@@ -121,12 +144,14 @@ export function HeaderFilter() {
       const firstSlug = categoriesData?.categories[0]?.slug;
       if (firstSlug) {
         void navigate({
-          to: "/categories/$categoryId",
-          params: { categoryId: firstSlug },
+          to: "/$locale/categories/$categoryId",
+          params: { locale, categoryId: firstSlug },
           search: {
             sort: filters.sort,
             tagSlugs: "",
             promotionSlug: undefined,
+            attributeDefinitionKey: undefined,
+            allowedValueKey: undefined,
           },
         });
       }
@@ -135,8 +160,11 @@ export function HeaderFilter() {
 
     if (categoryMatch) {
       void navigate({
-        to: "/categories/$categoryId",
-        params: { categoryId: filters.categorySlug || categoryMatch.params.categoryId },
+        to: "/$locale/categories/$categoryId",
+        params: {
+          locale,
+          categoryId: filters.categorySlug || currentCategorySlug,
+        },
         search: categorySearch,
       });
     }

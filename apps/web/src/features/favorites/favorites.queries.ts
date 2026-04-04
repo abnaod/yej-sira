@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import {
   mutationOptions,
   queryOptions,
@@ -12,39 +13,41 @@ export type FavoritesResponse = {
   slugs: string[];
 };
 
-export function favoritesQuery(enabled: boolean) {
+export function favoritesQuery(locale: Locale, enabled: boolean) {
   return queryOptions({
-    queryKey: ["favorites"] as const,
-    queryFn: () => apiFetchJson<FavoritesResponse>("/api/favorites"),
+    queryKey: ["favorites", locale] as const,
+    queryFn: () => apiFetchJson<FavoritesResponse>("/api/favorites", { locale }),
     enabled,
   });
 }
 
-function invalidateFavorites(queryClient: QueryClient) {
-  void queryClient.invalidateQueries({ queryKey: ["favorites"] });
+function invalidateFavorites(queryClient: QueryClient, locale: Locale) {
+  void queryClient.invalidateQueries({ queryKey: ["favorites", locale] });
 }
 
-export function addFavoriteMutationOptions(queryClient: QueryClient) {
+export function addFavoriteMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
-    mutationKey: ["favorites", "add"] as const,
+    mutationKey: ["favorites", "add", locale] as const,
     mutationFn: async (slug: string) => {
       await apiFetchJson("/api/favorites", {
         method: "POST",
         body: JSON.stringify({ slug }),
+        locale,
       });
     },
-    onSuccess: () => invalidateFavorites(queryClient),
+    onSuccess: () => invalidateFavorites(queryClient, locale),
   });
 }
 
-export function removeFavoriteMutationOptions(queryClient: QueryClient) {
+export function removeFavoriteMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
-    mutationKey: ["favorites", "remove"] as const,
+    mutationKey: ["favorites", "remove", locale] as const,
     mutationFn: async (slug: string) => {
       await apiFetchJson(`/api/favorites/${encodeURIComponent(slug)}`, {
         method: "DELETE",
+        locale,
       });
     },
-    onSuccess: () => invalidateFavorites(queryClient),
+    onSuccess: () => invalidateFavorites(queryClient, locale),
   });
 }

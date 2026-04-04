@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import {
   mutationOptions,
   queryOptions,
@@ -25,34 +26,35 @@ export type CartResponse = {
   total: number;
 };
 
-export const cartQuery = () =>
+export const cartQuery = (locale: Locale) =>
   queryOptions({
-    queryKey: ["cart"] as const,
-    queryFn: () => apiFetchJson<CartResponse>("/api/cart"),
+    queryKey: ["cart", locale] as const,
+    queryFn: () => apiFetchJson<CartResponse>("/api/cart", { locale }),
   });
 
-function invalidateCart(queryClient: QueryClient) {
-  void queryClient.invalidateQueries({ queryKey: ["cart"] });
+function invalidateCart(queryClient: QueryClient, locale: Locale) {
+  void queryClient.invalidateQueries({ queryKey: ["cart", locale] });
 }
 
 export type AddToCartInput = { variantId: string; quantity: number };
 
-export function addToCartMutationOptions(queryClient: QueryClient) {
+export function addToCartMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
-    mutationKey: ["cart", "addItem"] as const,
+    mutationKey: ["cart", "addItem", locale] as const,
     mutationFn: async (input: AddToCartInput) => {
       await apiFetchJson("/api/cart/items", {
         method: "POST",
         body: JSON.stringify(input),
+        locale,
       });
     },
-    onSuccess: () => invalidateCart(queryClient),
+    onSuccess: () => invalidateCart(queryClient, locale),
   });
 }
 
-export function updateCartItemMutationOptions(queryClient: QueryClient) {
+export function updateCartItemMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
-    mutationKey: ["cart", "updateItem"] as const,
+    mutationKey: ["cart", "updateItem", locale] as const,
     mutationFn: async ({
       itemId,
       quantity,
@@ -63,28 +65,30 @@ export function updateCartItemMutationOptions(queryClient: QueryClient) {
       const res = await apiFetch(`/api/cart/items/${encodeURIComponent(itemId)}`, {
         method: "PATCH",
         body: JSON.stringify({ quantity }),
+        locale,
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? "Could not update");
       }
     },
-    onSuccess: () => invalidateCart(queryClient),
+    onSuccess: () => invalidateCart(queryClient, locale),
   });
 }
 
-export function removeCartItemMutationOptions(queryClient: QueryClient) {
+export function removeCartItemMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
-    mutationKey: ["cart", "removeItem"] as const,
+    mutationKey: ["cart", "removeItem", locale] as const,
     mutationFn: async (itemId: string) => {
       const res = await apiFetch(`/api/cart/items/${encodeURIComponent(itemId)}`, {
         method: "DELETE",
+        locale,
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(err.error ?? "Could not remove");
       }
     },
-    onSuccess: () => invalidateCart(queryClient),
+    onSuccess: () => invalidateCart(queryClient, locale),
   });
 }

@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import { queryOptions } from "@tanstack/react-query";
 
 import type { CategorySort } from "@/features/category";
@@ -5,13 +6,14 @@ import type { ProductsListResponse } from "@/features/category/category.queries"
 import { apiFetchJson } from "@/lib/api";
 
 export const productsSearchQuery = (
+  locale: Locale,
   q: string,
   sort: CategorySort,
   tagSlugs: string[] = [],
   promotionSlug?: string,
 ) =>
   queryOptions({
-    queryKey: ["products", "search", "list", q, sort, tagSlugs, promotionSlug ?? null] as const,
+    queryKey: ["products", "search", "list", locale, q, sort, tagSlugs, promotionSlug ?? null] as const,
     queryFn: () => {
       const params = new URLSearchParams({
         q,
@@ -25,6 +27,8 @@ export const productsSearchQuery = (
       if (promotionSlug) {
         params.set("promotionSlug", promotionSlug);
       }
-      return apiFetchJson<ProductsListResponse>(`/api/products?${params.toString()}`);
+      return apiFetchJson<ProductsListResponse>(`/api/products?${params.toString()}`, {
+        locale,
+      });
     },
   });

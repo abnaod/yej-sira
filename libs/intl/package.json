@@ -1,0 +1,15 @@
+{
+  "name": "@ys/intl",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./locales/en/common.json": "./locales/en/common.json",
+    "./locales/am/common.json": "./locales/am/common.json"
+  },
+  "devDependencies": {
+    "@ys/tsconfig": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

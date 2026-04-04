@@ -1,14 +1,16 @@
+import type { Locale } from "@ys/intl";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
 import { orderDetailQuery } from "../orders.queries";
 
-const routeApi = getRouteApi("/orders/$orderId");
+const routeApi = getRouteApi("/$locale/orders/$orderId");
 
 export function OrderDetailPage() {
-  const { orderId } = routeApi.useParams();
+  const { orderId, locale: localeParam } = routeApi.useParams();
+  const locale = localeParam as Locale;
 
-  const { data } = useSuspenseQuery(orderDetailQuery(orderId));
+  const { data } = useSuspenseQuery(orderDetailQuery(locale, orderId));
 
   const { order } = data;
 

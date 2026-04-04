@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import { queryOptions } from "@tanstack/react-query";
 
 import { apiFetchJson } from "@/lib/api";
@@ -14,10 +15,10 @@ export type CategoriesResponse = {
   categories: CategoryCardDto[];
 };
 
-export const categoriesQuery = () =>
+export const categoriesQuery = (locale: Locale) =>
   queryOptions({
-    queryKey: ["categories"] as const,
-    queryFn: () => apiFetchJson<CategoriesResponse>("/api/categories"),
+    queryKey: ["categories", locale] as const,
+    queryFn: () => apiFetchJson<CategoriesResponse>("/api/categories", { locale }),
   });
 
 export type ProductTagDto = {
@@ -29,10 +30,10 @@ export type TagsResponse = {
   tags: ProductTagDto[];
 };
 
-export const tagsQuery = () =>
+export const tagsQuery = (locale: Locale) =>
   queryOptions({
-    queryKey: ["tags"] as const,
-    queryFn: () => apiFetchJson<TagsResponse>("/api/tags"),
+    queryKey: ["tags", locale] as const,
+    queryFn: () => apiFetchJson<TagsResponse>("/api/tags", { locale }),
   });
 
 export type ProductPromotionDto = {
@@ -52,26 +53,30 @@ export type ProductCardDto = {
   imageUrl: string;
   rating: number;
   reviewCount: number;
+  shop: { slug: string; name: string; imageUrl: string | null };
   tags: ProductTagDto[];
   promotion?: ProductPromotionDto;
 };
 
 export type FeaturedProductsResponse = { products: ProductCardDto[] };
 
-export const featuredProductsQuery = (limit = 12) =>
+export const featuredProductsQuery = (locale: Locale, limit = 12) =>
   queryOptions({
-    queryKey: ["products", "featured", limit] as const,
+    queryKey: ["products", "featured", locale, limit] as const,
     queryFn: () =>
-      apiFetchJson<FeaturedProductsResponse>(`/api/products/featured?limit=${limit}`),
+      apiFetchJson<FeaturedProductsResponse>(`/api/products/featured?limit=${limit}`, {
+        locale,
+      }),
   });
 
 export type ProductSearchResponse = { products: ProductCardDto[] };
 
-export const productSearchQuery = (q: string, limit = 8) =>
+export const productSearchQuery = (locale: Locale, q: string, limit = 8) =>
   queryOptions({
-    queryKey: ["products", "search", q, limit] as const,
+    queryKey: ["products", "search", locale, q, limit] as const,
     queryFn: () =>
       apiFetchJson<ProductSearchResponse>(
         `/api/products/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+        { locale },
       ),
   });

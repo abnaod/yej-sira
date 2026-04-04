@@ -6,7 +6,7 @@ interface StarRatingProps {
   rating: number;
   maxRating?: number;
   reviewCount?: number;
-  size?: "sm" | "md";
+  size?: "xs" | "sm" | "md";
   className?: string;
 }
 
@@ -17,7 +17,12 @@ export function StarRating({
   size = "sm",
   className,
 }: StarRatingProps) {
-  const starSize = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
+  const starSize =
+    size === "xs"
+      ? "h-3 w-3"
+      : size === "sm"
+        ? "h-3.5 w-3.5"
+        : "h-4 w-4";
 
   return (
     <div className={cn("flex items-center gap-1", className)}>
@@ -42,7 +47,14 @@ export function StarRating({
         })}
       </div>
       {reviewCount !== undefined && (
-        <span className="text-xs text-muted-foreground">({reviewCount})</span>
+        <span
+          className={cn(
+            "text-muted-foreground",
+            size === "xs" ? "text-[10px]" : "text-xs",
+          )}
+        >
+          ({reviewCount})
+        </span>
       )}
     </div>
   );

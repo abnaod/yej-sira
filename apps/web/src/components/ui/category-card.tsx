@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
+import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 
 interface CategoryCardProps {
@@ -15,11 +16,18 @@ export function CategoryCard({
   slug,
   className,
 }: CategoryCardProps) {
+  const locale = useLocale();
   return (
     <Link
-      to="/categories/$categoryId"
-      params={{ categoryId: slug }}
-      search={{ sort: "relevancy", tagSlugs: "", promotionSlug: undefined }}
+      to="/$locale/categories/$categoryId"
+      params={{ locale, categoryId: slug }}
+      search={{
+        sort: "relevancy",
+        tagSlugs: "",
+        promotionSlug: undefined,
+        attributeDefinitionKey: undefined,
+        allowedValueKey: undefined,
+      }}
       className={cn(
         "group relative aspect-2/3 overflow-hidden rounded-lg",
         className,

@@ -1,31 +1,40 @@
+import type { Locale } from "@ys/intl";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 
-/** Matches `Shop by category` on the storefront — slugs align with catalog seed */
-const departmentLinks = [
-  { label: "Jewelry & Accessories", slug: "jewelry-accessories" },
-  { label: "Home & Living", slug: "home-living" },
-  { label: "Art & Collectibles", slug: "art-collectibles" },
-  { label: "Paper & Party", slug: "paper-party" },
-  { label: "Vintage", slug: "vintage" },
-  { label: "Clothing", slug: "clothing" },
+import { BrandLogo } from "@/components/layout/brand-logo";
+import { useLocale } from "@/lib/locale-path";
+
+/** Slugs align with catalog seed */
+const departmentSlugs = [
+  { labelKey: "footerDeptJewelry" as const, slug: "jewelry-accessories" },
+  { labelKey: "footerDeptHome" as const, slug: "home-living" },
+  { labelKey: "footerDeptArt" as const, slug: "art-collectibles" },
+  { labelKey: "footerDeptPaper" as const, slug: "paper-party" },
+  { labelKey: "footerDeptVintage" as const, slug: "vintage" },
+  { labelKey: "footerDeptClothing" as const, slug: "clothing" },
 ] as const;
 
-const aboutLinks = ["About Yej Sira", "Seller stories", "Our impact"];
+const aboutKeys = [
+  "footerAbout1",
+  "footerAbout2",
+  "footerAbout3",
+] as const;
 
-const serviceLinks: { label: string; to?: "/sell" }[] = [
-  { label: "Yej Sira app" },
-  { label: "Shipping & policies" },
-  { label: "Open a shop", to: "/sell" },
+const serviceLinks: { labelKey: "footerService1" | "footerService2" | "footerService3"; to?: "/$locale/sell" }[] = [
+  { labelKey: "footerService1" },
+  { labelKey: "footerService2" },
+  { labelKey: "footerService3", to: "/$locale/sell" },
 ];
 
-const helpLinks = [
-  "Help Center",
-  "Returns & exchanges",
-  "Track your order",
-  "Contact us",
-  "Site feedback",
-  "Trust & safety",
-];
+const helpKeys = [
+  "footerHelp1",
+  "footerHelp2",
+  "footerHelp3",
+  "footerHelp4",
+  "footerHelp5",
+  "footerHelp6",
+] as const;
 
 function FooterLink({ children }: { children: React.ReactNode }) {
   return (
@@ -42,22 +51,31 @@ function FooterLink({ children }: { children: React.ReactNode }) {
 function FooterColumn({
   title,
   links,
+  locale,
+  t,
 }: {
   title: string;
-  links: readonly string[] | readonly { label: string; to?: "/sell" }[];
+  links:
+    | readonly string[]
+    | readonly { labelKey: string; to?: "/$locale/sell" }[];
+  locale: Locale;
+  t: (key: string) => string;
 }) {
   return (
     <div>
       <h3 className="text-sm font-semibold text-white">{title}</h3>
       <ul className="mt-4 space-y-2.5">
         {links.map((item) => {
-          const label = typeof item === "string" ? item : item.label;
+          const label =
+            typeof item === "string" ? t(item) : t(item.labelKey);
+          const key = typeof item === "string" ? item : item.labelKey;
           const to = typeof item === "string" ? undefined : item.to;
           return (
-            <li key={label}>
+            <li key={key}>
               {to ? (
                 <Link
                   to={to}
+                  params={{ locale }}
                   className="block text-sm text-white/80 transition-colors hover:text-white"
                 >
                   {label}
@@ -74,50 +92,70 @@ function FooterColumn({
 }
 
 export function Footer() {
+  const { t } = useTranslation("common");
+  const locale = useLocale();
+  const year = new Date().getFullYear();
   return (
     <footer className="border-t border-white/20 bg-primary text-white">
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="flex flex-col gap-12 lg:flex-row lg:gap-16">
           <div className="max-w-sm shrink-0">
             <Link
-              to="/"
-              className="inline-flex items-center gap-2 text-lg font-bold tracking-tight text-white"
+              to="/$locale"
+              params={{ locale }}
+              className="inline-flex items-center text-white"
             >
-              <span className="text-xl" aria-hidden>
-                ✦
-              </span>
-              <span>Yej Sira</span>
+              <BrandLogo className="text-white" />
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-white/80">
-              A marketplace for handmade goods, vintage finds, and craft
-              supplies—where independent makers and small studios connect with
-              people who care about how things are made.
+              {t("footerTagline")}
             </p>
           </div>
 
           <div className="grid flex-1 grid-cols-2 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
             <div>
               <h3 className="text-sm font-semibold text-white">
-                Shop by category
+                {t("shopByCategory")}
               </h3>
               <ul className="mt-4 space-y-2.5">
-                {departmentLinks.map(({ label, slug }) => (
+                {departmentSlugs.map(({ labelKey, slug }) => (
                   <li key={slug}>
                     <Link
-                      to="/categories/$categoryId"
-                      params={{ categoryId: slug }}
-                      search={{ sort: "relevancy", tagSlugs: "", promotionSlug: undefined }}
+                      to="/$locale/categories/$categoryId"
+                      params={{ locale, categoryId: slug }}
+                      search={{
+                        sort: "relevancy",
+                        tagSlugs: "",
+                        promotionSlug: undefined,
+                        attributeDefinitionKey: undefined,
+                        allowedValueKey: undefined,
+                      }}
                       className="block text-sm text-white/80 transition-colors hover:text-white"
                     >
-                      {label}
+                      {t(labelKey)}
                     </Link>
                   </li>
                 ))}
               </ul>
             </div>
-            <FooterColumn title="About us" links={aboutLinks} />
-            <FooterColumn title="Services" links={serviceLinks} />
-            <FooterColumn title="Help" links={helpLinks} />
+            <FooterColumn
+              title={t("footerAboutUs")}
+              links={[...aboutKeys]}
+              locale={locale}
+              t={t}
+            />
+            <FooterColumn
+              title={t("footerServices")}
+              links={serviceLinks}
+              locale={locale}
+              t={t}
+            />
+            <FooterColumn
+              title={t("footerHelp")}
+              links={[...helpKeys]}
+              locale={locale}
+              t={t}
+            />
           </div>
         </div>
       </div>
@@ -125,7 +163,7 @@ export function Footer() {
       <div className="border-t border-white/20">
         <div className="mx-auto max-w-6xl px-4 py-6 text-center">
           <p className="text-xs text-white/70">
-            © {new Date().getFullYear()} Yej Sira. All rights reserved.
+            {t("footerCopyright", { year })}
           </p>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import { queryOptions } from "@tanstack/react-query";
 
 import type { ProductCardDto } from "@/features/storefront/storefront.queries";
@@ -16,10 +17,10 @@ export type PromotionsListResponse = {
   promotions: PromotionSummaryDto[];
 };
 
-export const promotionsListQuery = () =>
+export const promotionsListQuery = (locale: Locale) =>
   queryOptions({
-    queryKey: ["promotions", "list"] as const,
-    queryFn: () => apiFetchJson<PromotionsListResponse>("/api/promotions"),
+    queryKey: ["promotions", "list", locale] as const,
+    queryFn: () => apiFetchJson<PromotionsListResponse>("/api/promotions", { locale }),
   });
 
 export type PromotionDetailResponse = {
@@ -40,11 +41,12 @@ export type PromotionDetailResponse = {
   totalPages: number;
 };
 
-export const promotionDetailQuery = (slug: string) =>
+export const promotionDetailQuery = (locale: Locale, slug: string) =>
   queryOptions({
-    queryKey: ["promotions", "detail", slug] as const,
+    queryKey: ["promotions", "detail", locale, slug] as const,
     queryFn: () =>
       apiFetchJson<PromotionDetailResponse>(
         `/api/promotions/${encodeURIComponent(slug)}`,
+        { locale },
       ),
   });

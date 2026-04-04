@@ -40,12 +40,108 @@ const tabsListVariants = cva(
   }
 )
 
+function TabsLineList({
+  className,
+  variant,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.List> &
+  VariantProps<typeof tabsListVariants>) {
+  const wrapperRef = React.useRef<HTMLDivElement>(null)
+  const listRef = React.useRef<HTMLDivElement>(null)
+  const [indicator, setIndicator] = React.useState({
+    left: 0,
+    width: 0,
+    bottom: 0,
+  })
+
+  const updateIndicator = React.useCallback(() => {
+    const wrap = wrapperRef.current
+    const list = listRef.current
+    if (!wrap || !list) return
+    const active = list.querySelector(
+      '[data-slot="tabs-trigger"][data-state="active"]',
+    ) as HTMLElement | null
+    if (!active) {
+      setIndicator({ left: 0, width: 0, bottom: 0 })
+      return
+    }
+    const wr = wrap.getBoundingClientRect()
+    const lr = list.getBoundingClientRect()
+    const ar = active.getBoundingClientRect()
+    // Align the bar with the list’s bottom border (separator), not the wrapper’s
+    // bottom — e.g. margin-bottom on the list sits outside the border box and
+    // can make the wrapper extend below the border line.
+    const bottom = Math.max(0, wr.bottom - lr.bottom)
+    setIndicator({
+      left: ar.left - wr.left,
+      width: ar.width,
+      bottom,
+    })
+  }, [])
+
+  React.useLayoutEffect(() => {
+    updateIndicator()
+    const wrap = wrapperRef.current
+    const list = listRef.current
+    if (!wrap || !list) return
+
+    const ro = new ResizeObserver(() => {
+      updateIndicator()
+    })
+    ro.observe(wrap)
+    ro.observe(list)
+
+    const mo = new MutationObserver(() => {
+      updateIndicator()
+    })
+    mo.observe(list, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-state"],
+    })
+
+    window.addEventListener("resize", updateIndicator)
+    return () => {
+      ro.disconnect()
+      mo.disconnect()
+      window.removeEventListener("resize", updateIndicator)
+    }
+  }, [updateIndicator])
+
+  return (
+    <div ref={wrapperRef} className="relative w-full">
+      <TabsPrimitive.List
+        ref={listRef}
+        data-slot="tabs-list"
+        data-variant={variant}
+        className={cn(tabsListVariants({ variant }), className)}
+        {...props}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-0 z-10 h-0.5 origin-left bg-foreground transition-[transform,width,bottom] duration-300 ease-out motion-reduce:transition-none"
+        style={{
+          bottom: indicator.bottom,
+          transform: `translate3d(${indicator.left}px,0,0)`,
+          width: indicator.width || undefined,
+          opacity: indicator.width > 0 ? 1 : 0,
+        }}
+      />
+    </div>
+  )
+}
+
 function TabsList({
   className,
   variant = "default",
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List> &
   VariantProps<typeof tabsListVariants>) {
+  if (variant === "line") {
+    return (
+      <TabsLineList className={className} variant={variant} {...props} />
+    )
+  }
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
@@ -68,6 +164,8 @@ function TabsTrigger({
         "group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:border-transparent dark:group-data-[variant=line]/tabs-list:data-[state=active]:bg-transparent",
         "data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground",
         "after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-[orientation=horizontal]/tabs:after:inset-x-0 group-data-[orientation=horizontal]/tabs:after:bottom-[-5px] group-data-[orientation=horizontal]/tabs:after:h-0.5 group-data-[orientation=vertical]/tabs:after:inset-y-0 group-data-[orientation=vertical]/tabs:after:-right-1 group-data-[orientation=vertical]/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-[state=active]:after:opacity-100",
+        "group-data-[variant=line]/tabs-list:group-data-[orientation=horizontal]/tabs:after:bottom-[-2.5px]",
+        "group-data-[variant=line]/tabs-list:group-data-[orientation=horizontal]/tabs:after:hidden",
         className
       )}
       {...props}

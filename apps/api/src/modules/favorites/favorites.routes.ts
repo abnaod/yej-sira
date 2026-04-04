@@ -1,10 +1,10 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { prisma } from "../../lib/db.js";
-import { auth } from "../auth/auth.js";
-import { getProductCardInclude, mapProductCard } from "../catalog/product-card.mapper.js";
-import { favoriteBodySchema } from "./favorites.schema.js";
+import { prisma, publicProductVisibilityWhere } from "../../lib/db";
+import { auth } from "../auth/auth";
+import { getProductCardInclude, mapProductCard } from "../catalog/product-card.mapper";
+import { favoriteBodySchema } from "./favorites.schema";
 
 export const favoritesRouter = new Hono();
 
@@ -14,16 +14,20 @@ favoritesRouter.get("/favorites", async (c) => {
     throw new HTTPException(401, { message: "Unauthorized" });
   }
 
+  const locale = c.get("locale");
   const now = new Date();
   const rows = await prisma.favorite.findMany({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      product: publicProductVisibilityWhere,
+    },
     include: {
-      product: { include: getProductCardInclude(now) },
+      product: { include: getProductCardInclude(now, locale) },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  const products = rows.map((r) => mapProductCard(r.product));
+  const products = rows.map((r) => mapProductCard(r.product, locale));
   return c.json({
     products,
     slugs: products.map((p) => p.slug),
@@ -42,8 +46,8 @@ favoritesRouter.post("/favorites", async (c) => {
     throw new HTTPException(400, { message: "Invalid body" });
   }
 
-  const product = await prisma.product.findUnique({
-    where: { slug: parsed.data.slug },
+  const product = await prisma.product.findFirst({
+    where: { slug: parsed.data.slug, ...publicProductVisibilityWhere },
   });
   if (!product) {
     throw new HTTPException(404, { message: "Product not found" });

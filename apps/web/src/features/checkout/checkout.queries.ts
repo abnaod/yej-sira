@@ -1,3 +1,4 @@
+import type { Locale } from "@ys/intl";
 import { mutationOptions, type QueryClient } from "@tanstack/react-query";
 
 import { apiFetchJson } from "@/lib/api";
@@ -18,26 +19,28 @@ export type CheckoutBody = {
   country: string;
 };
 
-export async function postCheckout(body: CheckoutBody): Promise<CheckoutResponse> {
+export async function postCheckout(body: CheckoutBody, locale: Locale): Promise<CheckoutResponse> {
   return apiFetchJson<CheckoutResponse>("/api/checkout", {
     method: "POST",
     body: JSON.stringify(body),
+    locale,
   });
 }
 
 export function checkoutMutationOptions(
   queryClient: QueryClient,
+  locale: Locale,
   callbacks: {
     onSuccess?: (data: CheckoutResponse) => void;
     onError?: (err: unknown) => void;
   } = {},
 ) {
   return mutationOptions({
-    mutationKey: ["checkout"] as const,
-    mutationFn: postCheckout,
+    mutationKey: ["checkout", locale] as const,
+    mutationFn: (body: CheckoutBody) => postCheckout(body, locale),
     onSuccess: (data) => {
-      void queryClient.invalidateQueries({ queryKey: ["cart"] });
-      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      void queryClient.invalidateQueries({ queryKey: ["cart", locale] });
+      void queryClient.invalidateQueries({ queryKey: ["orders", locale] });
       callbacks.onSuccess?.(data);
     },
     onError: callbacks.onError,

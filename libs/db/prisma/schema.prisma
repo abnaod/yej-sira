@@ -6,19 +6,29 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  customer
+  admin
+
+  @@map("user_role")
+}
+
 model User {
   id            String     @id
   name          String
   email         String
   emailVerified Boolean    @map("email_verified")
   image         String?
+  role          UserRole   @default(customer)
   createdAt     DateTime   @map("created_at")
   updatedAt     DateTime   @map("updated_at")
   sessions      Session[]
   accounts      Account[]
   carts         Cart[]
-  orders        Order[]
-  favorites     Favorite[]
+  orders         Order[]
+  favorites      Favorite[]
+  productRatings ProductRating[]
+  ownedShop      Shop?
 
   @@unique([email])
   @@map("user")
@@ -78,46 +88,205 @@ enum OrderStatus {
   @@map("order_status")
 }
 
+enum ContentLocale {
+  en
+  am
+
+  @@map("content_locale")
+}
+
+enum ShopStatus {
+  pending
+  active
+  rejected
+  suspended
+
+  @@map("shop_status")
+}
+
+model Shop {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?
+  imageUrl    String?    @map("image_url")
+  ownerUserId String?    @map("owner_user_id")
+  owner       User?      @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+  status      ShopStatus @default(pending)
+  products    Product[]
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  @@unique([ownerUserId])
+  @@index([status])
+  @@map("shops")
+}
+
+enum CategoryAttributeInputType {
+  select
+  text
+  number
+  boolean
+
+  @@map("category_attribute_input_type")
+}
+
 model Category {
-  id        String    @id @default(cuid())
-  slug      String    @unique
-  name      String
-  imageUrl  String    @map("image_url")
-  sortOrder Int       @default(0) @map("sort_order")
-  products  Product[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id           String                      @id @default(cuid())
+  slug         String                      @unique
+  name         String
+  imageUrl     String                      @map("image_url")
+  sortOrder    Int                         @default(0) @map("sort_order")
+  products     Product[]
+  translations CategoryTranslation[]
+  attributeDefinitions CategoryAttributeDefinition[]
+  createdAt    DateTime                    @default(now()) @map("created_at")
+  updatedAt    DateTime                    @updatedAt @map("updated_at")
 
   @@map("categories")
 }
 
+model CategoryAttributeDefinition {
+  id             String                                   @id @default(cuid())
+  categoryId     String                                   @map("category_id")
+  category       Category                                 @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  key            String
+  inputType      CategoryAttributeInputType               @map("input_type")
+  sortOrder      Int                                      @default(0) @map("sort_order")
+  isRequired     Boolean                                  @default(false) @map("is_required")
+  allowedValues  AttributeAllowedValue[]
+  translations   CategoryAttributeDefinitionTranslation[]
+  productValues  ProductAttributeValue[]
+
+  @@unique([categoryId, key])
+  @@index([categoryId])
+  @@map("category_attribute_definitions")
+}
+
+model CategoryAttributeDefinitionTranslation {
+  id           String                    @id @default(cuid())
+  definitionId String                    @map("definition_id")
+  definition   CategoryAttributeDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  locale       ContentLocale
+  label        String
+
+  @@unique([definitionId, locale])
+  @@index([definitionId])
+  @@map("category_attribute_definition_translations")
+}
+
+model AttributeAllowedValue {
+  id            String                         @id @default(cuid())
+  definitionId  String                         @map("definition_id")
+  definition    CategoryAttributeDefinition    @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+  key           String
+  sortOrder     Int                            @default(0) @map("sort_order")
+  translations  AttributeAllowedValueTranslation[]
+  productValues ProductAttributeValue[]
+
+  @@unique([definitionId, key])
+  @@index([definitionId])
+  @@map("attribute_allowed_values")
+}
+
+model AttributeAllowedValueTranslation {
+  id             String                @id @default(cuid())
+  allowedValueId String                @map("allowed_value_id")
+  allowedValue   AttributeAllowedValue @relation(fields: [allowedValueId], references: [id], onDelete: Cascade)
+  locale         ContentLocale
+  label          String
+
+  @@unique([allowedValueId, locale])
+  @@index([allowedValueId])
+  @@map("attribute_allowed_value_translations")
+}
+
+model ProductAttributeValue {
+  id             String                    @id @default(cuid())
+  productId      String                    @map("product_id")
+  product        Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  definitionId   String                    @map("definition_id")
+  definition     CategoryAttributeDefinition @relation(fields: [definitionId], references: [id], onDelete: Restrict)
+  allowedValueId String?                   @map("allowed_value_id")
+  allowedValue   AttributeAllowedValue?    @relation(fields: [allowedValueId], references: [id], onDelete: Restrict)
+  textValue      String?
+  numberValue    Decimal?                  @db.Decimal(12, 4)
+  booleanValue   Boolean?
+
+  @@unique([productId, definitionId])
+  @@index([productId])
+  @@index([definitionId])
+  @@index([allowedValueId])
+  @@map("product_attribute_values")
+}
+
+model CategoryTranslation {
+  id         String        @id @default(cuid())
+  categoryId String        @map("category_id")
+  category   Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  locale     ContentLocale
+  name       String
+
+  @@unique([categoryId, locale])
+  @@index([categoryId])
+  @@map("category_translations")
+}
+
 model Tag {
-  id          String       @id @default(cuid())
-  slug        String       @unique
-  name        String
-  productTags ProductTag[]
+  id           String           @id @default(cuid())
+  slug         String           @unique
+  name         String
+  productTags  ProductTag[]
+  translations TagTranslation[]
 
   @@index([slug])
   @@map("tags")
 }
 
+model TagTranslation {
+  id     String        @id @default(cuid())
+  tagId  String        @map("tag_id")
+  tag    Tag           @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  locale ContentLocale
+  name   String
+
+  @@unique([tagId, locale])
+  @@index([tagId])
+  @@map("tag_translations")
+}
+
 model Promotion {
-  id           String             @id @default(cuid())
-  slug         String             @unique
+  id           String                 @id @default(cuid())
+  slug         String                 @unique
   title        String
   subtitle     String?
-  badgeLabel   String             @map("badge_label")
-  startsAt     DateTime           @map("starts_at")
-  endsAt       DateTime           @map("ends_at")
-  heroImageUrl String?            @map("hero_image_url")
-  sortOrder    Int                @default(0) @map("sort_order")
-  priority     Int                @default(0)
+  badgeLabel   String                 @map("badge_label")
+  startsAt     DateTime               @map("starts_at")
+  endsAt       DateTime               @map("ends_at")
+  heroImageUrl String?                @map("hero_image_url")
+  sortOrder    Int                    @default(0) @map("sort_order")
+  priority     Int                    @default(0)
   products     PromotionProduct[]
-  createdAt    DateTime           @default(now()) @map("created_at")
-  updatedAt    DateTime           @updatedAt @map("updated_at")
+  translations PromotionTranslation[]
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
 
   @@index([startsAt, endsAt])
   @@map("promotions")
+}
+
+model PromotionTranslation {
+  id          String        @id @default(cuid())
+  promotionId String        @map("promotion_id")
+  promotion   Promotion     @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  locale      ContentLocale
+  title       String
+  subtitle    String?
+  badgeLabel  String        @map("badge_label")
+
+  @@unique([promotionId, locale])
+  @@index([promotionId])
+  @@map("promotion_translations")
 }
 
 model PromotionProduct {
@@ -135,25 +304,61 @@ model PromotionProduct {
 }
 
 model Product {
-  id                String             @id @default(cuid())
-  slug              String             @unique
-  categoryId        String             @map("category_id")
-  category          Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  id                String               @id @default(cuid())
+  slug              String               @unique
+  shopId            String               @map("shop_id")
+  shop              Shop                 @relation(fields: [shopId], references: [id], onDelete: Restrict)
+  categoryId        String               @map("category_id")
+  category          Category             @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   name              String
   description       String
-  rating            Decimal            @db.Decimal(3, 2)
-  reviewCount       Int                @map("review_count")
-  featured          Boolean            @default(false)
+  rating            Decimal              @db.Decimal(3, 2)
+  reviewCount       Int                  @map("review_count")
+  featured          Boolean              @default(false)
+  isPublished       Boolean              @default(false) @map("is_published")
   images            ProductImage[]
   variants          ProductVariant[]
   favorites         Favorite[]
   productTags       ProductTag[]
   promotionProducts PromotionProduct[]
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  translations      ProductTranslation[]
+  ratings           ProductRating[]
+  attributeValues   ProductAttributeValue[]
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
 
   @@index([categoryId])
+  @@index([shopId])
   @@map("products")
+}
+
+model ProductRating {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  stars     Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@map("product_ratings")
+}
+
+model ProductTranslation {
+  id          String        @id @default(cuid())
+  productId   String        @map("product_id")
+  product     Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  locale      ContentLocale
+  name        String
+  description String
+
+  @@unique([productId, locale])
+  @@index([productId])
+  @@map("product_translations")
 }
 
 model Favorite {
@@ -192,19 +397,32 @@ model ProductImage {
 }
 
 model ProductVariant {
-  id             String     @id @default(cuid())
-  productId      String     @map("product_id")
-  product        Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  sku            String?    @unique
+  id             String                      @id @default(cuid())
+  productId      String                      @map("product_id")
+  product        Product                     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku            String?                     @unique
   label          String
-  colorHex       String?    @map("color_hex")
-  price          Decimal    @db.Decimal(10, 2)
-  compareAtPrice Decimal?   @map("compare_at_price") @db.Decimal(10, 2)
+  colorHex       String?                     @map("color_hex")
+  price          Decimal                     @db.Decimal(10, 2)
+  compareAtPrice Decimal?                    @map("compare_at_price") @db.Decimal(10, 2)
   stock          Int
   cartItems      CartItem[]
+  translations   ProductVariantTranslation[]
 
   @@index([productId])
   @@map("product_variants")
+}
+
+model ProductVariantTranslation {
+  id        String         @id @default(cuid())
+  variantId String         @map("variant_id")
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  locale    ContentLocale
+  label     String
+
+  @@unique([variantId, locale])
+  @@index([variantId])
+  @@map("product_variant_translations")
 }
 
 model Cart {
