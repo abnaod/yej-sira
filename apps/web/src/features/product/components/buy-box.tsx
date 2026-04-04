@@ -80,7 +80,7 @@ export function BuyBox({
             }
             className={cn(
               "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-white transition-colors hover:bg-neutral-50",
-              isFavorite ? "text-red-500" : "text-muted-foreground hover:text-red-500",
+              isFavorite ? "text-red-600" : "text-muted-foreground hover:text-red-600",
               favoritePending && "opacity-60",
             )}
           >

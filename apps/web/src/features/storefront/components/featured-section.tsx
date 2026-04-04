@@ -12,7 +12,7 @@ export function FeaturedSection() {
 
   return (
     <section>
-      <h2 className="text-xl font-bold tracking-tight md:text-2xl">
+      <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
         Popular picks
       </h2>
       <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-6 sm:mt-10 sm:grid-cols-3 lg:grid-cols-4">

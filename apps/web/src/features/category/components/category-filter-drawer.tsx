@@ -235,7 +235,7 @@ export function CategoryFilterDrawer({
                 <SectionTitle>Tags</SectionTitle>
                 <div className="space-y-4">
                   {tags.map((t) => (
-                    <div key={t.slug} className="flex items-start gap-3">
+                    <div key={t.slug} className="flex items-center gap-3">
                       <Checkbox
                         id={`tag-${t.slug}`}
                         checked={draftTagSlugs.includes(t.slug)}
@@ -248,7 +248,6 @@ export function CategoryFilterDrawer({
                               : prev.filter((s) => s !== t.slug),
                           )
                         }
-                        className="mt-0.5"
                       />
                       <Label htmlFor={`tag-${t.slug}`} className="font-normal">
                         {t.name}

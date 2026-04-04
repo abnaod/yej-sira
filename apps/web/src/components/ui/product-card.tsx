@@ -95,8 +95,8 @@ export function ProductCard({
                     "group-hover:opacity-60 group-focus-within:opacity-60",
                 ),
             isFavorite
-              ? "text-red-500"
-              : "text-neutral-500 hover:text-red-500",
+              ? "text-red-600"
+              : "text-neutral-500 hover:text-red-600",
           )}
         >
           <Heart

@@ -8,7 +8,7 @@ export function ShopByCategorySection() {
 
   return (
     <section>
-      <h2 className="text-xl font-bold tracking-tight md:text-2xl">
+      <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
         Shop by category
       </h2>
       <div className="mt-8 grid w-full grid-cols-[repeat(3,minmax(0,9rem))] justify-center gap-x-5 gap-y-6 sm:mt-10 sm:grid-cols-[repeat(6,minmax(0,9rem))]">
