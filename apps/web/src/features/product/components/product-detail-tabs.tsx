@@ -28,10 +28,10 @@ export function ProductDetailTabs({
 
   return (
     <section className="mt-10">
-      <Tabs defaultValue="description" className="w-full">
+      <Tabs defaultValue="description" className="w-full gap-6">
         <TabsList
           variant="line"
-          className="mb-6 h-auto min-h-0 w-full min-w-0 flex-wrap items-end justify-start gap-x-1 gap-y-0 rounded-none border-b border-border bg-transparent p-0"
+          className="h-auto min-h-0 w-full min-w-0 flex-wrap items-end justify-start gap-x-1 gap-y-0 rounded-none border-b border-border bg-transparent p-0"
         >
           <TabsTrigger
             value="description"
