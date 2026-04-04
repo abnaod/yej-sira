@@ -488,8 +488,10 @@ async function main() {
             stock: v.stock,
           })),
         },
-        tags: {
-          connect: p.tagSlugs.map((slug) => ({ slug })),
+        productTags: {
+          create: p.tagSlugs.map((slug) => ({
+            tag: { connect: { slug } },
+          })),
         },
       },
     });

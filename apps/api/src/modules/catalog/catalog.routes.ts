@@ -41,7 +41,7 @@ function productListWhere(args: {
   // AND: product must include every selected tag (narrowing filter).
   if (args.tagSlugs?.length) {
     for (const slug of args.tagSlugs) {
-      clauses.push({ tags: { some: { slug } } });
+      clauses.push({ productTags: { some: { tag: { slug } } } });
     }
   }
   if (args.promotionSlug) {
@@ -260,7 +260,10 @@ catalogRouter.get("/products/:slug", async (c) => {
       category: true,
       images: { orderBy: { sortOrder: "asc" } },
       variants: { orderBy: { label: "asc" } },
-      tags: { orderBy: { name: "asc" } },
+      productTags: {
+        orderBy: { tag: { name: "asc" } },
+        include: { tag: true },
+      },
       promotionProducts: {
         where: { promotion: activePromotionWhere(now) },
         include: {
@@ -308,7 +311,10 @@ catalogRouter.get("/products/:slug", async (c) => {
         stock: v.stock,
       })),
       priceFrom: minPrice,
-      tags: product.tags.map((t) => ({ slug: t.slug, name: t.name })),
+      tags: product.productTags.map((pt) => ({
+        slug: pt.tag.slug,
+        name: pt.tag.name,
+      })),
       promotion: promotionPick
         ? {
             slug: promotionPick.slug,

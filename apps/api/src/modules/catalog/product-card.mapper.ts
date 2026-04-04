@@ -7,7 +7,10 @@ import {
 export const productCardInclude = {
   images: { orderBy: { sortOrder: "asc" as const } },
   variants: true,
-  tags: { orderBy: { name: "asc" as const } },
+  productTags: {
+    orderBy: { tag: { name: "asc" as const } },
+    include: { tag: true },
+  },
 } as const;
 
 /** Card list queries: tags + active promotion enrollment for ribbons. */
@@ -53,7 +56,7 @@ export function mapProductCard(p: {
   reviewCount: number;
   images: { url: string }[];
   variants: { id: string; price: unknown; compareAtPrice: unknown | null }[];
-  tags: { slug: string; name: string }[];
+  productTags: { tag: { slug: string; name: string } }[];
   promotionProducts?: { promotion: PromotionCardSlice }[];
 }) {
   const imageUrl = p.images[0]?.url ?? "";
@@ -77,7 +80,7 @@ export function mapProductCard(p: {
     imageUrl,
     rating: toNumber(p.rating),
     reviewCount: p.reviewCount,
-    tags: p.tags.map((t) => ({ slug: t.slug, name: t.name })),
+    tags: p.productTags.map((pt) => ({ slug: pt.tag.slug, name: pt.tag.name })),
   };
   if (!promotion) {
     return base;
