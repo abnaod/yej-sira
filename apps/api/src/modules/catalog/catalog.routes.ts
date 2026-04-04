@@ -431,7 +431,7 @@ catalogRouter.get("/products/:slug/reviews", async (c) => {
   const slug = c.req.param("slug");
   const product = await prisma.product.findFirst({
     where: { slug, ...publicProductVisibilityWhere },
-    select: { id: true },
+    select: { id: true, rating: true, reviewCount: true },
   });
   if (!product) {
     throw new HTTPException(404, { message: "Product not found" });
@@ -446,13 +446,20 @@ catalogRouter.get("/products/:slug/reviews", async (c) => {
   }
   const { take, cursor } = parsed.data;
 
-  const rows = await prisma.productRating.findMany({
-    where: { productId: product.id },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: take + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-    include: { user: { select: { name: true } } },
-  });
+  const [rows, starGroups] = await Promise.all([
+    prisma.productRating.findMany({
+      where: { productId: product.id },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: take + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      include: { user: { select: { name: true } } },
+    }),
+    prisma.productRating.groupBy({
+      by: ["stars"],
+      where: { productId: product.id },
+      _count: { _all: true },
+    }),
+  ]);
 
   let nextCursor: string | null = null;
   if (rows.length > take) {
@@ -487,6 +494,13 @@ catalogRouter.get("/products/:slug/reviews", async (c) => {
     }
   }
 
+  const counts: [number, number, number, number, number] = [0, 0, 0, 0, 0];
+  for (const g of starGroups) {
+    if (g.stars >= 1 && g.stars <= 5) {
+      counts[g.stars - 1] = g._count._all;
+    }
+  }
+
   return c.json({
     reviews: rows.map((r: (typeof rows)[number]) => ({
       id: r.id,
@@ -497,6 +511,11 @@ catalogRouter.get("/products/:slug/reviews", async (c) => {
     })),
     nextCursor,
     viewerReview,
+    summary: {
+      average: toNumber(product.rating),
+      total: product.reviewCount,
+      counts,
+    },
   });
 });
 

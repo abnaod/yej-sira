@@ -86,11 +86,27 @@ export type ViewerProductReviewDto = {
   createdAt: string;
 };
 
+/** Index `i` = `i + 1` stars (e.g. `[0]` = 1-star count). */
+export type ProductRatingSummaryCounts = [
+  number,
+  number,
+  number,
+  number,
+  number,
+];
+
+export type ProductRatingSummary = {
+  average: number;
+  total: number;
+  counts: ProductRatingSummaryCounts;
+};
+
 export type ProductReviewsResponse = {
   reviews: ProductReviewDto[];
   nextCursor: string | null;
   /** Present when the request includes a signed-in user who has reviewed this product. */
   viewerReview: ViewerProductReviewDto | null;
+  summary: ProductRatingSummary;
 };
 
 export const productReviewsQuery = (locale: Locale, productSlug: string) =>

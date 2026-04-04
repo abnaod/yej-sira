@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAuthDialog } from "@/components/auth";
 import { Button } from "@/components/ui/button";
+import { RatingSummary } from "@/components/ui/rating-summary";
 import { StarRating } from "@/components/ui/star-rating";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
@@ -146,6 +147,15 @@ export function ProductReviewsSection({
         <h2 className="mb-6 text-xl font-bold tracking-tight md:text-2xl">
           Customer reviews
         </h2>
+      ) : null}
+
+      {!isPending && !isError && data && data.summary.total > 0 ? (
+        <RatingSummary
+          className="mb-8"
+          average={data.summary.average}
+          total={data.summary.total}
+          counts={data.summary.counts}
+        />
       ) : null}
 
       {sessionPending ? (
