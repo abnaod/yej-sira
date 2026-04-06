@@ -1,6 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, Heart, ShoppingCart, User } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { ChevronDown, Heart, LogOut, Package, ShoppingCart, Store, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAuthDialog } from "@/components/auth";
@@ -12,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { userMeQueryOptions } from "@/features/user/user.queries";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { BrandLogo } from "../brand-logo";
@@ -24,12 +22,9 @@ import { HeaderNav } from "./header-nav";
 export function Header() {
   const { t } = useTranslation("common");
   const locale = useLocale();
+  const navigate = useNavigate();
   const { openAuth } = useAuthDialog();
   const { data: session, isPending } = authClient.useSession();
-  const { data: userMe } = useQuery({
-    ...userMeQueryOptions,
-    enabled: !!session?.user,
-  });
 
   const displayName =
     session?.user?.name?.trim() ||
@@ -79,29 +74,31 @@ export function Header() {
               <DropdownMenuContent align="end" className="min-w-48">
                 <DropdownMenuItem asChild>
                   <Link to="/$locale/orders" params={{ locale }}>
+                    <Package />
                     {t("orders")}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/$locale/sell" params={{ locale }}>
-                    {t("openShop")}
+                    <Store />
+                    {t("myShop")}
                   </Link>
                 </DropdownMenuItem>
-                {userMe?.user.role === "admin" ? (
-                  <DropdownMenuItem asChild>
-                    <Link to="/$locale/admin/shops" params={{ locale }}>
-                      {t("adminShops")}
-                    </Link>
-                  </DropdownMenuItem>
-                ) : null}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  variant="destructive"
                   onSelect={(e) => {
                     e.preventDefault();
-                    void authClient.signOut();
+                    void authClient.signOut(
+                      {},
+                      {
+                        onSuccess: () => {
+                          void navigate({ to: "/$locale", params: { locale } });
+                        },
+                      },
+                    );
                   }}
                 >
+                  <LogOut />
                   {t("signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>

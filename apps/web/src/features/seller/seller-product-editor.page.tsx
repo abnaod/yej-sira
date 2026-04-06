@@ -165,7 +165,7 @@ function SellerProductEditor({
       if (mode === "new") {
         createMut.mutate(body, {
           onSuccess: () => {
-            void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
+            void navigate({ to: "/$locale/sell/products", params: { locale } });
           },
         });
       } else if (productId) {
@@ -192,7 +192,7 @@ function SellerProductEditor({
       <main className="mx-auto max-w-2xl py-12">
         <p className="text-destructive">Could not load product.</p>
         <Button className="mt-4" variant="outline" asChild>
-          <Link to="/$locale/sell/dashboard" params={{ locale }}>
+          <Link to="/$locale/sell/products" params={{ locale }}>
             Back
           </Link>
         </Button>
@@ -206,8 +206,8 @@ function SellerProductEditor({
     <main className="mx-auto max-w-2xl py-12">
       <div className="mb-8">
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/$locale/sell/dashboard" params={{ locale }}>
-            ← Dashboard
+          <Link to="/$locale/sell/products" params={{ locale }}>
+            ← Products
           </Link>
         </Button>
       </div>
@@ -415,7 +415,7 @@ function SellerProductEditor({
                 if (!window.confirm("Delete this product?")) return;
                 deleteMut.mutate(undefined, {
                   onSuccess: () => {
-                    void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
+                    void navigate({ to: "/$locale/sell/products", params: { locale } });
                   },
                 });
               }}

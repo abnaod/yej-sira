@@ -33,6 +33,15 @@ export async function apiFetch(path: string, init?: ApiFetchInit) {
   if (locale) {
     headers.set("X-Locale", locale);
   }
+  if (import.meta.env.SSR && !headers.has("cookie")) {
+    try {
+      const { getRequestHeaders } = await import("@tanstack/react-start/server");
+      const cookie = getRequestHeaders().get("cookie");
+      if (cookie) headers.set("cookie", cookie);
+    } catch {
+      /* not in a request context */
+    }
+  }
   return fetch(url, {
     ...rest,
     credentials: "include",

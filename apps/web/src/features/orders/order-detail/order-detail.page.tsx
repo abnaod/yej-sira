@@ -4,7 +4,7 @@ import { getRouteApi } from "@tanstack/react-router";
 
 import { orderDetailQuery } from "../orders.queries";
 
-const routeApi = getRouteApi("/$locale/orders/$orderId");
+const routeApi = getRouteApi("/$locale/(store)/orders/$orderId");
 
 export function OrderDetailPage() {
   const { orderId, locale: localeParam } = routeApi.useParams();

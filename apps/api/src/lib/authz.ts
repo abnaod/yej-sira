@@ -18,18 +18,6 @@ export async function requireUserId(c: Context): Promise<string> {
   return id;
 }
 
-export async function requireAdminUserId(c: Context): Promise<string> {
-  const userId = await requireUserId(c);
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { role: true },
-  });
-  if (!user || user.role !== "admin") {
-    throw new HTTPException(403, { message: "Forbidden" });
-  }
-  return userId;
-}
-
 export async function getOwnedShop(userId: string): Promise<Shop | null> {
   return prisma.shop.findUnique({
     where: { ownerUserId: userId },

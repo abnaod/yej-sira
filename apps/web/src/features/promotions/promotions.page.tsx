@@ -7,7 +7,7 @@ import { addToCartMutationOptions } from "@/features/cart/cart.queries";
 
 import { promotionDetailQuery } from "./promotions.queries";
 
-const routeApi = getRouteApi("/$locale/promotions/$slug");
+const routeApi = getRouteApi("/$locale/(store)/promotions/$slug");
 
 export function PromotionPage() {
   const { slug, locale: localeParam } = routeApi.useParams();

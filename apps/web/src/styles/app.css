@@ -1,20 +1,32 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 @theme inline {
-  --color-background: oklch(100% 0 0);
+  /* Slightly off-white canvas (shadcn-style) so borders read softer vs pure #fff */
+  --color-background: oklch(99.2% 0 0);
   --color-foreground: oklch(14.5% 0 0);
+  --color-card: oklch(100% 0 0);
+  --color-card-foreground: oklch(14.5% 0 0);
   --color-popover: oklch(100% 0 0);
   --color-popover-foreground: oklch(14.5% 0 0);
-  --color-muted: oklch(96.7% 0 0);
+  --color-muted: oklch(97% 0 0);
   --color-muted-foreground: oklch(45.5% 0 0);
-  --color-border: oklch(91.7% 0 0);
+  /* Slightly stronger than 95.5% for clearer edges without near-black currentColor */
+  --color-border: oklch(91.5% 0 0);
+  --color-input: oklch(90.5% 0 0);
+  --color-secondary: oklch(96.5% 0 0);
+  --color-secondary-foreground: oklch(20.5% 0 0);
+  --color-destructive: oklch(57.7% 0.215 27);
+  --color-destructive-foreground: oklch(100% 0 0);
+  --color-ring: oklch(59% 0.2 264);
 
   --color-primary: oklch(30.6% 0.056 160);
   --color-primary-foreground: oklch(100% 0 0);
   --color-primary-hover: oklch(25% 0.05 160);
 
-  --color-accent: oklch(96% 0.02 160);
+  --color-accent: oklch(96.5% 0.02 160);
   --color-accent-foreground: oklch(30.6% 0.056 160);
 
   --color-rating: oklch(79.5% 0.17 75);
@@ -28,6 +40,23 @@
   /* Avenir (system on many platforms); use `font-logo` (not `font-*-logo` or Tailwind treats it as a bad font name) */
   --font-logo:
     Avenir, "Avenir Next", "Helvetica Neue", Helvetica, ui-sans-serif, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+}
+
+/* Preflight leaves border-color as currentColor; bare `border` would match text (near-black). */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
 }
 
 body {
@@ -39,5 +68,56 @@ body {
     ui-sans-serif,
     system-ui,
     sans-serif;
+}
+
+:root {
+  /* shadcn Chart (https://ui.shadcn.com/docs/components/radix/chart) */
+  --chart-1: oklch(0.55 0.12 160);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  --sidebar: hsl(0 0% 98.5%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 90%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+.dark {
+  --chart-1: oklch(0.55 0.14 160);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+
+  --color-background: oklch(14.5% 0 0);
+  --color-foreground: oklch(98.5% 0 0);
+  --color-card: oklch(16% 0 0);
+  --color-card-foreground: oklch(98.5% 0 0);
+  --color-popover: oklch(16% 0 0);
+  --color-popover-foreground: oklch(98.5% 0 0);
+  --color-muted: oklch(22% 0 0);
+  --color-muted-foreground: oklch(65% 0 0);
+  --color-border: oklch(100% 0 0 / 16%);
+  --color-input: oklch(100% 0 0 / 20%);
+  --color-secondary: oklch(22% 0 0);
+  --color-secondary-foreground: oklch(98.5% 0 0);
+  --color-accent: oklch(22% 0 0);
+  --color-accent-foreground: oklch(98.5% 0 0);
+  --color-ring: oklch(59% 0.2 264);
+
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 22%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 

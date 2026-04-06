@@ -51,6 +51,170 @@ async function assertTagSlugsExist(tagSlugs: string[]): Promise<void> {
   }
 }
 
+sellerRouter.get("/seller/dashboard", async (c) => {
+  const userId = await requireUserId(c);
+  const shop = await getOwnedShop(userId);
+  if (!shop) {
+    throw new HTTPException(404, { message: "No shop" });
+  }
+  assertSellerCanManageShop(shop, userId);
+
+  const shopProductIds = await prisma.product.findMany({
+    where: { shopId: shop.id },
+    select: { id: true },
+  });
+  const ids = shopProductIds.map((p) => p.id);
+
+  const [productCount, publishedCount] = await Promise.all([
+    prisma.product.count({ where: { shopId: shop.id } }),
+    prisma.product.count({ where: { shopId: shop.id, isPublished: true } }),
+  ]);
+
+  if (ids.length === 0) {
+    const ordersByDay: { date: string; orders: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setUTCHours(0, 0, 0, 0);
+      d.setUTCDate(d.getUTCDate() - i);
+      ordersByDay.push({ date: d.toISOString().slice(0, 10), orders: 0 });
+    }
+    return c.json({
+      productCount,
+      publishedCount,
+      revenue30d: 0,
+      orders30d: 0,
+      ordersByDay,
+    });
+  }
+
+  const since = new Date();
+  since.setUTCDate(since.getUTCDate() - 30);
+  since.setUTCHours(0, 0, 0, 0);
+
+  const items = await prisma.orderItem.findMany({
+    where: {
+      productId: { in: ids },
+      order: { createdAt: { gte: since } },
+    },
+    select: {
+      orderId: true,
+      unitPrice: true,
+      quantity: true,
+      order: { select: { createdAt: true } },
+    },
+  });
+
+  let revenue30d = 0;
+  const ordersByDayMap = new Map<string, Set<string>>();
+  for (const row of items) {
+    revenue30d += toNumber(row.unitPrice) * row.quantity;
+    const day = row.order.createdAt.toISOString().slice(0, 10);
+    if (!ordersByDayMap.has(day)) ordersByDayMap.set(day, new Set());
+    ordersByDayMap.get(day)!.add(row.orderId);
+  }
+
+  const orders30d = new Set(items.map((i) => i.orderId)).size;
+
+  const ordersByDay: { date: string; orders: number }[] = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() - i);
+    const date = d.toISOString().slice(0, 10);
+    ordersByDay.push({
+      date,
+      orders: ordersByDayMap.get(date)?.size ?? 0,
+    });
+  }
+
+  return c.json({
+    productCount,
+    publishedCount,
+    revenue30d,
+    orders30d,
+    ordersByDay,
+  });
+});
+
+/** Orders that include at least one line item for this shop's products (aggregated per order). */
+sellerRouter.get("/seller/orders", async (c) => {
+  const userId = await requireUserId(c);
+  const shop = await getOwnedShop(userId);
+  if (!shop) {
+    throw new HTTPException(404, { message: "No shop" });
+  }
+  assertSellerCanManageShop(shop, userId);
+
+  const shopProductIds = await prisma.product.findMany({
+    where: { shopId: shop.id },
+    select: { id: true },
+  });
+  const ids = shopProductIds.map((p) => p.id);
+  if (ids.length === 0) {
+    return c.json({ orders: [] });
+  }
+
+  const lines = await prisma.orderItem.findMany({
+    where: { productId: { in: ids } },
+    include: {
+      order: {
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+        },
+      },
+    },
+    orderBy: { order: { createdAt: "desc" } },
+  });
+
+  const byOrder = new Map<
+    string,
+    {
+      id: string;
+      status: (typeof lines)[number]["order"]["status"];
+      createdAt: string;
+      lineCount: number;
+      shopTotal: number;
+      imageUrl: string;
+    }
+  >();
+
+  for (const li of lines) {
+    const o = li.order;
+    const lineTotal = toNumber(li.unitPrice) * li.quantity;
+    const existing = byOrder.get(o.id);
+    if (!existing) {
+      byOrder.set(o.id, {
+        id: o.id,
+        status: o.status,
+        createdAt: o.createdAt.toISOString(),
+        lineCount: 1,
+        shopTotal: lineTotal,
+        imageUrl: li.imageUrl?.trim() ?? "",
+      });
+    } else {
+      existing.lineCount += 1;
+      existing.shopTotal += lineTotal;
+    }
+  }
+
+  const orders = [...byOrder.values()].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+
+  return c.json({
+    orders: orders.map((o) => ({
+      id: o.id,
+      status: o.status,
+      createdAt: o.createdAt,
+      lineCount: o.lineCount,
+      shopTotal: o.shopTotal,
+      imageUrl: o.imageUrl,
+    })),
+  });
+});
+
 sellerRouter.get("/seller/products", async (c) => {
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);

@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/ui/product-card";
 import { addToCartMutationOptions } from "@/features/cart/cart.queries";
 import { shopPublicQuery } from "./shop.queries";
 
-const routeApi = getRouteApi("/$locale/shops/$shopSlug");
+const routeApi = getRouteApi("/$locale/(store)/shops/$shopSlug");
 
 export function ShopPage() {
   const { shopSlug, locale: localeParam } = routeApi.useParams();

@@ -8,7 +8,7 @@ import { parseTagSlugsParam, productsForCategoryQuery } from "./category.queries
 
 import { CategoryToolbar } from "./components/category-toolbar";
 
-const routeApi = getRouteApi("/$locale/categories/$categoryId");
+const routeApi = getRouteApi("/$locale/(store)/categories/$categoryId");
 
 export function CategoryPage() {
   const { categoryId, locale: localeParam } = routeApi.useParams();

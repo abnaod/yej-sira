@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { SearchSortToolbar } from "./components/search-sort-toolbar";
 import { productsSearchQuery } from "./search.queries";
 
-const routeApi = getRouteApi("/$locale/search/");
+const routeApi = getRouteApi("/$locale/(store)/search/");
 
 function toggleSlug(slugs: string[], slug: string): string[] {
   if (slugs.includes(slug)) return slugs.filter((s) => s !== slug);

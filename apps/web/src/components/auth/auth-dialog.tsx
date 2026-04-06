@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
+import { useLocale } from "@/lib/locale-path";
+import type { Locale } from "@ys/intl";
 
 function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -42,9 +45,14 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function getCallbackUrl() {
+function getDefaultCallbackUrl() {
   if (typeof window === "undefined") return "/";
   return `${window.location.origin}/`;
+}
+
+function getSellerPortalCallbackUrl(locale: Locale) {
+  if (typeof window === "undefined") return "/";
+  return `${window.location.origin}/${locale}/sell/dashboard`;
 }
 
 function formatAuthError(err: unknown): string {
@@ -62,9 +70,16 @@ function formatAuthError(err: unknown): string {
 export type AuthDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  redirectToSellerPortal?: boolean;
 };
 
-export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
+export function AuthDialog({
+  open,
+  onOpenChange,
+  redirectToSellerPortal = false,
+}: AuthDialogProps) {
+  const locale = useLocale() as Locale;
+  const navigate = useNavigate();
   const [tab, setTab] = React.useState<"login" | "register">("login");
   const [loginEmail, setLoginEmail] = React.useState("");
   const [loginPassword, setLoginPassword] = React.useState("");
@@ -97,11 +112,16 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
       const { error: err } = await authClient.signIn.email({
         email: loginEmail.trim(),
         password: loginPassword,
-        callbackURL: getCallbackUrl(),
+        callbackURL: redirectToSellerPortal
+          ? getSellerPortalCallbackUrl(locale)
+          : getDefaultCallbackUrl(),
       });
       if (err) {
         setError(formatAuthError(err));
         return;
+      }
+      if (redirectToSellerPortal) {
+        void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
       }
       onOpenChange(false);
     } finally {
@@ -116,7 +136,9 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     try {
       const { error: err } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: getCallbackUrl(),
+        callbackURL: redirectToSellerPortal
+          ? getSellerPortalCallbackUrl(locale)
+          : getDefaultCallbackUrl(),
       });
       if (err) {
         setOauthError(formatAuthError(err));
@@ -136,11 +158,16 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
         email: regEmail.trim(),
         password: regPassword,
         name: regFirstName.trim(),
-        callbackURL: getCallbackUrl(),
+        callbackURL: redirectToSellerPortal
+          ? getSellerPortalCallbackUrl(locale)
+          : getDefaultCallbackUrl(),
       });
       if (err) {
         setError(formatAuthError(err));
         return;
+      }
+      if (redirectToSellerPortal) {
+        void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
       }
       onOpenChange(false);
     } finally {

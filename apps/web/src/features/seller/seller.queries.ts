@@ -126,6 +126,7 @@ export function createSellerProductMutationOptions(queryClient: QueryClient, loc
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["seller", "products", locale] });
+      void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
     },
   });
 }
@@ -168,6 +169,7 @@ export function updateSellerProductMutationOptions(
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["seller", "products", locale] });
+      void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
       void queryClient.invalidateQueries({
         queryKey: ["seller", "product", locale, productId],
       });
@@ -189,6 +191,7 @@ export function deleteSellerProductMutationOptions(
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["seller", "products", locale] });
+      void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
     },
   });
 }

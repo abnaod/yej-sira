@@ -4,6 +4,7 @@
   "errorGeneric": "የሆነ ስህተት ተፈጥሯል",
   "account": "መለያ",
   "orders": "ትዕዛዞች",
+  "myShop": "የእኔ ሱቅ",
   "signOut": "ውጣ",
   "favorites": "የሚወዱ",
   "cart": "ጋሪ",
@@ -60,5 +61,5 @@
   "removeFromFavorites": "ከየሚወዱ አስወግድ",
   "soldBy": "የሸጠ",
   "viewShop": "መደብር ይመልከቱ",
-  "adminShops": "አስተዳዳር፡ መደብሮች"
+  "sellerGetStarted": "ሽያጭ ይጀመሩ"
 }

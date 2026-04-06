@@ -113,6 +113,18 @@ model Shop {
   ownerUserId String?    @map("owner_user_id")
   owner       User?      @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
   status      ShopStatus @default(pending)
+  contactEmail            String? @map("contact_email")
+  contactPhone            String? @map("contact_phone")
+  socialLinks             Json?   @map("social_links")
+  shippingPolicy          String? @map("shipping_policy") @db.Text
+  returnsPolicy           String? @map("returns_policy") @db.Text
+  businessLegalName       String? @map("business_legal_name")
+  businessTaxId           String? @map("business_tax_id")
+  businessAddressLine1    String? @map("business_address_line1")
+  businessAddressLine2    String? @map("business_address_line2")
+  businessCity            String? @map("business_city")
+  businessPostalCode      String? @map("business_postal_code")
+  businessCountry         String? @map("business_country")
   products    Product[]
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
@@ -324,6 +336,7 @@ model Product {
   translations      ProductTranslation[]
   ratings           ProductRating[]
   attributeValues   ProductAttributeValue[]
+  orderItems        OrderItem[]
   createdAt         DateTime             @default(now()) @map("created_at")
   updatedAt         DateTime             @updatedAt @map("updated_at")
 
@@ -473,15 +486,18 @@ model Order {
 }
 
 model OrderItem {
-  id           String  @id @default(cuid())
-  orderId      String  @map("order_id")
-  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productName  String  @map("product_name")
-  variantLabel String? @map("variant_label")
-  unitPrice    Decimal @map("unit_price") @db.Decimal(10, 2)
+  id           String   @id @default(cuid())
+  orderId      String   @map("order_id")
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String?  @map("product_id")
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName  String   @map("product_name")
+  variantLabel String?  @map("variant_label")
+  unitPrice    Decimal  @map("unit_price") @db.Decimal(10, 2)
   quantity     Int
-  imageUrl     String  @map("image_url")
+  imageUrl     String   @map("image_url")
 
   @@index([orderId])
+  @@index([productId])
   @@map("order_items")
 }

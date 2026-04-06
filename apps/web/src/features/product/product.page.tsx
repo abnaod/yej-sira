@@ -12,7 +12,7 @@ import { BuyBox } from "./components/buy-box";
 import { ProductDetailTabs } from "./components/product-detail-tabs";
 import { ProductGallery } from "./components/product-gallery";
 
-const routeApi = getRouteApi("/$locale/products/$productId");
+const routeApi = getRouteApi("/$locale/(store)/products/$productId");
 
 export function ProductPage() {
   const { productId, locale: localeParam } = routeApi.useParams();

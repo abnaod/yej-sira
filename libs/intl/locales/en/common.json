@@ -4,6 +4,7 @@
   "errorGeneric": "Something went wrong",
   "account": "Account",
   "orders": "Orders",
+  "myShop": "My Shop",
   "signOut": "Sign out",
   "favorites": "Favorites",
   "cart": "Cart",
@@ -60,5 +61,5 @@
   "removeFromFavorites": "Remove from favorites",
   "soldBy": "Sold by",
   "viewShop": "View shop",
-  "adminShops": "Admin: shops"
+  "sellerGetStarted": "Start Selling"
 }

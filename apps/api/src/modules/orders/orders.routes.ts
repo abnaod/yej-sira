@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 import { pickProductName, pickVariantLabel } from "../../lib/localized-catalog";
+import { getOwnedShop } from "../../lib/authz";
 import { auth } from "../auth/auth";
 import { prisma } from "../../lib/db";
 import { toNumber } from "../../lib/money";
@@ -106,6 +107,7 @@ ordersRouter.post("/checkout", async (c) => {
           create: items.map((line) => {
             const imageUrl = line.variant.product.images[0]?.url ?? "";
             return {
+              productId: line.variant.productId,
               productName: pickProductName(
                 {
                   name: line.variant.product.name,
@@ -188,11 +190,34 @@ ordersRouter.get("/orders/:id", async (c) => {
 
   const id = c.req.param("id");
   const order = await prisma.order.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id },
     include: { items: true },
   });
 
   if (!order) {
+    throw new HTTPException(404, { message: "Order not found" });
+  }
+
+  const isBuyer = order.userId === session.user.id;
+  let isSeller = false;
+  if (!isBuyer) {
+    const shop = await getOwnedShop(session.user.id);
+    if (shop) {
+      const productIds = await prisma.product.findMany({
+        where: { shopId: shop.id },
+        select: { id: true },
+      });
+      const shopIds = productIds.map((p) => p.id);
+      if (shopIds.length > 0) {
+        const hit = await prisma.orderItem.findFirst({
+          where: { orderId: id, productId: { in: shopIds } },
+        });
+        isSeller = Boolean(hit);
+      }
+    }
+  }
+
+  if (!isBuyer && !isSeller) {
     throw new HTTPException(404, { message: "Order not found" });
   }
 

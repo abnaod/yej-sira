@@ -1,6 +1,11 @@
-import { ShopLayout } from "./shop-layout";
+import { AuthDialogProvider } from "@/components/auth";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-/** Re-export shell; swap implementation later if HTML shell vs shop chrome split. */
+/** Shared providers only. Per–route-group chrome lives under `$locale/(store)` and `$locale/(seller)`. */
 export function RootLayout({ children }: { children: React.ReactNode }) {
-  return <ShopLayout>{children}</ShopLayout>;
+  return (
+    <TooltipProvider>
+      <AuthDialogProvider>{children}</AuthDialogProvider>
+    </TooltipProvider>
+  );
 }
