@@ -80,8 +80,8 @@ export function LineItems({ items, onUpdateQuantity, onRemove }: LineItemsProps)
             </Button>
           </div>
 
-          <span className="w-20 text-right text-sm font-semibold">
-            ${(item.price * item.quantity).toFixed(2)}
+          <span className="w-20 text-right text-sm font-semibold tabular-nums">
+            ETB {(item.price * item.quantity).toFixed(2)}
           </span>
 
           <Button

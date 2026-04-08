@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAuthDialog } from "@/components/auth";
 import { Button } from "@/components/ui/button";
-import { RatingSummary } from "@/components/ui/rating-summary";
 import { StarRating } from "@/components/ui/star-rating";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
@@ -149,15 +148,6 @@ export function ProductReviewsSection({
         </h2>
       ) : null}
 
-      {!isPending && !isError && data && data.summary.total > 0 ? (
-        <RatingSummary
-          className="mb-8"
-          average={data.summary.average}
-          total={data.summary.total}
-          counts={data.summary.counts}
-        />
-      ) : null}
-
       {sessionPending ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : !session?.user ? (
@@ -212,7 +202,7 @@ export function ProductReviewsSection({
             </div>
           </div>
           <div className="space-y-2">
-            <label htmlFor="review-comment" className="text-sm text-muted-foreground">
+            <label htmlFor="review-comment" className="text-sm font-medium text-label-foreground">
               Your review
             </label>
             <Textarea

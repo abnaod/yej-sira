@@ -17,6 +17,7 @@ model User {
   id            String     @id
   name          String
   email         String
+  phone         String?
   emailVerified Boolean    @map("email_verified")
   image         String?
   role          UserRole   @default(customer)
@@ -81,11 +82,53 @@ model Verification {
 
 enum OrderStatus {
   pending
+  awaiting_payment
   paid
   fulfilled
   cancelled
 
   @@map("order_status")
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  cancelled
+
+  @@map("payment_status")
+}
+
+enum PaymentMethod {
+  chapa
+  telebirr
+  cod
+
+  @@map("payment_method")
+}
+
+enum DeliveryMethod {
+  standard
+  pickup
+
+  @@map("delivery_method")
+}
+
+model PickupLocation {
+  id         String   @id @default(cuid())
+  name       String
+  line1      String   @map("line1")
+  line2      String?  @map("line2")
+  city       String
+  postalCode String   @map("postal_code")
+  country    String   @default("Ethiopia")
+  latitude   Decimal  @db.Decimal(10, 7)
+  longitude  Decimal  @db.Decimal(10, 7)
+  sortOrder  Int      @default(0) @map("sort_order")
+  orders     Order[]
+
+  @@index([sortOrder])
+  @@map("pickup_locations")
 }
 
 enum ContentLocale {
@@ -464,22 +507,26 @@ model CartItem {
 }
 
 model Order {
-  id                 String      @id @default(cuid())
-  userId             String      @map("user_id")
-  user               User        @relation(fields: [userId], references: [id], onDelete: Restrict)
-  status             OrderStatus @default(pending)
-  subtotal           Decimal     @db.Decimal(10, 2)
-  shipping           Decimal     @db.Decimal(10, 2)
-  tax                Decimal     @db.Decimal(10, 2)
-  total              Decimal     @db.Decimal(10, 2)
-  shippingLine1      String      @map("shipping_line1")
-  shippingLine2      String?     @map("shipping_line2")
-  shippingCity       String      @map("shipping_city")
-  shippingPostalCode String      @map("shipping_postal_code")
-  shippingCountry    String      @map("shipping_country")
+  id                 String         @id @default(cuid())
+  userId             String         @map("user_id")
+  user               User           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status             OrderStatus    @default(pending)
+  subtotal           Decimal        @db.Decimal(10, 2)
+  shipping           Decimal        @db.Decimal(10, 2)
+  tax                Decimal        @db.Decimal(10, 2)
+  total              Decimal        @db.Decimal(10, 2)
+  deliveryMethod     DeliveryMethod @default(standard) @map("delivery_method")
+  pickupLocationId   String?        @map("pickup_location_id")
+  pickupLocation     PickupLocation? @relation(fields: [pickupLocationId], references: [id], onDelete: Restrict)
+  shippingCity              String @map("shipping_city")
+  shippingSubcity           String @map("shipping_subcity")
+  shippingWoreda            String @map("shipping_woreda")
+  shippingKebele            String @map("shipping_kebele")
+  shippingSpecificLocation  String @map("shipping_specific_location")
   items              OrderItem[]
-  createdAt          DateTime    @default(now()) @map("created_at")
-  updatedAt          DateTime    @updatedAt @map("updated_at")
+  payment            Payment?
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
 
   @@index([userId])
   @@map("orders")
@@ -500,4 +547,23 @@ model OrderItem {
   @@index([orderId])
   @@index([productId])
   @@map("order_items")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String        @unique @map("order_id")
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  txRef         String        @unique @map("tx_ref")
+  chapaRef      String?       @map("chapa_ref")
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("ETB")
+  status        PaymentStatus @default(pending)
+  paymentMethod PaymentMethod? @map("payment_method")
+  chapaResponse Json?         @map("chapa_response")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  @@index([txRef])
+  @@index([orderId])
+  @@map("payments")
 }

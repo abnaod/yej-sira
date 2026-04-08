@@ -11,10 +11,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SUPPORTED_LOCALES, type Locale } from "@ys/intl";
 import { useTranslation } from "react-i18next";
+import { Icon } from "@iconify/react";
 
 const LOCALE_LABEL_KEY: Record<Locale, "english" | "amharic"> = {
   en: "english",
   am: "amharic",
+};
+
+const LOCALE_FLAG_KEY: Record<Locale, string> = {
+  en: "flag:gb-4x3",
+  am: "flag:et-4x3",
 };
 
 export function LanguageSwitcher({ className }: { className?: string }) {
@@ -64,8 +70,12 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           <DropdownMenuItem
             key={loc}
             onSelect={() => switchTo(loc)}
-            className={loc === locale ? "bg-accent" : undefined}
+            className={cn("gap-2", loc === locale && "bg-accent")}
           >
+            <Icon
+              icon={LOCALE_FLAG_KEY[loc]}
+              className="h-4 w-4 shrink-0 rounded-sm"
+            />
             {t(LOCALE_LABEL_KEY[loc])}
           </DropdownMenuItem>
         ))}

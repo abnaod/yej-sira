@@ -10,6 +10,7 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
+    "dotenv": "catalog:",
     "@casl/ability": "catalog:",
     "@casl/prisma": "catalog:",
     "@hono/node-server": "catalog:",

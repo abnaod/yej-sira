@@ -8,3 +8,7 @@ export const cartItemBodySchema = z.object({
 export const cartItemPatchSchema = z.object({
   quantity: z.number().int().min(0).max(99),
 });
+
+export const promoCodeSchema = z.object({
+  code: z.string().min(1).trim().toUpperCase(),
+});

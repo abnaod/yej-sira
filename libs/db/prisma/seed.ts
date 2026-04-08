@@ -677,6 +677,7 @@ async function main() {
     }),
     prisma.orderItem.deleteMany(),
     prisma.order.deleteMany(),
+    prisma.pickupLocation.deleteMany(),
     prisma.cartItem.deleteMany(),
     prisma.cart.deleteMany(),
     prisma.promotion.deleteMany(),
@@ -713,6 +714,55 @@ async function main() {
       status: "active",
       ownerUserId: null,
     },
+  });
+
+  await prisma.pickupLocation.createMany({
+    data: [
+      {
+        name: "Yej Sira — Bole",
+        line1: "Bole Road, near Edna Mall",
+        line2: null,
+        city: "Addis Ababa",
+        postalCode: "1000",
+        country: "Ethiopia",
+        latitude: new Prisma.Decimal("8.9779"),
+        longitude: new Prisma.Decimal("38.7997"),
+        sortOrder: 0,
+      },
+      {
+        name: "Yej Sira — Merkato",
+        line1: "Merkato, Megenagna area",
+        line2: null,
+        city: "Addis Ababa",
+        postalCode: "1001",
+        country: "Ethiopia",
+        latitude: new Prisma.Decimal("9.032"),
+        longitude: new Prisma.Decimal("38.7469"),
+        sortOrder: 1,
+      },
+      {
+        name: "Yej Sira — Hawassa",
+        line1: "Tabor Subcity, main road",
+        line2: null,
+        city: "Hawassa",
+        postalCode: "1920",
+        country: "Ethiopia",
+        latitude: new Prisma.Decimal("7.062"),
+        longitude: new Prisma.Decimal("38.4773"),
+        sortOrder: 2,
+      },
+      {
+        name: "Yej Sira — Bahir Dar",
+        line1: "Kebele 03, near Lake Tana",
+        line2: null,
+        city: "Bahir Dar",
+        postalCode: "6000",
+        country: "Ethiopia",
+        latitude: new Prisma.Decimal("11.5926"),
+        longitude: new Prisma.Decimal("37.3879"),
+        sortOrder: 3,
+      },
+    ],
   });
 
   await prisma.tag.createMany({

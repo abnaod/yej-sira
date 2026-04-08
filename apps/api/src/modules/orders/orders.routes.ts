@@ -7,6 +7,7 @@ import { pickProductName, pickVariantLabel } from "../../lib/localized-catalog";
 import { getOwnedShop } from "../../lib/authz";
 import { auth } from "../auth/auth";
 import { prisma } from "../../lib/db";
+import { standardDeliveryFeeEtb } from "../../lib/delivery";
 import { toNumber } from "../../lib/money";
 import { getOrCreateCart } from "../cart/cart.service";
 import { checkoutBodySchema } from "./orders.schema";
@@ -36,6 +37,37 @@ function orderLineInclude(locale: Locale) {
 
 export const ordersRouter = new Hono();
 
+ordersRouter.get("/pickup-locations", async (c) => {
+  const list = await prisma.pickupLocation.findMany({
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      line1: true,
+      line2: true,
+      city: true,
+      postalCode: true,
+      country: true,
+      latitude: true,
+      longitude: true,
+    },
+  });
+
+  return c.json({
+    locations: list.map((loc) => ({
+      id: loc.id,
+      name: loc.name,
+      line1: loc.line1,
+      line2: loc.line2,
+      city: loc.city,
+      postalCode: loc.postalCode,
+      country: loc.country,
+      latitude: toNumber(loc.latitude),
+      longitude: toNumber(loc.longitude),
+    })),
+  });
+});
+
 ordersRouter.post("/checkout", async (c) => {
   const locale = c.get("locale");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
@@ -46,14 +78,54 @@ ordersRouter.post("/checkout", async (c) => {
   const body = await c.req.json().catch(() => null);
   const parsed = checkoutBodySchema.safeParse(body);
   if (!parsed.success) {
-    throw new HTTPException(400, { message: "Invalid shipping address" });
+    throw new HTTPException(400, { message: "Invalid checkout data" });
   }
-  const addr = parsed.data;
+  const data = parsed.data;
+  const deliveryMethod = data.deliveryMethod;
+  const paymentMethod = data.paymentMethod;
+
+  let pickupLoc: Awaited<ReturnType<typeof prisma.pickupLocation.findUnique>> = null;
+  if (data.deliveryMethod === "pickup") {
+    pickupLoc = await prisma.pickupLocation.findUnique({
+      where: { id: data.pickupLocationId },
+    });
+    if (!pickupLoc) {
+      throw new HTTPException(400, { message: "Invalid pickup location" });
+    }
+  }
+
+  const shippingSnapshot =
+    data.deliveryMethod === "pickup"
+      ? {
+          shippingCity: pickupLoc!.city,
+          shippingSubcity: pickupLoc!.line1 ?? "",
+          shippingWoreda: pickupLoc!.line2 ?? "",
+          shippingKebele: "",
+          shippingSpecificLocation: pickupLoc!.name,
+        }
+      : {
+          shippingCity: data.city,
+          shippingSubcity: data.subcity,
+          shippingWoreda: data.woreda,
+          shippingKebele: data.kebele,
+          shippingSpecificLocation: data.specificLocation,
+        };
+
+  const phoneTrimmed = data.phone?.trim();
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      name: data.fullName,
+      email: data.email,
+      phone: phoneTrimmed ? phoneTrimmed : null,
+    },
+  });
 
   const { cart } = await getOrCreateCart(c);
 
   const itemsPreview = await prisma.cartItem.findMany({
     where: { cartId: cart.id },
+    orderBy: { id: "asc" },
     include: orderLineInclude(locale),
   });
 
@@ -76,9 +148,18 @@ ordersRouter.post("/checkout", async (c) => {
     }
   }
 
+  const deliveryFee = standardDeliveryFeeEtb();
+  const shippingCosts = {
+    standard: deliveryFee,
+    pickup: 0,
+  } as const;
+
+  const txRef = `yejsira-txn-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+
   const result = await prisma.$transaction(async (tx) => {
     const items = await tx.cartItem.findMany({
       where: { cartId: cart.id },
+      orderBy: { id: "asc" },
       include: orderLineInclude(locale),
     });
 
@@ -86,23 +167,24 @@ ordersRouter.post("/checkout", async (c) => {
     for (const line of items) {
       subtotal += toNumber(line.variant.price) * line.quantity;
     }
-    const shipping = 0;
+    const shipping = shippingCosts[deliveryMethod];
     const tax = Math.round(subtotal * 0.08 * 100) / 100;
     const total = subtotal + shipping + tax;
+
+    const orderStatus =
+      paymentMethod === "cod" ? "pending" : "awaiting_payment";
 
     const order = await tx.order.create({
       data: {
         userId: session.user.id,
-        status: "pending",
+        status: orderStatus,
         subtotal,
         shipping,
         tax,
         total,
-        shippingLine1: addr.line1,
-        shippingLine2: addr.line2,
-        shippingCity: addr.city,
-        shippingPostalCode: addr.postalCode,
-        shippingCountry: addr.country,
+        deliveryMethod,
+        pickupLocationId: data.deliveryMethod === "pickup" ? pickupLoc!.id : null,
+        ...shippingSnapshot,
         items: {
           create: items.map((line) => {
             const imageUrl = line.variant.product.images[0]?.url ?? "";
@@ -128,7 +210,17 @@ ordersRouter.post("/checkout", async (c) => {
             };
           }),
         },
+        payment: {
+          create: {
+            txRef,
+            amount: total,
+            currency: "ETB",
+            status: "pending",
+            paymentMethod,
+          },
+        },
       },
+      include: { payment: true },
     });
 
     for (const line of items) {
@@ -151,7 +243,9 @@ ordersRouter.post("/checkout", async (c) => {
       subtotal: toNumber(result.subtotal),
       shipping: toNumber(result.shipping),
       tax: toNumber(result.tax),
+      deliveryMethod: result.deliveryMethod,
     },
+    txRef,
   });
 });
 
@@ -169,6 +263,15 @@ ordersRouter.get("/orders", async (c) => {
       status: true,
       total: true,
       createdAt: true,
+      deliveryMethod: true,
+      _count: { select: { items: true } },
+      payment: {
+        select: {
+          status: true,
+          txRef: true,
+          paymentMethod: true,
+        },
+      },
     },
   });
 
@@ -178,6 +281,15 @@ ordersRouter.get("/orders", async (c) => {
       status: o.status,
       total: toNumber(o.total),
       createdAt: o.createdAt.toISOString(),
+      deliveryMethod: o.deliveryMethod,
+      itemCount: o._count.items,
+      payment: o.payment
+        ? {
+            status: o.payment.status,
+            txRef: o.payment.txRef,
+            method: o.payment.paymentMethod,
+          }
+        : null,
     })),
   });
 });
@@ -191,7 +303,21 @@ ordersRouter.get("/orders/:id", async (c) => {
   const id = c.req.param("id");
   const order = await prisma.order.findFirst({
     where: { id },
-    include: { items: true },
+    include: {
+      items: true,
+      payment: { select: { paymentMethod: true, status: true } },
+      pickupLocation: {
+        select: {
+          id: true,
+          name: true,
+          line1: true,
+          line2: true,
+          city: true,
+          postalCode: true,
+          country: true,
+        },
+      },
+    },
   });
 
   if (!order) {
@@ -229,14 +355,22 @@ ordersRouter.get("/orders/:id", async (c) => {
       shipping: toNumber(order.shipping),
       tax: toNumber(order.tax),
       total: toNumber(order.total),
+      deliveryMethod: order.deliveryMethod,
+      pickupLocation: order.pickupLocation,
       shippingAddress: {
-        line1: order.shippingLine1,
-        line2: order.shippingLine2,
         city: order.shippingCity,
-        postalCode: order.shippingPostalCode,
-        country: order.shippingCountry,
+        subcity: order.shippingSubcity,
+        woreda: order.shippingWoreda,
+        kebele: order.shippingKebele,
+        specificLocation: order.shippingSpecificLocation,
       },
       createdAt: order.createdAt.toISOString(),
+      payment: order.payment
+        ? {
+            method: order.payment.paymentMethod,
+            status: order.payment.status,
+          }
+        : null,
       items: order.items.map((i) => ({
         id: i.id,
         productName: i.productName,

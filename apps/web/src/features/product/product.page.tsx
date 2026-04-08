@@ -113,6 +113,7 @@ export function ProductPage() {
                       addToCart.mutate({
                         variantId: p.defaultVariantId!,
                         quantity: 1,
+                        productName: p.name,
                       })
                   : undefined
               }

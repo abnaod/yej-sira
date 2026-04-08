@@ -41,6 +41,7 @@ export function FeaturedSection() {
                     addToCart.mutate({
                       variantId: product.defaultVariantId!,
                       quantity: 1,
+                      productName: product.name,
                     })
                 : undefined
             }

@@ -7,12 +7,14 @@
   /* Slightly off-white canvas (shadcn-style) so borders read softer vs pure #fff */
   --color-background: oklch(99.2% 0 0);
   --color-foreground: oklch(14.5% 0 0);
+  /* Form field captions: slightly darker than body text for clarity */
+  --color-label-foreground: oklch(9% 0 0);
   --color-card: oklch(100% 0 0);
   --color-card-foreground: oklch(14.5% 0 0);
   --color-popover: oklch(100% 0 0);
   --color-popover-foreground: oklch(14.5% 0 0);
   --color-muted: oklch(97% 0 0);
-  --color-muted-foreground: oklch(45.5% 0 0);
+  --color-muted-foreground: oklch(53% 0 0);
   /* Slightly stronger than 95.5% for clearer edges without near-black currentColor */
   --color-border: oklch(91.5% 0 0);
   --color-input: oklch(90.5% 0 0);
@@ -97,12 +99,13 @@ body {
 
   --color-background: oklch(14.5% 0 0);
   --color-foreground: oklch(98.5% 0 0);
+  --color-label-foreground: oklch(100% 0 0);
   --color-card: oklch(16% 0 0);
   --color-card-foreground: oklch(98.5% 0 0);
   --color-popover: oklch(16% 0 0);
   --color-popover-foreground: oklch(98.5% 0 0);
   --color-muted: oklch(22% 0 0);
-  --color-muted-foreground: oklch(65% 0 0);
+  --color-muted-foreground: oklch(72% 0 0);
   --color-border: oklch(100% 0 0 / 16%);
   --color-input: oklch(100% 0 0 / 20%);
   --color-secondary: oklch(22% 0 0);

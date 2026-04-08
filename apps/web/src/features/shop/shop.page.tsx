@@ -54,6 +54,7 @@ export function ShopPage() {
                     addToCart.mutate({
                       variantId: product.defaultVariantId!,
                       quantity: 1,
+                      productName: product.name,
                     })
                 : undefined
             }

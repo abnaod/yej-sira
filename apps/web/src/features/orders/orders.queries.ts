@@ -9,6 +9,13 @@ export type OrdersListResponse = {
     status: string;
     total: number;
     createdAt: string;
+    deliveryMethod: "standard" | "pickup";
+    itemCount: number;
+    payment: {
+      status: string;
+      txRef: string;
+      method: "chapa" | "telebirr" | "cod" | null;
+    } | null;
   }[];
 };
 
@@ -26,14 +33,28 @@ export type OrderDetailResponse = {
     shipping: number;
     tax: number;
     total: number;
-    shippingAddress: {
+    deliveryMethod: "standard" | "pickup";
+    pickupLocation: {
+      id: string;
+      name: string;
       line1: string;
-      line2?: string | null;
+      line2: string | null;
       city: string;
       postalCode: string;
       country: string;
+    } | null;
+    shippingAddress: {
+      city: string;
+      subcity: string;
+      woreda: string;
+      kebele: string;
+      specificLocation: string;
     };
     createdAt: string;
+    payment: {
+      method: "chapa" | "telebirr" | "cod" | null;
+      status: string;
+    } | null;
     items: {
       id: string;
       productName: string;

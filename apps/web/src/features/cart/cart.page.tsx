@@ -1,4 +1,6 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { OrderSummary } from "@/features/orders";
 import { useLocale } from "@/lib/locale-path";
@@ -8,19 +10,44 @@ import {
   cartQuery,
   removeCartItemMutationOptions,
   updateCartItemMutationOptions,
+  applyPromoMutationOptions,
 } from "./cart.queries";
 
 import { LineItems, type LineItemData } from "./components/line-items";
 
 export function CartPage() {
   const locale = useLocale();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data: cartData } = useSuspenseQuery(cartQuery(locale));
 
   const updateQty = useMutation(updateCartItemMutationOptions(queryClient, locale));
-
   const removeItem = useMutation(removeCartItemMutationOptions(queryClient, locale));
+
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoApplied, setPromoApplied] = useState<{
+    code: string;
+    discount: number;
+    discountLabel: string;
+  } | null>(null);
+
+  const applyPromo = useMutation(
+    applyPromoMutationOptions(queryClient, locale, {
+      onSuccess: (data) => {
+        setPromoApplied({
+          code: data.code,
+          discount: data.discount,
+          discountLabel: data.discountLabel,
+        });
+        setPromoError(null);
+      },
+      onError: (err) => {
+        setPromoError(err instanceof Error ? err.message : "Invalid promo code");
+        setPromoApplied(null);
+      },
+    }),
+  );
 
   const { items, subtotal, shipping, tax, total } = cartData;
 
@@ -35,6 +62,17 @@ export function CartPage() {
 
   const isEmpty = lineItems.length === 0;
   const totalUnits = lineItems.reduce((sum, i) => sum + i.quantity, 0);
+
+  const handleCheckout = () => {
+    void router.navigate({ to: "/$locale/checkout", params: { locale } });
+  };
+
+  const handleApplyPromo = (code: string) => {
+    applyPromo.mutate(code);
+  };
+
+  const discount = promoApplied?.discount ?? 0;
+  const effectiveTotal = total - discount;
 
   return (
     <main>
@@ -65,7 +103,12 @@ export function CartPage() {
             subtotal={subtotal}
             shipping={shipping}
             tax={tax}
-            total={total}
+            total={effectiveTotal}
+            onCheckout={handleCheckout}
+            onApplyPromo={handleApplyPromo}
+            discount={discount}
+            discountLabel={promoApplied?.discountLabel}
+            promoError={promoError}
           />
         )}
       </div>

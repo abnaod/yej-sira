@@ -5,9 +5,10 @@ import { HTTPException } from "hono/http-exception";
 
 import { pickProductName, pickVariantLabel } from "../../lib/localized-catalog";
 import { prisma } from "../../lib/db";
+import { standardDeliveryFeeEtb } from "../../lib/delivery";
 import { toNumber } from "../../lib/money";
 import { getOrCreateCart } from "./cart.service";
-import { cartItemBodySchema, cartItemPatchSchema } from "./cart.schema";
+import { cartItemBodySchema, cartItemPatchSchema, promoCodeSchema } from "./cart.schema";
 
 export const cartRouter = new Hono();
 
@@ -87,12 +88,14 @@ cartRouter.get("/cart", async (c) => {
 
   const items = await prisma.cartItem.findMany({
     where: { cartId: cart.id },
+    orderBy: { id: "asc" },
     include: cartItemInclude(locale),
   });
 
   const lines = mapCartResponse(items, locale);
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
-  const shipping = 0;
+  const configuredDeliveryFeeEtb = standardDeliveryFeeEtb();
+  const shipping = lines.length === 0 ? 0 : configuredDeliveryFeeEtb;
   const tax = Math.round(subtotal * 0.08 * 100) / 100;
   const total = subtotal + shipping + tax;
 
@@ -101,7 +104,10 @@ cartRouter.get("/cart", async (c) => {
     anonymousToken: cart.anonymousToken,
     items: lines,
     subtotal,
+    /** Charged for standard delivery when the cart has items (pickup is 0 at checkout). */
     shipping,
+    /** Configured flat fee from env; use for delivery-method UI. */
+    standardDeliveryFeeEtb: configuredDeliveryFeeEtb,
     tax,
     total,
   });
@@ -203,4 +209,41 @@ cartRouter.delete("/cart/items/:itemId", async (c) => {
   }
 
   return c.json({ ok: true });
+});
+
+const VALID_PROMO_CODES: Record<string, { discountPercent: number; label: string }> = {
+  SAVE10: { discountPercent: 10, label: "SAVE10" },
+  SAVE20: { discountPercent: 20, label: "SAVE20" },
+};
+
+cartRouter.post("/cart/promo", async (c) => {
+  const locale = c.get("locale");
+  const body = await c.req.json().catch(() => null);
+  const parsed = promoCodeSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new HTTPException(400, { message: "Promo code is required" });
+  }
+  const { code } = parsed.data;
+
+  const promo = VALID_PROMO_CODES[code];
+  if (!promo) {
+    throw new HTTPException(400, { message: "Invalid promo code" });
+  }
+
+  const { cart } = await getOrCreateCart(c);
+  const items = await prisma.cartItem.findMany({
+    where: { cartId: cart.id },
+    orderBy: { id: "asc" },
+    include: cartItemInclude(locale),
+  });
+  const lines = mapCartResponse(items, locale);
+  const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
+  const discount = Math.round(subtotal * (promo.discountPercent / 100) * 100) / 100;
+
+  return c.json({
+    valid: true,
+    code: promo.label,
+    discount,
+    discountLabel: `-${promo.discountPercent}%`,
+  });
 });

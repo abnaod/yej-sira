@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Heart, Minus, Plus, RotateCcw, Truck } from "lucide-react";
+import { Heart, Minus, Plus } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
+import type { AddToCartInput } from "@/features/cart/cart.queries";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,8 @@ interface BuyBoxProps {
   variants: ProductVariantOption[];
   /** Active merchandising promotion (Phase A — display only; checkout uses list price). */
   promotion?: { badgeLabel: string; endsAt: string };
-  onBuyNow?: (payload: { variantId: string; quantity: number }) => void;
-  onAddToCart?: (payload: { variantId: string; quantity: number }) => void;
+  onBuyNow?: (payload: AddToCartInput) => void;
+  onAddToCart?: (payload: AddToCartInput) => void;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   favoritePending?: boolean;
@@ -214,7 +215,7 @@ export function BuyBox({
           size="lg"
           className="flex-1"
           disabled={stock < 1}
-          onClick={() => onBuyNow?.({ variantId: v.id, quantity })}
+          onClick={() => onBuyNow?.({ variantId: v.id, quantity, productName: name })}
         >
           Buy Now
         </Button>
@@ -223,37 +224,12 @@ export function BuyBox({
           size="lg"
           className="flex-1"
           disabled={stock < 1}
-          onClick={() => onAddToCart?.({ variantId: v.id, quantity })}
+          onClick={() =>
+            onAddToCart?.({ variantId: v.id, quantity, productName: name })
+          }
         >
           Add to Cart
         </Button>
-      </div>
-
-      <div className="mt-1 space-y-3 rounded-lg border border-border p-4">
-        <div className="flex gap-3">
-          <Truck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div>
-            <p className="text-sm font-semibold">Free Delivery</p>
-            <p className="text-xs text-muted-foreground">
-              <a href="#" className="underline underline-offset-2 hover:text-primary">
-                Enter your Postal code for Delivery Availability
-              </a>
-            </p>
-          </div>
-        </div>
-        <hr className="border-border" />
-        <div className="flex gap-3">
-          <RotateCcw className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
-          <div>
-            <p className="text-sm font-semibold">Return Delivery</p>
-            <p className="text-xs text-muted-foreground">
-              Free 30 Days Delivery Returns.{" "}
-              <a href="#" className="underline underline-offset-2 hover:text-primary">
-                Details
-              </a>
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

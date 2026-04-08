@@ -28,6 +28,7 @@ import { Route as LocalestoreOrdersOrderIdRouteImport } from './routes/$locale/(
 import { Route as LocalestoreCategoriesCategoryIdRouteImport } from './routes/$locale/(store)/categories/$categoryId'
 import { Route as LocalesellerSellRegisterRouteImport } from './routes/$locale/(seller)/sell/register'
 import { Route as LocalesellerSellDashboardRouteImport } from './routes/$locale/(seller)/sell/dashboard'
+import { Route as LocalestorePaymentsSuccessIndexRouteImport } from './routes/$locale/(store)/payments/success/index'
 import { Route as LocalesellerSellProductsIndexRouteImport } from './routes/$locale/(seller)/sell/products/index'
 import { Route as LocalesellerSellOrdersIndexRouteImport } from './routes/$locale/(seller)/sell/orders/index'
 import { Route as LocalesellerSellProductsNewRouteImport } from './routes/$locale/(seller)/sell/products/new'
@@ -135,6 +136,12 @@ const LocalesellerSellDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => LocalesellerSellRouteRoute,
   } as any)
+const LocalestorePaymentsSuccessIndexRoute =
+  LocalestorePaymentsSuccessIndexRouteImport.update({
+    id: '/payments/success/',
+    path: '/payments/success/',
+    getParentRoute: () => LocalestoreRouteRoute,
+  } as any)
 const LocalesellerSellProductsIndexRoute =
   LocalesellerSellProductsIndexRouteImport.update({
     id: '/products/',
@@ -182,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/$locale/sell/products/new': typeof LocalesellerSellProductsNewRoute
   '/$locale/sell/orders/': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/sell/products/': typeof LocalesellerSellProductsIndexRoute
+  '/$locale/payments/success/': typeof LocalestorePaymentsSuccessIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -203,6 +211,7 @@ export interface FileRoutesByTo {
   '/$locale/sell/products/new': typeof LocalesellerSellProductsNewRoute
   '/$locale/sell/orders': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/sell/products': typeof LocalesellerSellProductsIndexRoute
+  '/$locale/payments/success': typeof LocalestorePaymentsSuccessIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -229,6 +238,7 @@ export interface FileRoutesById {
   '/$locale/(seller)/sell/products/new': typeof LocalesellerSellProductsNewRoute
   '/$locale/(seller)/sell/orders/': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/(seller)/sell/products/': typeof LocalesellerSellProductsIndexRoute
+  '/$locale/(store)/payments/success/': typeof LocalestorePaymentsSuccessIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/$locale/sell/products/new'
     | '/$locale/sell/orders/'
     | '/$locale/sell/products/'
+    | '/$locale/payments/success/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/$locale/sell/products/new'
     | '/$locale/sell/orders'
     | '/$locale/sell/products'
+    | '/$locale/payments/success'
   id:
     | '__root__'
     | '/'
@@ -300,6 +312,7 @@ export interface FileRouteTypes {
     | '/$locale/(seller)/sell/products/new'
     | '/$locale/(seller)/sell/orders/'
     | '/$locale/(seller)/sell/products/'
+    | '/$locale/(store)/payments/success/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -442,6 +455,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalesellerSellDashboardRouteImport
       parentRoute: typeof LocalesellerSellRouteRoute
     }
+    '/$locale/(store)/payments/success/': {
+      id: '/$locale/(store)/payments/success/'
+      path: '/payments/success'
+      fullPath: '/$locale/payments/success/'
+      preLoaderRoute: typeof LocalestorePaymentsSuccessIndexRouteImport
+      parentRoute: typeof LocalestoreRouteRoute
+    }
     '/$locale/(seller)/sell/products/': {
       id: '/$locale/(seller)/sell/products/'
       path: '/products'
@@ -522,6 +542,7 @@ interface LocalestoreRouteRouteChildren {
   LocalestoreFavoritesIndexRoute: typeof LocalestoreFavoritesIndexRoute
   LocalestoreOrdersIndexRoute: typeof LocalestoreOrdersIndexRoute
   LocalestoreSearchIndexRoute: typeof LocalestoreSearchIndexRoute
+  LocalestorePaymentsSuccessIndexRoute: typeof LocalestorePaymentsSuccessIndexRoute
 }
 
 const LocalestoreRouteRouteChildren: LocalestoreRouteRouteChildren = {
@@ -536,6 +557,7 @@ const LocalestoreRouteRouteChildren: LocalestoreRouteRouteChildren = {
   LocalestoreFavoritesIndexRoute: LocalestoreFavoritesIndexRoute,
   LocalestoreOrdersIndexRoute: LocalestoreOrdersIndexRoute,
   LocalestoreSearchIndexRoute: LocalestoreSearchIndexRoute,
+  LocalestorePaymentsSuccessIndexRoute: LocalestorePaymentsSuccessIndexRoute,
 }
 
 const LocalestoreRouteRouteWithChildren =

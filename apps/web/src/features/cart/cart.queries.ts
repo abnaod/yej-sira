@@ -5,6 +5,8 @@ import {
   type QueryClient,
 } from "@tanstack/react-query";
 
+import { toast } from "sonner";
+
 import { apiFetch, apiFetchJson } from "@/lib/api";
 
 export type CartResponse = {
@@ -22,6 +24,8 @@ export type CartResponse = {
   }[];
   subtotal: number;
   shipping: number;
+  /** Server-configured standard delivery fee (from `STANDARD_DELIVERY_FEE_ETB`). */
+  standardDeliveryFeeEtb: number;
   tax: number;
   total: number;
 };
@@ -36,19 +40,33 @@ function invalidateCart(queryClient: QueryClient, locale: Locale) {
   void queryClient.invalidateQueries({ queryKey: ["cart", locale] });
 }
 
-export type AddToCartInput = { variantId: string; quantity: number };
+/** `productName` is optional UI-only copy for toasts; it is not sent to the API. */
+export type AddToCartInput = {
+  variantId: string;
+  quantity: number;
+  productName?: string;
+};
 
 export function addToCartMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
     mutationKey: ["cart", "addItem", locale] as const,
     mutationFn: async (input: AddToCartInput) => {
+      const { variantId, quantity } = input;
       await apiFetchJson("/api/cart/items", {
         method: "POST",
-        body: JSON.stringify(input),
+        body: JSON.stringify({ variantId, quantity }),
         locale,
       });
     },
-    onSuccess: () => invalidateCart(queryClient, locale),
+    onSuccess: (_data, variables) => {
+      invalidateCart(queryClient, locale);
+      const label = variables.productName?.trim();
+      toast.success(label ? `${label} added to cart` : "Added to cart");
+    },
+    onError: (err) => {
+      const message = err instanceof Error ? err.message : "Could not add to cart";
+      toast.error(message);
+    },
   });
 }
 
@@ -90,5 +108,38 @@ export function removeCartItemMutationOptions(queryClient: QueryClient, locale: 
       }
     },
     onSuccess: () => invalidateCart(queryClient, locale),
+  });
+}
+
+export type PromoResponse = {
+  valid: boolean;
+  code: string;
+  discount: number;
+  discountLabel: string;
+};
+
+export function applyPromoMutationOptions(
+  queryClient: QueryClient,
+  locale: Locale,
+  callbacks: {
+    onSuccess?: (data: PromoResponse) => void;
+    onError?: (err: Error) => void;
+  } = {},
+) {
+  return mutationOptions({
+    mutationKey: ["cart", "promo", locale] as const,
+    mutationFn: async (code: string): Promise<PromoResponse> => {
+      return apiFetchJson<PromoResponse>("/api/cart/promo", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+        locale,
+      });
+    },
+    onSuccess: (data) => {
+      callbacks.onSuccess?.(data);
+    },
+    onError: (err) => {
+      callbacks.onError?.(err as Error);
+    },
   });
 }
