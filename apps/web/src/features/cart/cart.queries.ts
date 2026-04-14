@@ -119,7 +119,7 @@ export type PromoResponse = {
 };
 
 export function applyPromoMutationOptions(
-  queryClient: QueryClient,
+  _queryClient: QueryClient,
   locale: Locale,
   callbacks: {
     onSuccess?: (data: PromoResponse) => void;

@@ -25,7 +25,7 @@ export function FilterChip({
         "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
         active
           ? "border-primary bg-primary/5 text-primary"
-          : "border-border bg-white text-foreground hover:bg-neutral-50",
+          : "border-border bg-white text-foreground hover:bg-gray-100 dark:hover:bg-gray-800",
         className,
       )}
     >

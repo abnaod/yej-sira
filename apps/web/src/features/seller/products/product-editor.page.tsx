@@ -6,21 +6,25 @@ import { useEffect, useState } from "react";
 import { useLocale } from "@/lib/locale-path";
 
 import { Button } from "@/components/ui/button";
+import { DialogBody, DialogFooter, DialogMain } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { categoriesQuery } from "@/features/storefront/storefront.queries";
 import {
   categoryAttributeDefinitionsQuery,
   createSellerProductMutationOptions,
-  deleteSellerProductMutationOptions,
   sellerProductDetailQuery,
   updateSellerProductMutationOptions,
   type CategoryAttributeDefinitionDto,
   type CreateSellerProductBody,
   type SellerAttributeInput,
-} from "./seller.queries";
-import { getCategoryDescriptionHints } from "./description-hints";
+} from "./products.queries";
+import { getCategoryDescriptionHints } from "../shared/description-hints";
 
 type VariantForm = {
   label: string;
@@ -29,6 +33,8 @@ type VariantForm = {
 };
 
 const emptyVariant = (): VariantForm => ({ label: "", price: "", stock: "0" });
+
+const SELLER_PRODUCT_EMBEDDED_FORM_ID = "seller-product-embedded-form";
 
 function buildAttributesPayload(
   defs: CategoryAttributeDefinitionDto[],
@@ -56,20 +62,50 @@ function buildAttributesPayload(
   return out;
 }
 
-export function SellerProductNewPage() {
-  return <SellerProductEditor mode="new" />;
+export function SellerProductNewDialogForm({
+  onCreated,
+  onCancel,
+}: {
+  onCreated: () => void;
+  onCancel: () => void;
+}) {
+  return <SellerProductEditor mode="new" embedded onCreated={onCreated} onCancel={onCancel} />;
 }
 
-export function SellerProductEditPage({ productId }: { productId: string }) {
-  return <SellerProductEditor mode="edit" productId={productId} />;
+export function SellerProductEditDialogForm({
+  productId,
+  onSaved,
+  onCancel,
+}: {
+  productId: string;
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <SellerProductEditor
+      mode="edit"
+      productId={productId}
+      embedded
+      onSaved={onSaved}
+      onCancel={onCancel}
+    />
+  );
 }
 
 function SellerProductEditor({
   mode,
   productId,
+  embedded = false,
+  onCreated,
+  onSaved,
+  onCancel,
 }: {
   mode: "new" | "edit";
   productId?: string;
+  embedded?: boolean;
+  onCreated?: () => void;
+  onSaved?: () => void;
+  onCancel?: () => void;
 }) {
   const locale = useLocale() as Locale;
   const navigate = useNavigate();
@@ -87,7 +123,6 @@ function SellerProductEditor({
   const updateMut = useMutation(
     updateSellerProductMutationOptions(queryClient, locale, productId ?? ""),
   );
-  const deleteMut = useMutation(deleteSellerProductMutationOptions(queryClient, locale, productId ?? ""));
 
   const [categorySlug, setCategorySlug] = useState("");
   const attrsQuery = useQuery({
@@ -165,14 +200,27 @@ function SellerProductEditor({
       if (mode === "new") {
         createMut.mutate(body, {
           onSuccess: () => {
-            void navigate({ to: "/$locale/sell/products", params: { locale } });
+            if (onCreated) onCreated();
+            else
+              void navigate({
+                to: "/$locale/sell/products",
+                params: { locale },
+                search: { new: false, edit: undefined },
+              });
           },
         });
       } else if (productId) {
-        updateMut.mutate({
-          ...body,
-          isPublished: publish,
-        });
+        updateMut.mutate(
+          {
+            ...body,
+            isPublished: publish,
+          },
+          {
+            onSuccess: () => {
+              onSaved?.();
+            },
+          },
+        );
       }
     } catch (err) {
       window.alert((err as Error).message);
@@ -180,6 +228,15 @@ function SellerProductEditor({
   };
 
   if (mode === "edit" && detailQuery.isLoading) {
+    if (embedded) {
+      return (
+        <DialogMain>
+          <DialogBody className="mx-0 px-6 py-8">
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          </DialogBody>
+        </DialogMain>
+      );
+    }
     return (
       <main className="mx-auto max-w-2xl py-12">
         <p className="text-muted-foreground">Loading…</p>
@@ -188,11 +245,23 @@ function SellerProductEditor({
   }
 
   if (mode === "edit" && detailQuery.isError) {
+    if (embedded) {
+      return (
+        <DialogMain>
+          <DialogBody className="mx-0 space-y-4 px-6 py-8">
+            <p className="text-sm text-destructive">Could not load product.</p>
+            <Button type="button" variant="outline" onClick={() => onCancel?.()}>
+              Close
+            </Button>
+          </DialogBody>
+        </DialogMain>
+      );
+    }
     return (
       <main className="mx-auto max-w-2xl py-12">
         <p className="text-destructive">Could not load product.</p>
         <Button className="mt-4" variant="outline" asChild>
-          <Link to="/$locale/sell/products" params={{ locale }}>
+          <Link to="/$locale/sell/products" params={{ locale }} search={{ new: false, edit: undefined }}>
             Back
           </Link>
         </Button>
@@ -202,24 +271,16 @@ function SellerProductEditor({
 
   const descHints = getCategoryDescriptionHints(categorySlug || undefined);
 
-  return (
-    <main className="mx-auto max-w-2xl py-12">
-      <div className="mb-8">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/$locale/sell/products" params={{ locale }}>
-            ← Products
-          </Link>
-        </Button>
-      </div>
-      <h1 className="text-2xl font-semibold tracking-tight">
-        {mode === "new" ? "New product" : "Edit product"}
-      </h1>
-      <form className="mt-8 space-y-4" onSubmit={onSubmit}>
+  const form = (
+    <form
+      id={embedded ? SELLER_PRODUCT_EMBEDDED_FORM_ID : undefined}
+      className={embedded ? "space-y-4" : "mt-8 space-y-4"}
+      onSubmit={onSubmit}
+    >
         <div className="space-y-2">
           <Label htmlFor="cat">Category</Label>
-          <select
+          <NativeSelect
             id="cat"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             value={categorySlug}
             onChange={(e) => {
               setCategorySlug(e.target.value);
@@ -227,13 +288,13 @@ function SellerProductEditor({
             }}
             required
           >
-            <option value="">Select…</option>
+            <NativeSelectOption value="">Select…</NativeSelectOption>
             {categoriesData?.categories.map((c) => (
-              <option key={c.slug} value={c.slug}>
+              <NativeSelectOption key={c.slug} value={c.slug}>
                 {c.name}
-              </option>
+              </NativeSelectOption>
             ))}
-          </select>
+          </NativeSelect>
         </div>
         {categorySlug && attrsQuery.data && attrsQuery.data.definitions.length > 0 && (
           <div className="space-y-4 rounded-lg border border-border p-4">
@@ -245,9 +306,8 @@ function SellerProductEditor({
                   {d.isRequired ? " *" : ""}
                 </Label>
                 {d.inputType === "select" && d.options && (
-                  <select
+                  <NativeSelect
                     id={`attr-${d.key}`}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={attrValues[d.key] ?? ""}
                     required={d.isRequired}
                     onChange={(e) => {
@@ -255,13 +315,15 @@ function SellerProductEditor({
                       setAttrValues((prev) => ({ ...prev, [d.key]: v }));
                     }}
                   >
-                    <option value="">{d.isRequired ? "Select…" : "Optional"}</option>
+                    <NativeSelectOption value="">
+                      {d.isRequired ? "Select…" : "Optional"}
+                    </NativeSelectOption>
                     {d.options.map((o) => (
-                      <option key={o.key} value={o.key}>
+                      <NativeSelectOption key={o.key} value={o.key}>
                         {o.label}
-                      </option>
+                      </NativeSelectOption>
                     ))}
-                  </select>
+                  </NativeSelect>
                 )}
                 {d.inputType === "text" && (
                   <Input
@@ -286,19 +348,20 @@ function SellerProductEditor({
                   />
                 )}
                 {d.inputType === "boolean" && (
-                  <select
+                  <NativeSelect
                     id={`attr-${d.key}`}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                     value={attrValues[d.key] ?? ""}
                     required={d.isRequired}
                     onChange={(e) =>
                       setAttrValues((prev) => ({ ...prev, [d.key]: e.target.value }))
                     }
                   >
-                    <option value="">{d.isRequired ? "Select…" : "Optional"}</option>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
+                    <NativeSelectOption value="">
+                      {d.isRequired ? "Select…" : "Optional"}
+                    </NativeSelectOption>
+                    <NativeSelectOption value="true">Yes</NativeSelectOption>
+                    <NativeSelectOption value="false">No</NativeSelectOption>
+                  </NativeSelect>
                 )}
               </div>
             ))}
@@ -341,44 +404,62 @@ function SellerProductEditor({
             placeholder="https://..."
           />
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Label>Variants</Label>
-          {variants.map((v, i) => (
-            <div key={i} className="flex flex-wrap gap-2">
-              <Input
-                placeholder="Label"
-                value={v.label}
-                onChange={(e) => {
-                  const next = [...variants];
-                  next[i] = { ...v, label: e.target.value };
-                  setVariants(next);
-                }}
-              />
-              <Input
-                placeholder="Price"
-                type="number"
-                step="0.01"
-                className="w-28"
-                value={v.price}
-                onChange={(e) => {
-                  const next = [...variants];
-                  next[i] = { ...v, price: e.target.value };
-                  setVariants(next);
-                }}
-              />
-              <Input
-                placeholder="Stock"
-                type="number"
-                className="w-24"
-                value={v.stock}
-                onChange={(e) => {
-                  const next = [...variants];
-                  next[i] = { ...v, stock: e.target.value };
-                  setVariants(next);
-                }}
-              />
-            </div>
-          ))}
+          <div className="space-y-3">
+            {variants.map((v, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-border bg-muted/20 p-4"
+              >
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2 sm:min-w-0">
+                    <Label htmlFor={`variant-${i}-label`}>Variant</Label>
+                    <Input
+                      id={`variant-${i}-label`}
+                      placeholder="e.g. Size M, Red"
+                      value={v.label}
+                      onChange={(e) => {
+                        const next = [...variants];
+                        next[i] = { ...v, label: e.target.value };
+                        setVariants(next);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`variant-${i}-price`}>Price</Label>
+                    <Input
+                      id={`variant-${i}-price`}
+                      type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      value={v.price}
+                      onChange={(e) => {
+                        const next = [...variants];
+                        next[i] = { ...v, price: e.target.value };
+                        setVariants(next);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`variant-${i}-stock`}>Stock</Label>
+                    <Input
+                      id={`variant-${i}-stock`}
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={v.stock}
+                      onChange={(e) => {
+                        const next = [...variants];
+                        next[i] = { ...v, stock: e.target.value };
+                        setVariants(next);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
           <Button
             type="button"
             variant="outline"
@@ -401,30 +482,57 @@ function SellerProductEditor({
             {((createMut.error ?? updateMut.error) as Error)?.message}
           </p>
         )}
-        <div className="flex flex-wrap gap-3">
-          <Button type="submit" disabled={createMut.isPending || updateMut.isPending}>
-            {mode === "new" ? "Create" : "Save"}
-          </Button>
-          {mode === "edit" && productId && (
-            <Button
-              type="button"
-              variant="outline"
-              className="border-destructive text-destructive hover:bg-destructive/10"
-              disabled={deleteMut.isPending}
-              onClick={() => {
-                if (!window.confirm("Delete this product?")) return;
-                deleteMut.mutate(undefined, {
-                  onSuccess: () => {
-                    void navigate({ to: "/$locale/sell/products", params: { locale } });
-                  },
-                });
-              }}
-            >
-              Delete
+        {!embedded && (
+          <div className="flex flex-wrap gap-3">
+            <Button type="submit" disabled={createMut.isPending || updateMut.isPending}>
+              {mode === "new" ? "Create" : "Save"}
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </form>
+  );
+
+  if (embedded) {
+    const savePending = mode === "new" ? createMut.isPending : updateMut.isPending;
+    return (
+      <DialogMain>
+        <DialogBody className="mx-0 px-6 py-4">{form}</DialogBody>
+        <DialogFooter className="mx-0 gap-2 border-border px-8 py-4 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" disabled={savePending} onClick={() => onCancel?.()}>
+            Cancel
+          </Button>
+          <Button type="submit" form={SELLER_PRODUCT_EMBEDDED_FORM_ID} disabled={savePending}>
+            {mode === "new"
+              ? createMut.isPending
+                ? "Creating…"
+                : "Create product"
+              : updateMut.isPending
+                ? "Saving…"
+                : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogMain>
+    );
+  }
+
+  return (
+    <main className="mx-auto max-w-2xl py-12">
+      <div className="mb-8">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/$locale/sell/products" params={{ locale }} search={{ new: false, edit: undefined }}>
+            ← Products
+          </Link>
+        </Button>
+      </div>
+      <h1 className="text-2xl font-semibold tracking-tight">
+        {mode === "new" ? "New product" : "Edit product"}
+      </h1>
+      <p className="mt-2 text-xss text-muted-foreground">
+        {mode === "new"
+          ? "Add category, variants, images, and description for your listing."
+          : "Update this product's details, stock, and publish state."}
+      </p>
+      {form}
     </main>
   );
 }

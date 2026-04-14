@@ -1,8 +1,11 @@
 import type { Locale } from "@ys/intl";
 import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
 
-import { SellerAppShell } from "@/features/seller/seller-app-shell";
-import { myShopQuery, type MyShopResponse } from "@/features/seller/seller-shop.queries";
+import {
+  myShopQuery,
+  SellerAppShell,
+  type MyShopResponse,
+} from "@/features/seller";
 import { useLocale } from "@/lib/locale-path";
 
 /** Landing + register: full-width. Same paths used in `beforeLoad` for dashboard redirect. */

@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -185,6 +186,7 @@ export function AuthDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <DialogBody className="-mx-6 px-6">
         <Tabs
           value={tab}
           onValueChange={(v) => {
@@ -305,6 +307,7 @@ export function AuthDialog({
             </p>
           )}
         </div>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

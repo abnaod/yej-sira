@@ -6,14 +6,14 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
-import { getSellerOrderColumns } from "./seller-orders-columns";
-import { sellerOrdersQuery } from "./seller-orders.queries";
-import { myShopQuery } from "./seller-shop.queries";
-import { SellerShellDataTable } from "./seller-shell-data-table";
+import { getSellerOrderColumns } from "./orders-columns";
+import { sellerOrdersQuery } from "./orders.queries";
+import { myShopQuery } from "../shared/shop.queries";
+import { SellerShellDataTable } from "../shared/shell-data-table";
 
 export function SellerOrdersPage() {
   const locale = useLocale() as Locale;
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: sessionPending } = authClient.useSession();
   const shopState = useQuery({
     ...myShopQuery(locale),
     enabled: !!session?.user,
@@ -24,6 +24,22 @@ export function SellerOrdersPage() {
   });
 
   const columns = useMemo(() => getSellerOrderColumns(locale), [locale]);
+
+  if (sessionPending) {
+    return (
+      <div className="@container/main flex min-h-0 flex-1 flex-col">
+        <SellerShellDataTable
+          columns={columns}
+          data={[]}
+          filterColumnId="id"
+          filterPlaceholder="Filter by order ID…"
+          countNoun="order"
+          isLoading
+          loadingTitle="Loading…"
+        />
+      </div>
+    );
+  }
 
   if (!session?.user) {
     return (
@@ -69,18 +85,15 @@ export function SellerOrdersPage() {
   const ordersLoading = ordersState.isLoading;
 
   return (
-    <div className="@container/main flex flex-1 flex-col">
-      {ordersLoading ? (
-        <p className="text-sm text-muted-foreground">Loading orders…</p>
-      ) : (
-        <SellerShellDataTable
-          columns={columns}
-          data={orders}
-          filterColumnId="id"
-          filterPlaceholder="Filter by order ID…"
-          countNoun="order"
-        />
-      )}
+    <div className="@container/main flex min-h-0 flex-1 flex-col">
+      <SellerShellDataTable
+        columns={columns}
+        data={orders}
+        filterColumnId="id"
+        filterPlaceholder="Filter by order ID…"
+        countNoun="order"
+        isLoading={ordersLoading}
+      />
     </div>
   );
 }

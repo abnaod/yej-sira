@@ -181,7 +181,7 @@ export function DeliveryStep({
             <label
               key={option.id}
               className={cn(
-                "flex h-full cursor-pointer flex-col rounded-md border bg-white p-2.5 transition-colors hover:bg-primary/10",
+                "flex h-full cursor-pointer flex-col rounded-md border bg-white p-2.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800",
                 deliveryMethod === option.id
                   ? "border-primary"
                   : "border-border hover:border-primary/35",

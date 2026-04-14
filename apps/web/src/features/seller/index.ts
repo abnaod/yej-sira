@@ -1,11 +1,15 @@
-export { SellerLandingPage } from "./seller-landing.page";
-export { SellerRegisterPage } from "./seller-register.page";
-export { SellerDashboardPage } from "./seller-dashboard.page";
-export { SellerAppShell } from "./seller-app-shell";
+export { SellerLandingPage } from "./onboarding/landing.page";
+export { SellerRegisterPage } from "./onboarding/register.page";
+export { SellerDashboardPage } from "./dashboard/dashboard.page";
+export { SellerOrdersPage } from "./orders/orders.page";
+export { SellerOrderDetailPage } from "./orders/seller-order-detail.page";
+export { sellerOrderDetailQuery, type SellerOrderDetailResponse } from "./orders/orders.queries";
+export { SellerProductsPage } from "./products/products.page";
+export { SellerAppShell } from "./shell/app-shell";
 export {
   myShopQuery,
   createShopMutationOptions,
   type MyShop,
   type MyShopResponse,
   type CreateShopBody,
-} from "./seller-shop.queries";
+} from "./shared/shop.queries";

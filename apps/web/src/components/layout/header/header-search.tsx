@@ -197,7 +197,7 @@ export function HeaderSearch() {
                   tagSlugs: "",
                   promotionSlug: undefined,
                 }}
-                className="block px-3 py-2.5 text-sm text-primary transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="block px-3 py-2.5 text-sm text-primary transition-colors hover:bg-gray-100 hover:text-accent-foreground dark:hover:bg-gray-800"
                 onClick={() => setPopoverOpen(false)}
               >
                 Results for{" "}

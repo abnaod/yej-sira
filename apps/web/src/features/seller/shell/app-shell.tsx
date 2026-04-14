@@ -1,36 +1,44 @@
 import { Outlet, useRouterState } from "@tanstack/react-router";
 
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useLocale } from "@/lib/locale-path";
 import type { Locale } from "@ys/intl";
 
-import { SellerAppSidebar } from "./seller-app-sidebar";
-import { sellerPortalHeaderTitle } from "./seller-breadcrumb";
+import { SellerAppSidebar } from "./app-sidebar";
+import {
+  sellerPortalHeaderSubtitle,
+  sellerPortalHeaderTitle,
+} from "./breadcrumb";
 
 export function SellerAppShell() {
   const locale = useLocale() as Locale;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const title = sellerPortalHeaderTitle(pathname, locale);
+  const subtitle = sellerPortalHeaderSubtitle(pathname, locale);
+  const showHeader = title.length > 0 || subtitle.length > 0;
 
   return (
     <SidebarProvider>
       <SellerAppSidebar />
       <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border px-4 sm:px-6">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
-          <h1 className="text-sm font-semibold text-foreground">{title}</h1>
-        </header>
-        <div className="flex flex-1 flex-col gap-2 p-4 sm:p-6">
-          <Outlet />
+        <div
+          className={
+            showHeader
+              ? "flex min-h-0 flex-1 flex-col gap-4 px-4 pt-2 pb-4 sm:px-6 sm:pt-3 sm:pb-6"
+              : "flex min-h-0 flex-1 flex-col px-4 pt-2 pb-4 sm:px-6 sm:pt-3 sm:pb-6"
+          }
+        >
+          {showHeader ? (
+            <div className="shrink-0 space-y-0.5">
+              <h1 className="text-base font-semibold tracking-tight text-foreground">
+                {title}
+              </h1>
+              <p className="text-xss text-muted-foreground">{subtitle}</p>
+            </div>
+          ) : null}
+          <div className="flex min-h-0 flex-1 flex-col">
+            <Outlet />
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

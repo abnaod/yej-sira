@@ -14,9 +14,16 @@ import {
   getProductDetailInclude,
   minVariantPrice,
 } from "../catalog/product-card.mapper";
-import { pickCategoryName, pickProductDescription, pickProductName, pickVariantLabel } from "../../lib/localized-catalog";
+import {
+  pickCategoryName,
+  pickProductDescription,
+  pickProductName,
+  pickVariantLabel,
+} from "../../lib/localized-catalog";
+import { pickPromotionForProduct } from "../promotions/promotion.utils";
 import { toNumber } from "../../lib/money";
 import {
+  mapProductAttributeValuesForDetail,
   serializeProductAttributeValuesForSeller,
   validateProductAttributeInputs,
 } from "../../lib/category-attributes";
@@ -136,6 +143,11 @@ sellerRouter.get("/seller/dashboard", async (c) => {
   });
 });
 
+function sellerOrderLineProductLabel(productName: string, variantLabel: string | null): string {
+  const v = variantLabel?.trim();
+  return v ? `${productName} (${v})` : productName;
+}
+
 /** Orders that include at least one line item for this shop's products (aggregated per order). */
 sellerRouter.get("/seller/orders", async (c) => {
   const userId = await requireUserId(c);
@@ -177,6 +189,7 @@ sellerRouter.get("/seller/orders", async (c) => {
       lineCount: number;
       shopTotal: number;
       imageUrl: string;
+      productName: string;
     }
   >();
 
@@ -192,6 +205,7 @@ sellerRouter.get("/seller/orders", async (c) => {
         lineCount: 1,
         shopTotal: lineTotal,
         imageUrl: li.imageUrl?.trim() ?? "",
+        productName: sellerOrderLineProductLabel(li.productName, li.variantLabel),
       });
     } else {
       existing.lineCount += 1;
@@ -211,7 +225,97 @@ sellerRouter.get("/seller/orders", async (c) => {
       lineCount: o.lineCount,
       shopTotal: o.shopTotal,
       imageUrl: o.imageUrl,
+      productName: o.productName,
     })),
+  });
+});
+
+/** Single order with only this shop's line items (for seller fulfillment). */
+sellerRouter.get("/seller/orders/:orderId", async (c) => {
+  const userId = await requireUserId(c);
+  const shop = await getOwnedShop(userId);
+  if (!shop) {
+    throw new HTTPException(404, { message: "No shop" });
+  }
+  assertSellerCanManageShop(shop, userId);
+
+  const orderId = c.req.param("orderId");
+
+  const shopProductIds = await prisma.product.findMany({
+    where: { shopId: shop.id },
+    select: { id: true },
+  });
+  const ids = shopProductIds.map((p) => p.id);
+  if (ids.length === 0) {
+    throw new HTTPException(404, { message: "Order not found" });
+  }
+
+  const order = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+      items: { some: { productId: { in: ids } } },
+    },
+    include: {
+      items: {
+        where: { productId: { in: ids } },
+        orderBy: { id: "asc" },
+      },
+      payment: { select: { paymentMethod: true, status: true } },
+      pickupLocation: {
+        select: {
+          id: true,
+          name: true,
+          line1: true,
+          line2: true,
+          city: true,
+          postalCode: true,
+          country: true,
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new HTTPException(404, { message: "Order not found" });
+  }
+
+  let shopSubtotal = 0;
+  const items = order.items.map((i) => {
+    const line = toNumber(i.unitPrice) * i.quantity;
+    shopSubtotal += line;
+    return {
+      id: i.id,
+      productName: i.productName,
+      variantLabel: i.variantLabel,
+      unitPrice: toNumber(i.unitPrice),
+      quantity: i.quantity,
+      imageUrl: i.imageUrl,
+    };
+  });
+
+  return c.json({
+    order: {
+      id: order.id,
+      status: order.status,
+      shopSubtotal,
+      deliveryMethod: order.deliveryMethod,
+      pickupLocation: order.pickupLocation,
+      shippingAddress: {
+        city: order.shippingCity,
+        subcity: order.shippingSubcity,
+        woreda: order.shippingWoreda,
+        kebele: order.shippingKebele,
+        specificLocation: order.shippingSpecificLocation,
+      },
+      createdAt: order.createdAt.toISOString(),
+      payment: order.payment
+        ? {
+            method: order.payment.paymentMethod,
+            status: order.payment.status,
+          }
+        : null,
+      items,
+    },
   });
 });
 
@@ -416,10 +520,24 @@ sellerRouter.get("/seller/products/:id", async (c) => {
   }
 
   const minPrice = minVariantPrice(product.variants);
+  const promotionPick = pickPromotionForProduct(
+    product.promotionProducts.map((pp) => pp.promotion),
+  );
+  const storefrontAttributes = mapProductAttributeValuesForDetail(
+    locale,
+    product.attributeValues.map((av) => ({
+      definition: av.definition,
+      allowedValue: av.allowedValue,
+      textValue: av.textValue,
+      numberValue: av.numberValue,
+      booleanValue: av.booleanValue,
+    })),
+  );
   const tr = product.translations ?? [];
   const category = product.category as typeof product.category & {
     translations?: { name: string }[];
   };
+  const categoryTr = category.translations ?? [];
 
   return c.json({
     product: {
@@ -436,6 +554,30 @@ sellerRouter.get("/seller/products/:id", async (c) => {
       reviewCount: product.reviewCount,
       categoryId: product.categoryId,
       categorySlug: category.slug,
+      category: {
+        id: category.id,
+        slug: category.slug,
+        name: pickCategoryName(
+          { name: category.name, translations: categoryTr },
+          locale,
+        ),
+      },
+      shop: {
+        slug: product.shop.slug,
+        name: product.shop.name,
+        imageUrl: product.shop.imageUrl,
+      },
+      storefrontAttributes,
+      promotion: promotionPick
+        ? {
+            slug: promotionPick.slug,
+            badgeLabel:
+              locale === "en"
+                ? promotionPick.badgeLabel
+                : (promotionPick.translations?.[0]?.badgeLabel ?? promotionPick.badgeLabel),
+            endsAt: promotionPick.endsAt.toISOString(),
+          }
+        : undefined,
       images: product.images.map((i) => i.url),
       variants: product.variants.map((v) => {
         const vt = v as typeof v & { translations?: { label: string }[] };

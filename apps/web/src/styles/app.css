@@ -28,7 +28,8 @@
   --color-primary-foreground: oklch(100% 0 0);
   --color-primary-hover: oklch(25% 0.05 160);
 
-  --color-accent: oklch(96.5% 0.02 160);
+  /* Neutral hover surface (Tailwind `gray-100`) */
+  --color-accent: oklch(96.7% 0.003 264.538);
   --color-accent-foreground: oklch(30.6% 0.056 160);
 
   --color-rating: oklch(79.5% 0.17 75);
@@ -38,6 +39,12 @@
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-full: 9999px;
+
+  /* Extra steps for captions / labels (`text-xxs`, `text-xss`) */
+  --text-xxs: 11px;
+  --text-xxs--line-height: 1rem;
+  --text-xss: 13px;
+  --text-xss--line-height: 1.125rem;
 
   /* Avenir (system on many platforms); use `font-logo` (not `font-*-logo` or Tailwind treats it as a bad font name) */
   --font-logo:
@@ -50,6 +57,8 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  /* Main column behind `SidebarInset` — matches previous light sidebar tone */
+  --color-app-inset: hsl(0 0% 98.5%);
 }
 
 /* Preflight leaves border-color as currentColor; bare `border` would match text (near-black). */
@@ -58,6 +67,34 @@
   ::after,
   ::before {
     border-color: var(--color-border);
+  }
+
+  /* Chart palette (https://ui.shadcn.com/docs/components/radix/chart#theming) */
+  :root {
+    --chart-1: oklch(0.55 0.12 160);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+  }
+
+  .dark {
+    --chart-1: oklch(0.55 0.14 160);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+  }
+}
+
+/* shadcn Dialog scroll regions (https://ui.shadcn.com/docs/components/radix/dialog) */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
@@ -73,29 +110,18 @@ body {
 }
 
 :root {
-  /* shadcn Chart (https://ui.shadcn.com/docs/components/radix/chart) */
-  --chart-1: oklch(0.55 0.12 160);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-
-  --sidebar: hsl(0 0% 98.5%);
+  --sidebar: hsl(0 0% 100%);
   --sidebar-foreground: hsl(240 5.3% 26.1%);
   --sidebar-primary: hsl(240 5.9% 10%);
   --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent: rgb(243 244 246);
   --sidebar-accent-foreground: hsl(240 5.9% 10%);
   --sidebar-border: hsl(220 13% 90%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
 
 .dark {
-  --chart-1: oklch(0.55 0.14 160);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --color-app-inset: oklch(16% 0 0);
 
   --color-background: oklch(14.5% 0 0);
   --color-foreground: oklch(98.5% 0 0);
@@ -110,7 +136,7 @@ body {
   --color-input: oklch(100% 0 0 / 20%);
   --color-secondary: oklch(22% 0 0);
   --color-secondary-foreground: oklch(98.5% 0 0);
-  --color-accent: oklch(22% 0 0);
+  --color-accent: oklch(27.8% 0.033 256.848);
   --color-accent-foreground: oklch(98.5% 0 0);
   --color-ring: oklch(59% 0.2 264);
 
@@ -118,7 +144,7 @@ body {
   --sidebar-foreground: hsl(240 4.8% 95.9%);
   --sidebar-primary: hsl(224.3 76.3% 48%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent: rgb(31 41 55);
   --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
   --sidebar-border: hsl(240 3.7% 22%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);

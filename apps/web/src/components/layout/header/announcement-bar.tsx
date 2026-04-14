@@ -31,7 +31,7 @@ export function AnnouncementBar() {
         </div>
 
         <div className="flex items-center gap-3">
-          <LanguageSwitcher className="text-xs text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" />
+          <LanguageSwitcher className="text-xs text-primary-foreground hover:bg-gray-100 hover:text-primary" />
           <button
             type="button"
             className="flex items-center gap-1 transition-opacity hover:opacity-80"

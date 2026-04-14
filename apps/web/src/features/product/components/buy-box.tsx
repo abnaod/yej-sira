@@ -30,6 +30,9 @@ interface BuyBoxProps {
   promotion?: { badgeLabel: string; endsAt: string };
   onBuyNow?: (payload: AddToCartInput) => void;
   onAddToCart?: (payload: AddToCartInput) => void;
+  /** When set, purchase CTAs are disabled (e.g. draft storefront preview). */
+  purchaseDisabled?: boolean;
+  purchaseDisabledReason?: string;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   favoritePending?: boolean;
@@ -46,6 +49,8 @@ export function BuyBox({
   variants,
   onBuyNow,
   onAddToCart,
+  purchaseDisabled,
+  purchaseDisabledReason,
   isFavorite,
   onToggleFavorite,
   favoritePending,
@@ -87,7 +92,7 @@ export function BuyBox({
               isFavorite ? "Remove from favorites" : "Add to favorites"
             }
             className={cn(
-              "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-white transition-colors hover:bg-neutral-50",
+              "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-white transition-colors hover:bg-gray-100 dark:hover:bg-gray-800",
               isFavorite ? "text-red-600" : "text-muted-foreground hover:text-red-600",
               favoritePending && "opacity-60",
             )}
@@ -210,11 +215,14 @@ export function BuyBox({
         )}
       </div>
 
+      {purchaseDisabled && purchaseDisabledReason ? (
+        <p className="text-sm text-muted-foreground">{purchaseDisabledReason}</p>
+      ) : null}
       <div className="flex gap-3">
         <Button
           size="lg"
           className="flex-1"
-          disabled={stock < 1}
+          disabled={stock < 1 || purchaseDisabled}
           onClick={() => onBuyNow?.({ variantId: v.id, quantity, productName: name })}
         >
           Buy Now
@@ -223,7 +231,7 @@ export function BuyBox({
           variant="outline"
           size="lg"
           className="flex-1"
-          disabled={stock < 1}
+          disabled={stock < 1 || purchaseDisabled}
           onClick={() =>
             onAddToCart?.({ variantId: v.id, quantity, productName: name })
           }

@@ -5,10 +5,12 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
-import { sellerDashboardQuery } from "./seller-dashboard.queries";
-import { SellerDashboardSectionCards } from "./seller-dashboard-section-cards";
-import { SellerOrdersChart } from "./seller-orders-chart";
-import { myShopQuery } from "./seller-shop.queries";
+import { sellerDashboardQuery } from "./dashboard.queries";
+import { SellerDashboardSectionCards } from "./dashboard-section-cards";
+import { SellerDashboardRecentOrders } from "./recent-orders-card";
+import { SellerOrdersChart } from "./orders-chart";
+import { sellerOrdersQuery } from "../orders/orders.queries";
+import { myShopQuery } from "../shared/shop.queries";
 
 export function SellerDashboardPage() {
   const locale = useLocale() as Locale;
@@ -19,6 +21,10 @@ export function SellerDashboardPage() {
   });
   const dashboardState = useQuery({
     ...sellerDashboardQuery(locale),
+    enabled: !!session?.user && shopState.data?.shop?.status === "active",
+  });
+  const recentOrdersState = useQuery({
+    ...sellerOrdersQuery(locale),
     enabled: !!session?.user && shopState.data?.shop?.status === "active",
   });
   if (!session?.user) {
@@ -81,6 +87,12 @@ export function SellerDashboardPage() {
       />
 
       <SellerOrdersChart data={stats?.ordersByDay ?? []} isLoading={dashboardLoading} />
+
+      <SellerDashboardRecentOrders
+        orders={recentOrdersState.data?.orders ?? []}
+        isLoading={recentOrdersState.isLoading}
+        locale={locale}
+      />
     </div>
   );
 }

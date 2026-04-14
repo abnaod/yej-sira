@@ -101,7 +101,7 @@ export function PaymentMethodStep({
         {paymentOptions.map((option) => (
           <label
             key={option.id}
-            className={`flex cursor-pointer items-center gap-2.5 rounded-md border bg-white px-3 py-2.5 transition-colors hover:bg-accent ${
+            className={`flex cursor-pointer items-center gap-2.5 rounded-md border bg-white px-3 py-2.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
               value === option.id ? "border-primary" : "border-border"
             }`}
           >

@@ -1,14 +1,11 @@
-import { createFileRoute, getRouteApi } from "@tanstack/react-router";
-
-import { SellerProductEditPage } from "@/features/seller/seller-product-editor.page";
-
-const routeApi = getRouteApi("/$locale/(seller)/sell/products/$productId");
-
-function SellerProductEditRoute() {
-  const { productId } = routeApi.useParams();
-  return <SellerProductEditPage productId={productId} />;
-}
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/$locale/(seller)/sell/products/$productId")({
-  component: SellerProductEditRoute,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/$locale/sell/products",
+      params: { locale: params.locale },
+      search: { new: false, edit: params.productId },
+    });
+  },
 });

@@ -182,7 +182,7 @@ export function HeaderFilter() {
         <button
           type="button"
           className={cn(
-            "inline-flex shrink-0 items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:bg-neutral-100 hover:text-primary",
+            "inline-flex shrink-0 items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:bg-gray-100 hover:text-primary dark:hover:bg-gray-800",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
           )}
           aria-label="Filters"

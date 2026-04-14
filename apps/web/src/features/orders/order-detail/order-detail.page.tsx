@@ -26,11 +26,11 @@ async function initializePayment(orderId: string): Promise<InitializePaymentResp
 
 const statusConfig: Record<
   string,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" | "paid" }
 > = {
   pending: { label: "Pending", variant: "outline" },
   awaiting_payment: { label: "Awaiting Payment", variant: "secondary" },
-  paid: { label: "Paid", variant: "default" },
+  paid: { label: "Paid", variant: "paid" },
   fulfilled: { label: "Fulfilled", variant: "default" },
   cancelled: { label: "Cancelled", variant: "destructive" },
 };

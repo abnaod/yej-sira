@@ -30,21 +30,21 @@ export function SellerDashboardSectionCards({
     return (
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="gap-3 py-5">
+          <Card key={i} className="gap-2 py-4">
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-0">
               <Skeleton className="h-4 w-24" />
               <div
                 className={cn(
-                  "flex size-9 shrink-0 items-center justify-center rounded-lg",
+                  "flex size-8 shrink-0 items-center justify-center rounded-lg",
                   ICON_ACCENTS[i]!.wrap
                 )}
               >
-                <Skeleton className="size-5 rounded-md" />
+                <Skeleton className="size-4 rounded-md" />
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <Skeleton className="h-9 w-24" />
-              <Skeleton className="mt-1.5 h-3 w-32" />
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="mt-1 h-3 w-32" />
             </CardContent>
           </Card>
         ))}
@@ -87,24 +87,24 @@ export function SellerDashboardSectionCards({
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {items.map((item, index) => (
-        <Card key={item.title} className="gap-3 py-5">
+        <Card key={item.title} className="gap-2 py-4">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-0">
             <CardDescription>{item.title}</CardDescription>
             <div
               className={cn(
-                "flex size-9 shrink-0 items-center justify-center rounded-lg",
+                "flex size-8 shrink-0 items-center justify-center rounded-lg",
                 ICON_ACCENTS[index]!.wrap
               )}
             >
               <item.icon
-                className={cn("size-5", ICON_ACCENTS[index]!.fg)}
+                className={cn("size-4", ICON_ACCENTS[index]!.fg)}
                 aria-hidden
               />
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <p className="text-3xl font-semibold leading-none tracking-tight tabular-nums">{item.value}</p>
-            <p className="mt-1.5 text-xs text-muted-foreground">{item.description}</p>
+            <p className="text-2xl font-semibold leading-none tracking-tight tabular-nums">{item.value}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
           </CardContent>
         </Card>
       ))}

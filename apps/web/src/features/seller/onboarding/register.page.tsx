@@ -18,8 +18,8 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
-import type { CreateShopBody } from "./seller-shop.queries";
-import { createShopMutationOptions } from "./seller-shop.queries";
+import type { CreateShopBody } from "../shared/shop.queries";
+import { createShopMutationOptions } from "../shared/shop.queries";
 
 const STEPS = [
   "Shop basics",
@@ -159,6 +159,9 @@ export function SellerRegisterPage() {
           Step {step + 1} of {STEPS.length}
         </p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">Open your shop</h1>
+        <p className="mt-2 text-xss text-muted-foreground">
+          Complete the steps below—we&apos;ll review your application.
+        </p>
         <Progress className="mt-4 h-1" value={progress} />
       </div>
 

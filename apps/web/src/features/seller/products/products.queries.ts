@@ -55,6 +55,10 @@ export type SellerProductDetailResponse = {
     reviewCount: number;
     categoryId: string;
     categorySlug: string;
+    category: { id: string; slug: string; name: string };
+    shop: { slug: string; name: string; imageUrl: string | null };
+    storefrontAttributes: { key: string; label: string; displayValue: string }[];
+    promotion?: { slug: string; badgeLabel: string; endsAt: string };
     images: string[];
     variants: {
       id: string;
@@ -177,21 +181,39 @@ export function updateSellerProductMutationOptions(
   });
 }
 
-export function deleteSellerProductMutationOptions(
-  queryClient: QueryClient,
-  locale: Locale,
-  productId: string,
-) {
+export function deleteSellerProductMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
-    mutationKey: ["seller", "delete", locale, productId] as const,
-    mutationFn: () =>
+    mutationKey: ["seller", "delete", locale] as const,
+    mutationFn: (productId: string) =>
       apiFetchJson<{ ok: boolean }>(`/api/seller/products/${encodeURIComponent(productId)}`, {
         method: "DELETE",
         locale,
       }),
-    onSuccess: () => {
+    onSuccess: (_data, productId) => {
       void queryClient.invalidateQueries({ queryKey: ["seller", "products", locale] });
       void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
+      void queryClient.invalidateQueries({
+        queryKey: ["seller", "product", locale, productId],
+      });
+    },
+  });
+}
+
+export function publishSellerProductMutationOptions(queryClient: QueryClient, locale: Locale) {
+  return mutationOptions({
+    mutationKey: ["seller", "publish", locale] as const,
+    mutationFn: (productId: string) =>
+      apiFetchJson<{ ok: boolean }>(`/api/seller/products/${encodeURIComponent(productId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isPublished: true }),
+        locale,
+      }),
+    onSuccess: (_data, productId) => {
+      void queryClient.invalidateQueries({ queryKey: ["seller", "products", locale] });
+      void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
+      void queryClient.invalidateQueries({
+        queryKey: ["seller", "product", locale, productId],
+      });
     },
   });
 }

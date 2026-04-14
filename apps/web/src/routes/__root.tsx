@@ -19,7 +19,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         name: "viewport",
         content: "width=device-width, initial-scale=1",
       },
-      { title: "yej-sira" },
+      { title: "YEJSIRA" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),

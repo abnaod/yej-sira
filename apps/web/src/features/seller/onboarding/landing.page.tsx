@@ -24,6 +24,9 @@ export function SellerLandingPage() {
           <h1 className="font-serif text-4xl font-normal tracking-tight text-foreground md:text-5xl">
             Sell on Yej Sira
           </h1>
+          <p className="mt-3 max-w-xl text-xss text-muted-foreground">
+            For makers and shops in Ethiopia and the diaspora.
+          </p>
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
             Open your shop, reach customers across Ethiopia and the diaspora, and manage listings from one
             place. Complete a short application to get started.

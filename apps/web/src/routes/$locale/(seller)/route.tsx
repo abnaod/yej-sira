@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { SellerLayout } from "@/components/layouts/seller-layout";
+import { ShopLayout } from "@/components/layouts/shop-layout";
 
 export const Route = createFileRoute("/$locale/(seller)")({
-  component: SellerLayout,
+  component: ShopLayout,
 });

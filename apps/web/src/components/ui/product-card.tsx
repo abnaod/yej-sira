@@ -119,7 +119,7 @@ export function ProductCard({
             "absolute z-10 flex items-center justify-center rounded-full bg-white shadow-sm",
             compact ? "right-1.5 top-1.5 h-7 w-7" : "right-2 top-2 h-8 w-8",
             "transition-[opacity,transform,colors] duration-200 ease-out",
-            "hover:bg-neutral-50",
+            "hover:bg-gray-100 dark:hover:bg-gray-800",
             isFavorite
               ? cn(
                   "pointer-events-auto translate-y-0 scale-100 opacity-100",

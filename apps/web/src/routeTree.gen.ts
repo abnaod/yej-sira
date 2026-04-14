@@ -31,8 +31,10 @@ import { Route as LocalesellerSellDashboardRouteImport } from './routes/$locale/
 import { Route as LocalestorePaymentsSuccessIndexRouteImport } from './routes/$locale/(store)/payments/success/index'
 import { Route as LocalesellerSellProductsIndexRouteImport } from './routes/$locale/(seller)/sell/products/index'
 import { Route as LocalesellerSellOrdersIndexRouteImport } from './routes/$locale/(seller)/sell/orders/index'
+import { Route as LocalestorePreviewProductsProductIdRouteImport } from './routes/$locale/(store)/preview/products.$productId'
 import { Route as LocalesellerSellProductsNewRouteImport } from './routes/$locale/(seller)/sell/products/new'
 import { Route as LocalesellerSellProductsProductIdRouteImport } from './routes/$locale/(seller)/sell/products/$productId'
+import { Route as LocalesellerSellOrdersOrderIdRouteImport } from './routes/$locale/(seller)/sell/orders/$orderId'
 
 const LocaleRoute = LocaleRouteImport.update({
   id: '/$locale',
@@ -154,6 +156,12 @@ const LocalesellerSellOrdersIndexRoute =
     path: '/orders/',
     getParentRoute: () => LocalesellerSellRouteRoute,
   } as any)
+const LocalestorePreviewProductsProductIdRoute =
+  LocalestorePreviewProductsProductIdRouteImport.update({
+    id: '/preview/products/$productId',
+    path: '/preview/products/$productId',
+    getParentRoute: () => LocalestoreRouteRoute,
+  } as any)
 const LocalesellerSellProductsNewRoute =
   LocalesellerSellProductsNewRouteImport.update({
     id: '/products/new',
@@ -164,6 +172,12 @@ const LocalesellerSellProductsProductIdRoute =
   LocalesellerSellProductsProductIdRouteImport.update({
     id: '/products/$productId',
     path: '/products/$productId',
+    getParentRoute: () => LocalesellerSellRouteRoute,
+  } as any)
+const LocalesellerSellOrdersOrderIdRoute =
+  LocalesellerSellOrdersOrderIdRouteImport.update({
+    id: '/orders/$orderId',
+    path: '/orders/$orderId',
     getParentRoute: () => LocalesellerSellRouteRoute,
   } as any)
 
@@ -185,8 +199,10 @@ export interface FileRoutesByFullPath {
   '/$locale/favorites/': typeof LocalestoreFavoritesIndexRoute
   '/$locale/orders/': typeof LocalestoreOrdersIndexRoute
   '/$locale/search/': typeof LocalestoreSearchIndexRoute
+  '/$locale/sell/orders/$orderId': typeof LocalesellerSellOrdersOrderIdRoute
   '/$locale/sell/products/$productId': typeof LocalesellerSellProductsProductIdRoute
   '/$locale/sell/products/new': typeof LocalesellerSellProductsNewRoute
+  '/$locale/preview/products/$productId': typeof LocalestorePreviewProductsProductIdRoute
   '/$locale/sell/orders/': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/sell/products/': typeof LocalesellerSellProductsIndexRoute
   '/$locale/payments/success/': typeof LocalestorePaymentsSuccessIndexRoute
@@ -207,8 +223,10 @@ export interface FileRoutesByTo {
   '/$locale/favorites': typeof LocalestoreFavoritesIndexRoute
   '/$locale/orders': typeof LocalestoreOrdersIndexRoute
   '/$locale/search': typeof LocalestoreSearchIndexRoute
+  '/$locale/sell/orders/$orderId': typeof LocalesellerSellOrdersOrderIdRoute
   '/$locale/sell/products/$productId': typeof LocalesellerSellProductsProductIdRoute
   '/$locale/sell/products/new': typeof LocalesellerSellProductsNewRoute
+  '/$locale/preview/products/$productId': typeof LocalestorePreviewProductsProductIdRoute
   '/$locale/sell/orders': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/sell/products': typeof LocalesellerSellProductsIndexRoute
   '/$locale/payments/success': typeof LocalestorePaymentsSuccessIndexRoute
@@ -234,8 +252,10 @@ export interface FileRoutesById {
   '/$locale/(store)/favorites/': typeof LocalestoreFavoritesIndexRoute
   '/$locale/(store)/orders/': typeof LocalestoreOrdersIndexRoute
   '/$locale/(store)/search/': typeof LocalestoreSearchIndexRoute
+  '/$locale/(seller)/sell/orders/$orderId': typeof LocalesellerSellOrdersOrderIdRoute
   '/$locale/(seller)/sell/products/$productId': typeof LocalesellerSellProductsProductIdRoute
   '/$locale/(seller)/sell/products/new': typeof LocalesellerSellProductsNewRoute
+  '/$locale/(store)/preview/products/$productId': typeof LocalestorePreviewProductsProductIdRoute
   '/$locale/(seller)/sell/orders/': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/(seller)/sell/products/': typeof LocalesellerSellProductsIndexRoute
   '/$locale/(store)/payments/success/': typeof LocalestorePaymentsSuccessIndexRoute
@@ -260,8 +280,10 @@ export interface FileRouteTypes {
     | '/$locale/favorites/'
     | '/$locale/orders/'
     | '/$locale/search/'
+    | '/$locale/sell/orders/$orderId'
     | '/$locale/sell/products/$productId'
     | '/$locale/sell/products/new'
+    | '/$locale/preview/products/$productId'
     | '/$locale/sell/orders/'
     | '/$locale/sell/products/'
     | '/$locale/payments/success/'
@@ -282,8 +304,10 @@ export interface FileRouteTypes {
     | '/$locale/favorites'
     | '/$locale/orders'
     | '/$locale/search'
+    | '/$locale/sell/orders/$orderId'
     | '/$locale/sell/products/$productId'
     | '/$locale/sell/products/new'
+    | '/$locale/preview/products/$productId'
     | '/$locale/sell/orders'
     | '/$locale/sell/products'
     | '/$locale/payments/success'
@@ -308,8 +332,10 @@ export interface FileRouteTypes {
     | '/$locale/(store)/favorites/'
     | '/$locale/(store)/orders/'
     | '/$locale/(store)/search/'
+    | '/$locale/(seller)/sell/orders/$orderId'
     | '/$locale/(seller)/sell/products/$productId'
     | '/$locale/(seller)/sell/products/new'
+    | '/$locale/(store)/preview/products/$productId'
     | '/$locale/(seller)/sell/orders/'
     | '/$locale/(seller)/sell/products/'
     | '/$locale/(store)/payments/success/'
@@ -476,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalesellerSellOrdersIndexRouteImport
       parentRoute: typeof LocalesellerSellRouteRoute
     }
+    '/$locale/(store)/preview/products/$productId': {
+      id: '/$locale/(store)/preview/products/$productId'
+      path: '/preview/products/$productId'
+      fullPath: '/$locale/preview/products/$productId'
+      preLoaderRoute: typeof LocalestorePreviewProductsProductIdRouteImport
+      parentRoute: typeof LocalestoreRouteRoute
+    }
     '/$locale/(seller)/sell/products/new': {
       id: '/$locale/(seller)/sell/products/new'
       path: '/products/new'
@@ -490,6 +523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalesellerSellProductsProductIdRouteImport
       parentRoute: typeof LocalesellerSellRouteRoute
     }
+    '/$locale/(seller)/sell/orders/$orderId': {
+      id: '/$locale/(seller)/sell/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/$locale/sell/orders/$orderId'
+      preLoaderRoute: typeof LocalesellerSellOrdersOrderIdRouteImport
+      parentRoute: typeof LocalesellerSellRouteRoute
+    }
   }
 }
 
@@ -497,6 +537,7 @@ interface LocalesellerSellRouteRouteChildren {
   LocalesellerSellDashboardRoute: typeof LocalesellerSellDashboardRoute
   LocalesellerSellRegisterRoute: typeof LocalesellerSellRegisterRoute
   LocalesellerSellIndexRoute: typeof LocalesellerSellIndexRoute
+  LocalesellerSellOrdersOrderIdRoute: typeof LocalesellerSellOrdersOrderIdRoute
   LocalesellerSellProductsProductIdRoute: typeof LocalesellerSellProductsProductIdRoute
   LocalesellerSellProductsNewRoute: typeof LocalesellerSellProductsNewRoute
   LocalesellerSellOrdersIndexRoute: typeof LocalesellerSellOrdersIndexRoute
@@ -507,6 +548,7 @@ const LocalesellerSellRouteRouteChildren: LocalesellerSellRouteRouteChildren = {
   LocalesellerSellDashboardRoute: LocalesellerSellDashboardRoute,
   LocalesellerSellRegisterRoute: LocalesellerSellRegisterRoute,
   LocalesellerSellIndexRoute: LocalesellerSellIndexRoute,
+  LocalesellerSellOrdersOrderIdRoute: LocalesellerSellOrdersOrderIdRoute,
   LocalesellerSellProductsProductIdRoute:
     LocalesellerSellProductsProductIdRoute,
   LocalesellerSellProductsNewRoute: LocalesellerSellProductsNewRoute,
@@ -542,6 +584,7 @@ interface LocalestoreRouteRouteChildren {
   LocalestoreFavoritesIndexRoute: typeof LocalestoreFavoritesIndexRoute
   LocalestoreOrdersIndexRoute: typeof LocalestoreOrdersIndexRoute
   LocalestoreSearchIndexRoute: typeof LocalestoreSearchIndexRoute
+  LocalestorePreviewProductsProductIdRoute: typeof LocalestorePreviewProductsProductIdRoute
   LocalestorePaymentsSuccessIndexRoute: typeof LocalestorePaymentsSuccessIndexRoute
 }
 
@@ -557,6 +600,8 @@ const LocalestoreRouteRouteChildren: LocalestoreRouteRouteChildren = {
   LocalestoreFavoritesIndexRoute: LocalestoreFavoritesIndexRoute,
   LocalestoreOrdersIndexRoute: LocalestoreOrdersIndexRoute,
   LocalestoreSearchIndexRoute: LocalestoreSearchIndexRoute,
+  LocalestorePreviewProductsProductIdRoute:
+    LocalestorePreviewProductsProductIdRoute,
   LocalestorePaymentsSuccessIndexRoute: LocalestorePaymentsSuccessIndexRoute,
 }
 

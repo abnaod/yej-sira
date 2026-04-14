@@ -133,7 +133,7 @@ export function CategoryFilterDrawer({
           <DrawerClose asChild>
             <button
               type="button"
-              className="rounded-full p-2 text-foreground transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="rounded-full p-2 text-foreground transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:hover:bg-gray-800"
               aria-label="Close filters"
             >
               <X className="size-5" />

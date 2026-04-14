@@ -94,7 +94,7 @@ export function SearchPage() {
                   "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
                   active
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-foreground hover:bg-neutral-50",
+                    : "border-border bg-background text-foreground hover:bg-gray-100 dark:hover:bg-gray-800",
                 )}
               >
                 {t.name}

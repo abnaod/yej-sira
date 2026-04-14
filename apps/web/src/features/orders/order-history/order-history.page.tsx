@@ -15,11 +15,11 @@ type OrderRow = OrdersListResponse["orders"][number];
 
 const statusConfig: Record<
   string,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" | "paid" }
 > = {
   pending: { label: "Pending", variant: "outline" },
   awaiting_payment: { label: "Awaiting payment", variant: "secondary" },
-  paid: { label: "Paid", variant: "default" },
+  paid: { label: "Paid", variant: "paid" },
   fulfilled: { label: "Fulfilled", variant: "default" },
   cancelled: { label: "Cancelled", variant: "destructive" },
 };
@@ -110,7 +110,7 @@ function OrderListRow({ order, locale }: { order: OrderRow; locale: string }) {
         params={{ locale, orderId: order.id }}
         className={cn(
           "flex flex-col gap-3 rounded-lg border border-border bg-white p-4 text-sm transition-colors",
-          "hover:bg-neutral-50/80 sm:flex-row sm:items-center sm:justify-between sm:gap-4",
+          "hover:bg-gray-100 sm:flex-row sm:items-center sm:justify-between sm:gap-4 dark:hover:bg-gray-800",
         )}
       >
         <div className="min-w-0 flex-1 flex flex-col gap-2">

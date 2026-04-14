@@ -7,21 +7,29 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { useLocale } from "@/lib/locale-path";
 import type { Locale } from "@ys/intl";
 
-import { SellerNavUser } from "./seller-nav-user";
+import { SellerNavUser } from "./nav-user";
 
 function matchesSellPath(pathname: string, locale: Locale, suffix: string) {
   const prefix = `/${locale}/sell`;
   return pathname === `${prefix}${suffix}` || pathname.startsWith(`${prefix}${suffix}/`);
+}
+
+/** `/sell/orders/:orderId` — not the orders list. */
+function isSellerOrderDetailPath(pathname: string, locale: Locale) {
+  const base = `/${locale}/sell/orders`;
+  if (!pathname.startsWith(base)) return false;
+  const after = pathname.slice(base.length).replace(/^\//, "").replace(/\/$/, "");
+  return after.length > 0;
 }
 
 /** Left nav for the seller portal (shadcn sidebar-01–style `AppSidebar`). */
@@ -39,18 +47,29 @@ export function SellerAppSidebar() {
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <Store className="size-4" />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Seller</span>
-                  <span className="truncate text-xs text-sidebar-foreground/70">Portal</span>
+                <div className="grid flex-1 text-left text-xss leading-tight">
+                  {isSellerOrderDetailPath(pathname, locale) ? (
+                    <>
+                      <span className="truncate font-medium">Portal</span>
+                      <span className="truncate text-xxs text-sidebar-foreground/70">
+                        Order details
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="truncate font-medium">Seller</span>
+                      <span className="truncate text-xxs text-sidebar-foreground/70">Portal</span>
+                    </>
+                  )}
                 </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+      <SidebarSeparator />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Shop</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -80,7 +99,7 @@ export function SellerAppSidebar() {
                   asChild
                   isActive={matchesSellPath(pathname, locale, "/products")}
                 >
-                  <Link to="/$locale/sell/products" params={{ locale }}>
+                  <Link to="/$locale/sell/products" params={{ locale }} search={{ new: false, edit: undefined }}>
                     <Package />
                     <span>Products</span>
                   </Link>
