@@ -3,7 +3,7 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 
 import { apiFetchJson } from "@/lib/api";
 
-export type SellerProductListItem = {
+export type SellerListingListItem = {
   id: string;
   slug: string;
   name: string;
@@ -18,12 +18,12 @@ export type SellerProductListItem = {
   updatedAt: string;
 };
 
-export type SellerProductsResponse = { products: SellerProductListItem[] };
+export type SellerListingsResponse = { listings: SellerListingListItem[] };
 
-export const sellerProductsQuery = (locale: Locale) =>
+export const sellerListingsQuery = (locale: Locale) =>
   queryOptions({
-    queryKey: ["seller", "products", locale] as const,
-    queryFn: () => apiFetchJson<SellerProductsResponse>("/api/seller/products", { locale }),
+    queryKey: ["seller", "listings", locale] as const,
+    queryFn: () => apiFetchJson<SellerListingsResponse>("/api/seller/listings", { locale }),
   });
 
 export type SellerAttributeInput = {
@@ -43,8 +43,8 @@ export type CategoryAttributeDefinitionDto = {
   options?: { key: string; label: string }[];
 };
 
-export type SellerProductDetailResponse = {
-  product: {
+export type SellerListingDetailResponse = {
+  listing: {
     id: string;
     slug: string;
     name: string;
@@ -75,12 +75,12 @@ export type SellerProductDetailResponse = {
   };
 };
 
-export const sellerProductDetailQuery = (locale: Locale, productId: string) =>
+export const sellerListingDetailQuery = (locale: Locale, listingId: string) =>
   queryOptions({
-    queryKey: ["seller", "product", locale, productId] as const,
+    queryKey: ["seller", "listing", locale, listingId] as const,
     queryFn: () =>
-      apiFetchJson<SellerProductDetailResponse>(
-        `/api/seller/products/${encodeURIComponent(productId)}`,
+      apiFetchJson<SellerListingDetailResponse>(
+        `/api/seller/listings/${encodeURIComponent(listingId)}`,
         { locale },
       ),
   });
@@ -96,7 +96,7 @@ export const categoryAttributeDefinitionsQuery = (locale: Locale, categorySlug: 
     enabled: Boolean(categorySlug),
   });
 
-export type CreateSellerProductBody = {
+export type CreateSellerListingBody = {
   categorySlug?: string;
   categoryId?: string;
   name: string;
@@ -119,23 +119,23 @@ export type CreateSellerProductBody = {
   attributes?: SellerAttributeInput[];
 };
 
-export function createSellerProductMutationOptions(queryClient: QueryClient, locale: Locale) {
+export function createSellerListingMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
     mutationKey: ["seller", "create", locale] as const,
-    mutationFn: (body: CreateSellerProductBody) =>
-      apiFetchJson<{ product: { id: string; slug: string } }>("/api/seller/products", {
+    mutationFn: (body: CreateSellerListingBody) =>
+      apiFetchJson<{ listing: { id: string; slug: string } }>("/api/seller/listings", {
         method: "POST",
         body: JSON.stringify(body),
         locale,
       }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["seller", "products", locale] });
+      void queryClient.invalidateQueries({ queryKey: ["seller", "listings", locale] });
       void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
     },
   });
 }
 
-export type PatchSellerProductBody = Partial<{
+export type PatchSellerListingBody = Partial<{
   categorySlug: string;
   categoryId: string;
   name: string;
@@ -158,61 +158,61 @@ export type PatchSellerProductBody = Partial<{
   attributes: SellerAttributeInput[];
 }>;
 
-export function updateSellerProductMutationOptions(
+export function updateSellerListingMutationOptions(
   queryClient: QueryClient,
   locale: Locale,
-  productId: string,
+  listingId: string,
 ) {
   return mutationOptions({
-    mutationKey: ["seller", "patch", locale, productId] as const,
-    mutationFn: (body: PatchSellerProductBody) =>
-      apiFetchJson<{ ok: boolean }>(`/api/seller/products/${encodeURIComponent(productId)}`, {
+    mutationKey: ["seller", "patch", locale, listingId] as const,
+    mutationFn: (body: PatchSellerListingBody) =>
+      apiFetchJson<{ ok: boolean }>(`/api/seller/listings/${encodeURIComponent(listingId)}`, {
         method: "PATCH",
         body: JSON.stringify(body),
         locale,
       }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["seller", "products", locale] });
+      void queryClient.invalidateQueries({ queryKey: ["seller", "listings", locale] });
       void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
       void queryClient.invalidateQueries({
-        queryKey: ["seller", "product", locale, productId],
+        queryKey: ["seller", "listing", locale, listingId],
       });
     },
   });
 }
 
-export function deleteSellerProductMutationOptions(queryClient: QueryClient, locale: Locale) {
+export function deleteSellerListingMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
     mutationKey: ["seller", "delete", locale] as const,
-    mutationFn: (productId: string) =>
-      apiFetchJson<{ ok: boolean }>(`/api/seller/products/${encodeURIComponent(productId)}`, {
+    mutationFn: (listingId: string) =>
+      apiFetchJson<{ ok: boolean }>(`/api/seller/listings/${encodeURIComponent(listingId)}`, {
         method: "DELETE",
         locale,
       }),
-    onSuccess: (_data, productId) => {
-      void queryClient.invalidateQueries({ queryKey: ["seller", "products", locale] });
+    onSuccess: (_data, listingId) => {
+      void queryClient.invalidateQueries({ queryKey: ["seller", "listings", locale] });
       void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
       void queryClient.invalidateQueries({
-        queryKey: ["seller", "product", locale, productId],
+        queryKey: ["seller", "listing", locale, listingId],
       });
     },
   });
 }
 
-export function publishSellerProductMutationOptions(queryClient: QueryClient, locale: Locale) {
+export function publishSellerListingMutationOptions(queryClient: QueryClient, locale: Locale) {
   return mutationOptions({
     mutationKey: ["seller", "publish", locale] as const,
-    mutationFn: (productId: string) =>
-      apiFetchJson<{ ok: boolean }>(`/api/seller/products/${encodeURIComponent(productId)}`, {
+    mutationFn: (listingId: string) =>
+      apiFetchJson<{ ok: boolean }>(`/api/seller/listings/${encodeURIComponent(listingId)}`, {
         method: "PATCH",
         body: JSON.stringify({ isPublished: true }),
         locale,
       }),
-    onSuccess: (_data, productId) => {
-      void queryClient.invalidateQueries({ queryKey: ["seller", "products", locale] });
+    onSuccess: (_data, listingId) => {
+      void queryClient.invalidateQueries({ queryKey: ["seller", "listings", locale] });
       void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
       void queryClient.invalidateQueries({
-        queryKey: ["seller", "product", locale, productId],
+        queryKey: ["seller", "listing", locale, listingId],
       });
     },
   });

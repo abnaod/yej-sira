@@ -2,14 +2,15 @@ import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { assetUrl } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/star-rating";
-import type { ProductPromotionDto } from "@/features/storefront";
-import { useProductFavoriteRow } from "@/features/favorites/use-product-favorite-row";
+import type { ListingPromotionDto } from "@/features/storefront";
+import { useListingFavoriteRow } from "@/features/favorites/use-listing-favorite-row";
 
-export interface ProductCardProps {
+export interface ListingCardProps {
   slug: string;
   defaultVariantId?: string;
   name: string;
@@ -20,14 +21,14 @@ export interface ProductCardProps {
   rating: number;
   reviewCount: number;
   shop?: { slug: string; name: string; imageUrl: string | null };
-  promotion?: ProductPromotionDto;
+  promotion?: ListingPromotionDto;
   onAddToCart?: (variantId: string) => void;
   /** Compact layout for carousels / horizontal rows. */
   variant?: "default" | "compact";
   className?: string;
 }
 
-export function ProductCard({
+export function ListingCard({
   slug,
   defaultVariantId,
   name,
@@ -42,11 +43,11 @@ export function ProductCard({
   onAddToCart,
   variant = "default",
   className,
-}: ProductCardProps) {
+}: ListingCardProps) {
   const { t } = useTranslation("common");
   const locale = useLocale();
   const { isFavorite, onToggleWishlist, pending: favoritePending } =
-    useProductFavoriteRow(slug);
+    useListingFavoriteRow(slug);
   const onSale = originalPrice != null && originalPrice > price;
   const compact = variant === "compact";
   return (
@@ -58,8 +59,8 @@ export function ProductCard({
       )}
     >
       <Link
-        to="/$locale/products/$productId"
-        params={{ locale, productId: slug }}
+        to="/$locale/listings/$listingId"
+        params={{ locale, listingId: slug }}
         className={cn(
           "relative overflow-hidden bg-neutral-50",
           compact
@@ -68,7 +69,7 @@ export function ProductCard({
         )}
       >
         <img
-          src={imageUrl}
+          src={assetUrl(imageUrl)}
           alt={name}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
@@ -99,7 +100,7 @@ export function ProductCard({
                     : "px-2 py-0.5 text-[10px]",
                 )}
               >
-                {t("productSale")}
+                {t("listingSale")}
               </span>
             )}
           </div>
@@ -153,8 +154,8 @@ export function ProductCard({
       >
         <div className="flex min-w-0 items-start justify-between gap-2">
           <Link
-            to="/$locale/products/$productId"
-            params={{ locale, productId: slug }}
+            to="/$locale/listings/$listingId"
+            params={{ locale, listingId: slug }}
             className="min-w-0 flex-1"
           >
             <h3

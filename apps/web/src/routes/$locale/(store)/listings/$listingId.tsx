@@ -1,21 +1,21 @@
 import type { Locale } from "@ys/intl";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { ProductPage } from "@/features/product";
+import { ListingPage } from "@/features/listings";
 import {
-  moreFromShopProductsQuery,
-  productDetailQuery,
-  relatedProductsQuery,
-} from "@/features/product/product.queries";
+  moreFromShopListingsQuery,
+  listingDetailQuery,
+  relatedListingsQuery,
+} from "@/features/listings/listings.queries";
 
-export const Route = createFileRoute("/$locale/(store)/products/$productId")({
+export const Route = createFileRoute("/$locale/(store)/listings/$listingId")({
   loader: async ({ context, params }) => {
     const locale = params.locale as Locale;
     await Promise.all([
-      context.queryClient.ensureQueryData(productDetailQuery(locale, params.productId)),
-      context.queryClient.ensureQueryData(relatedProductsQuery(locale, params.productId)),
+      context.queryClient.ensureQueryData(listingDetailQuery(locale, params.listingId)),
+      context.queryClient.ensureQueryData(relatedListingsQuery(locale, params.listingId)),
       context.queryClient.ensureQueryData(
-        moreFromShopProductsQuery(locale, params.productId),
+        moreFromShopListingsQuery(locale, params.listingId),
       ),
     ]);
   },
@@ -27,5 +27,5 @@ export const Route = createFileRoute("/$locale/(store)/products/$productId")({
       {error instanceof Error ? error.message : "Something went wrong"}
     </main>
   ),
-  component: ProductPage,
+  component: ListingPage,
 });

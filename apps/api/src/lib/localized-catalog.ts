@@ -8,7 +8,7 @@ export function pickCategoryName(
   return row.translations[0]?.name ?? row.name;
 }
 
-export function pickProductName(
+export function pickListingName(
   row: { name: string; translations: { name: string }[] },
   locale: Locale,
 ): string {
@@ -16,7 +16,7 @@ export function pickProductName(
   return row.translations[0]?.name ?? row.name;
 }
 
-export function pickProductDescription(
+export function pickListingDescription(
   row: { description: string; translations: { description: string }[] },
   locale: Locale,
 ): string {

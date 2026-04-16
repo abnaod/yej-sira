@@ -1,29 +1,29 @@
 import type { Locale } from "@ys/intl";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-import { ProductListItem } from "@/components/ui/product-list-item";
+import { ListingListItem } from "@/components/ui/listing-list-item";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { moreFromShopProductsQuery } from "../product.queries";
-import { ProductReviewsSection } from "./product-reviews-section";
+import { moreFromShopListingsQuery } from "../listings.queries";
+import { ListingReviewsSection } from "./listings-reviews-section";
 
-interface ProductDetailTabsProps {
+interface ListingDetailTabsProps {
   locale: Locale;
-  productSlug: string;
+  listingSlug: string;
   description: string;
   shopName: string;
   attributes: { key: string; label: string; displayValue: string }[];
 }
 
-export function ProductDetailTabs({
+export function ListingDetailTabs({
   locale,
-  productSlug,
+  listingSlug,
   description,
   shopName,
   attributes,
-}: ProductDetailTabsProps) {
+}: ListingDetailTabsProps) {
   const { data: shopData } = useSuspenseQuery(
-    moreFromShopProductsQuery(locale, productSlug),
+    moreFromShopListingsQuery(locale, listingSlug),
   );
 
   return (
@@ -74,15 +74,15 @@ export function ProductDetailTabs({
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No description has been added for this product yet.
+              No description has been added for this listing yet.
             </p>
           )}
         </TabsContent>
 
         <TabsContent value="reviews" className="mt-0">
-          <ProductReviewsSection
+          <ListingReviewsSection
             locale={locale}
-            productSlug={productSlug}
+            listingSlug={listingSlug}
             embedded
           />
         </TabsContent>
@@ -92,14 +92,14 @@ export function ProductDetailTabs({
             Other listings from{" "}
             <span className="font-medium text-foreground">{shopName}</span>.
           </p>
-          {shopData.products.length === 0 ? (
+          {shopData.listings.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No other products from this shop right now.
+              No other listings from this shop right now.
             </p>
           ) : (
             <div className="space-y-2">
-              {shopData.products.map((p) => (
-                <ProductListItem
+              {shopData.listings.map((p) => (
+                <ListingListItem
                   key={p.id}
                   id={p.slug}
                   name={p.name}

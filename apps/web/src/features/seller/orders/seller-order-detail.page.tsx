@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
+import { assetUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { sellerOrderDetailQuery } from "./orders.queries";
 
@@ -259,7 +260,7 @@ export function SellerOrderDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(17.5rem,20rem)] xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex min-w-0 flex-col gap-6">
-          <OrderSection title="Order items" description="Products from your shop on this order.">
+          <OrderSection title="Order items" description="Listings from your shop on this order.">
             <ul className="divide-y divide-border">
               {order.items.map((item) => {
                 const lineTotal = item.quantity * item.unitPrice;
@@ -268,7 +269,7 @@ export function SellerOrderDetailPage() {
                     <div className="relative size-20 shrink-0 overflow-hidden rounded-lg border border-border bg-muted/50">
                       {item.imageUrl ? (
                         <img
-                          src={item.imageUrl}
+                          src={assetUrl(item.imageUrl)}
                           alt=""
                           className="size-full object-contain p-1.5"
                         />
@@ -280,7 +281,7 @@ export function SellerOrderDetailPage() {
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-center gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                       <div className="min-w-0">
-                        <p className="font-medium leading-snug text-foreground">{item.productName}</p>
+                        <p className="font-medium leading-snug text-foreground">{item.listingName}</p>
                         {item.variantLabel ? (
                           <p className="mt-1 text-sm text-muted-foreground">{item.variantLabel}</p>
                         ) : null}

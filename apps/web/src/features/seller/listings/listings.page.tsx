@@ -16,74 +16,74 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { myShopQuery } from "../shared/shop.queries";
-import { SellerProductEditDialogForm, SellerProductNewDialogForm } from "./product-editor.page";
-import { getSellerProductColumns } from "./products-columns";
+import { SellerListingEditDialogForm, SellerListingNewDialogForm } from "./listing-editor.page";
+import { getSellerListingColumns } from "./listings-columns";
 import {
-  deleteSellerProductMutationOptions,
-  publishSellerProductMutationOptions,
-  sellerProductsQuery,
-} from "./products.queries";
+  deleteSellerListingMutationOptions,
+  publishSellerListingMutationOptions,
+  sellerListingsQuery,
+} from "./listings.queries";
 import { SellerShellDataTable } from "../shared/shell-data-table";
 
-const routeApi = getRouteApi("/$locale/(seller)/sell/products/");
+const routeApi = getRouteApi("/$locale/(seller)/sell/listings/");
 
-export function SellerProductsPage() {
+export function SellerListingsPage() {
   const locale = useLocale() as Locale;
   const navigate = useNavigate();
   const { new: openFromUrl, edit: editFromUrl } = routeApi.useSearch();
-  const [newProductOpen, setNewProductOpen] = useState(false);
-  const [newProductFormKey, setNewProductFormKey] = useState(0);
-  const [editProductOpen, setEditProductOpen] = useState(false);
-  const [editProductId, setEditProductId] = useState<string | null>(null);
-  const [editProductFormKey, setEditProductFormKey] = useState(0);
+  const [newListingOpen, setNewListingOpen] = useState(false);
+  const [newListingFormKey, setNewListingFormKey] = useState(0);
+  const [editListingOpen, setEditListingOpen] = useState(false);
+  const [editListingId, setEditListingId] = useState<string | null>(null);
+  const [editListingFormKey, setEditListingFormKey] = useState(0);
   const { data: session } = authClient.useSession();
   const shopState = useQuery({
     ...myShopQuery(locale),
     enabled: !!session?.user,
   });
-  const productsState = useQuery({
-    ...sellerProductsQuery(locale),
+  const listingsState = useQuery({
+    ...sellerListingsQuery(locale),
     enabled: !!session?.user && shopState.data?.shop?.status === "active",
   });
 
   const queryClient = useQueryClient();
-  const closeEditProductDialog = useCallback(() => {
-    setEditProductOpen(false);
-    setEditProductId(null);
+  const closeEditListingDialog = useCallback(() => {
+    setEditListingOpen(false);
+    setEditListingId(null);
   }, []);
 
-  const openNewProductDialog = useCallback(() => {
-    setEditProductOpen(false);
-    setEditProductId(null);
-    setNewProductFormKey((k) => k + 1);
-    setNewProductOpen(true);
+  const openNewListingDialog = useCallback(() => {
+    setEditListingOpen(false);
+    setEditListingId(null);
+    setNewListingFormKey((k) => k + 1);
+    setNewListingOpen(true);
   }, []);
 
-  const deleteProductMut = useMutation(deleteSellerProductMutationOptions(queryClient, locale));
-  const publishProductMut = useMutation(publishSellerProductMutationOptions(queryClient, locale));
+  const deleteListingMut = useMutation(deleteSellerListingMutationOptions(queryClient, locale));
+  const publishListingMut = useMutation(publishSellerListingMutationOptions(queryClient, locale));
 
-  const onPublishProduct = useCallback(
-    (productId: string) => {
-      publishProductMut.mutate(productId, {
+  const onPublishListing = useCallback(
+    (listingId: string) => {
+      publishListingMut.mutate(listingId, {
         onSuccess: () => {
-          toast.success("Product published");
+          toast.success("Listing published");
         },
         onError: (e) => {
           toast.error((e as Error).message);
         },
       });
     },
-    [publishProductMut],
+    [publishListingMut],
   );
 
-  const onDeleteProduct = useCallback(
-    (productId: string) => {
-      if (!window.confirm("Delete this product?")) return;
-      deleteProductMut.mutate(productId, {
+  const onDeleteListing = useCallback(
+    (listingId: string) => {
+      if (!window.confirm("Delete this listing?")) return;
+      deleteListingMut.mutate(listingId, {
         onSuccess: () => {
-          setEditProductId((current) => {
-            if (current === productId) {
-              setEditProductOpen(false);
+          setEditListingId((current) => {
+            if (current === listingId) {
+              setEditListingOpen(false);
               return null;
             }
             return current;
@@ -91,65 +91,65 @@ export function SellerProductsPage() {
         },
       });
     },
-    [deleteProductMut],
+    [deleteListingMut],
   );
 
-  const deletingProductId =
-    deleteProductMut.isPending && deleteProductMut.variables != null
-      ? deleteProductMut.variables
+  const deletingListingId =
+    deleteListingMut.isPending && deleteListingMut.variables != null
+      ? deleteListingMut.variables
       : null;
 
-  const publishingProductId =
-    publishProductMut.isPending && publishProductMut.variables != null
-      ? publishProductMut.variables
+  const publishingListingId =
+    publishListingMut.isPending && publishListingMut.variables != null
+      ? publishListingMut.variables
       : null;
 
   const columns = useMemo(
     () =>
-      getSellerProductColumns(locale, {
-        onDeleteProduct,
-        deletingProductId,
-        onPublishProduct,
-        publishingProductId,
+      getSellerListingColumns(locale, {
+        onDeleteListing,
+        deletingListingId,
+        onPublishListing,
+        publishingListingId,
       }),
-    [locale, onDeleteProduct, deletingProductId, onPublishProduct, publishingProductId],
+    [locale, onDeleteListing, deletingListingId, onPublishListing, publishingListingId],
   );
 
   useEffect(() => {
     if (!openFromUrl) return;
     void navigate({
-      to: "/$locale/sell/products",
+      to: "/$locale/sell/listings",
       params: { locale },
       search: { new: false, edit: undefined },
       replace: true,
     });
     if (!session?.user) return;
-    setEditProductOpen(false);
-    setEditProductId(null);
-    setNewProductFormKey((k) => k + 1);
-    setNewProductOpen(true);
+    setEditListingOpen(false);
+    setEditListingId(null);
+    setNewListingFormKey((k) => k + 1);
+    setNewListingOpen(true);
   }, [openFromUrl, locale, navigate, session?.user]);
 
   useEffect(() => {
     if (!editFromUrl) return;
     const id = editFromUrl;
     void navigate({
-      to: "/$locale/sell/products",
+      to: "/$locale/sell/listings",
       params: { locale },
       search: { new: false, edit: undefined },
       replace: true,
     });
     if (!session?.user) return;
-    setNewProductOpen(false);
-    setEditProductFormKey((k) => k + 1);
-    setEditProductId(id);
-    setEditProductOpen(true);
+    setNewListingOpen(false);
+    setEditListingFormKey((k) => k + 1);
+    setEditListingId(id);
+    setEditListingOpen(true);
   }, [editFromUrl, locale, navigate, session?.user]);
 
   if (!session?.user) {
     return (
       <div className="mx-auto max-w-3xl px-4">
-        <p className="text-muted-foreground">Sign in to manage your products.</p>
+        <p className="text-muted-foreground">Sign in to manage your listings.</p>
       </div>
     );
   }
@@ -180,39 +180,39 @@ export function SellerProductsPage() {
     return (
       <div className="mx-auto max-w-3xl px-4">
         <p className="text-muted-foreground">
-          Your shop is {shop.status}. You can list products once it&apos;s active.
+          Your shop is {shop.status}. You can list listings once it&apos;s active.
         </p>
       </div>
     );
   }
 
-  const products = productsState.data?.products ?? [];
-  const productsLoading = productsState.isLoading;
+  const listings = listingsState.data?.listings ?? [];
+  const listingsLoading = listingsState.isLoading;
 
   return (
     <div className="@container/main flex min-h-0 flex-1 flex-col">
-      <Dialog open={newProductOpen} onOpenChange={setNewProductOpen}>
+      <Dialog open={newListingOpen} onOpenChange={setNewListingOpen}>
         <DialogContent
           showCloseButton
           className="flex max-h-[min(90vh,56rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
         >
           <DialogHeader className="shrink-0 gap-1 border-b px-6 py-4 text-left">
-            <DialogTitle>New product</DialogTitle>
+            <DialogTitle>New listing</DialogTitle>
             <DialogDescription>
               Add category, variants, images, and description for your listing.
             </DialogDescription>
           </DialogHeader>
-          <SellerProductNewDialogForm
-            key={newProductFormKey}
-            onCreated={() => setNewProductOpen(false)}
-            onCancel={() => setNewProductOpen(false)}
+          <SellerListingNewDialogForm
+            key={newListingFormKey}
+            onCreated={() => setNewListingOpen(false)}
+            onCancel={() => setNewListingOpen(false)}
           />
         </DialogContent>
       </Dialog>
       <Dialog
-        open={editProductOpen}
+        open={editListingOpen}
         onOpenChange={(open) => {
-          if (!open) closeEditProductDialog();
+          if (!open) closeEditListingDialog();
         }}
       >
         <DialogContent
@@ -220,34 +220,34 @@ export function SellerProductsPage() {
           className="flex max-h-[min(90vh,56rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
         >
           <DialogHeader className="shrink-0 gap-1 border-b px-6 py-4 text-left">
-            <DialogTitle>Edit product</DialogTitle>
+            <DialogTitle>Edit listing</DialogTitle>
             <DialogDescription>
-              Update this product&apos;s details, stock, and publish state.
+              Update this listing&apos;s details, stock, and publish state.
             </DialogDescription>
           </DialogHeader>
-          {editProductId ? (
-            <SellerProductEditDialogForm
-              key={`${editProductId}-${editProductFormKey}`}
-              productId={editProductId}
-              onSaved={closeEditProductDialog}
-              onCancel={closeEditProductDialog}
+          {editListingId ? (
+            <SellerListingEditDialogForm
+              key={`${editListingId}-${editListingFormKey}`}
+              listingId={editListingId}
+              onSaved={closeEditListingDialog}
+              onCancel={closeEditListingDialog}
             />
           ) : null}
         </DialogContent>
       </Dialog>
-      {productsLoading ? (
-        <p className="text-sm text-muted-foreground">Loading products…</p>
+      {listingsLoading ? (
+        <p className="text-sm text-muted-foreground">Loading listings…</p>
       ) : (
         <SellerShellDataTable
           columns={columns}
-          data={products}
+          data={listings}
           filterColumnId="name"
           filterPlaceholder="Filter by name…"
-          countNoun="product"
+          countNoun="listing"
           toolbarEnd={
-            <Button type="button" onClick={openNewProductDialog}>
+            <Button type="button" onClick={openNewListingDialog}>
               <Plus className="size-3.5 shrink-0" aria-hidden />
-              New product
+              New listing
             </Button>
           }
         />

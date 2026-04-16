@@ -1,8 +1,10 @@
 import type { Locale } from "@ys/intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Loader2, Plus, Trash2, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
+import { assetUrl, uploadImage } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 
 import { Button } from "@/components/ui/button";
@@ -17,13 +19,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { categoriesQuery } from "@/features/storefront/storefront.queries";
 import {
   categoryAttributeDefinitionsQuery,
-  createSellerProductMutationOptions,
-  sellerProductDetailQuery,
-  updateSellerProductMutationOptions,
+  createSellerListingMutationOptions,
+  sellerListingDetailQuery,
+  updateSellerListingMutationOptions,
   type CategoryAttributeDefinitionDto,
-  type CreateSellerProductBody,
+  type CreateSellerListingBody,
   type SellerAttributeInput,
-} from "./products.queries";
+} from "./listings.queries";
 import { getCategoryDescriptionHints } from "../shared/description-hints";
 
 type VariantForm = {
@@ -32,9 +34,27 @@ type VariantForm = {
   stock: string;
 };
 
+/**
+ * One slot in the listing image "field array". Each slot is either empty,
+ * currently uploading, or has a resolved `/static/uploads/...` URL. Using a
+ * stable `id` lets React keep focus/previews when rows are reordered or removed.
+ */
+type ImageSlot = {
+  id: string;
+  url: string | null;
+  uploading: boolean;
+  error: string | null;
+};
+
 const emptyVariant = (): VariantForm => ({ label: "", price: "", stock: "0" });
 
-const SELLER_PRODUCT_EMBEDDED_FORM_ID = "seller-product-embedded-form";
+let imageSlotCounter = 0;
+const makeImageSlot = (url: string | null = null): ImageSlot => {
+  imageSlotCounter += 1;
+  return { id: `img-${imageSlotCounter}`, url, uploading: false, error: null };
+};
+
+const SELLER_LISTING_EMBEDDED_FORM_ID = "seller-listing-embedded-form";
 
 function buildAttributesPayload(
   defs: CategoryAttributeDefinitionDto[],
@@ -62,29 +82,29 @@ function buildAttributesPayload(
   return out;
 }
 
-export function SellerProductNewDialogForm({
+export function SellerListingNewDialogForm({
   onCreated,
   onCancel,
 }: {
   onCreated: () => void;
   onCancel: () => void;
 }) {
-  return <SellerProductEditor mode="new" embedded onCreated={onCreated} onCancel={onCancel} />;
+  return <SellerListingEditor mode="new" embedded onCreated={onCreated} onCancel={onCancel} />;
 }
 
-export function SellerProductEditDialogForm({
-  productId,
+export function SellerListingEditDialogForm({
+  listingId,
   onSaved,
   onCancel,
 }: {
-  productId: string;
+  listingId: string;
   onSaved: () => void;
   onCancel: () => void;
 }) {
   return (
-    <SellerProductEditor
+    <SellerListingEditor
       mode="edit"
-      productId={productId}
+      listingId={listingId}
       embedded
       onSaved={onSaved}
       onCancel={onCancel}
@@ -92,16 +112,16 @@ export function SellerProductEditDialogForm({
   );
 }
 
-function SellerProductEditor({
+function SellerListingEditor({
   mode,
-  productId,
+  listingId,
   embedded = false,
   onCreated,
   onSaved,
   onCancel,
 }: {
   mode: "new" | "edit";
-  productId?: string;
+  listingId?: string;
   embedded?: boolean;
   onCreated?: () => void;
   onSaved?: () => void;
@@ -115,13 +135,13 @@ function SellerProductEditor({
   const [attrValues, setAttrValues] = useState<Record<string, string>>({});
 
   const detailQuery = useQuery({
-    ...sellerProductDetailQuery(locale, productId ?? ""),
-    enabled: mode === "edit" && !!productId,
+    ...sellerListingDetailQuery(locale, listingId ?? ""),
+    enabled: mode === "edit" && !!listingId,
   });
 
-  const createMut = useMutation(createSellerProductMutationOptions(queryClient, locale));
+  const createMut = useMutation(createSellerListingMutationOptions(queryClient, locale));
   const updateMut = useMutation(
-    updateSellerProductMutationOptions(queryClient, locale, productId ?? ""),
+    updateSellerListingMutationOptions(queryClient, locale, listingId ?? ""),
   );
 
   const [categorySlug, setCategorySlug] = useState("");
@@ -132,18 +152,20 @@ function SellerProductEditor({
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
-  const [imagesText, setImagesText] = useState("");
+  const [imageSlots, setImageSlots] = useState<ImageSlot[]>(() => [makeImageSlot()]);
   const [variants, setVariants] = useState<VariantForm[]>([emptyVariant()]);
   const [publish, setPublish] = useState(false);
 
   useEffect(() => {
     if (mode !== "edit" || !detailQuery.data) return;
-    const p = detailQuery.data.product;
+    const p = detailQuery.data.listing;
     setCategorySlug(p.categorySlug);
     setName(p.name);
     setSlug(p.slug);
     setDescription(p.description);
-    setImagesText(p.images.join("\n"));
+    setImageSlots(
+      p.images.length > 0 ? p.images.map((u) => makeImageSlot(u)) : [makeImageSlot()],
+    );
     setVariants(
       p.variants.map((v) => ({
         label: v.label,
@@ -166,11 +188,16 @@ function SellerProductEditor({
     }
   }, [mode, detailQuery.data]);
 
-  const buildBody = (): CreateSellerProductBody => {
-    const images = imagesText
-      .split("\n")
-      .map((s) => s.trim())
+  const buildBody = (): CreateSellerListingBody => {
+    if (imageSlots.some((s) => s.uploading)) {
+      throw new Error("Wait for image uploads to finish");
+    }
+    const images = imageSlots
+      .map((s) => s.url?.trim() ?? "")
       .filter(Boolean);
+    if (images.length === 0) {
+      throw new Error("Attach at least one image");
+    }
     const variantRows = variants.map((v) => ({
       label: v.label.trim(),
       price: Number(v.price),
@@ -203,13 +230,13 @@ function SellerProductEditor({
             if (onCreated) onCreated();
             else
               void navigate({
-                to: "/$locale/sell/products",
+                to: "/$locale/sell/listings",
                 params: { locale },
                 search: { new: false, edit: undefined },
               });
           },
         });
-      } else if (productId) {
+      } else if (listingId) {
         updateMut.mutate(
           {
             ...body,
@@ -249,7 +276,7 @@ function SellerProductEditor({
       return (
         <DialogMain>
           <DialogBody className="mx-0 space-y-4 px-6 py-8">
-            <p className="text-sm text-destructive">Could not load product.</p>
+            <p className="text-sm text-destructive">Could not load listing.</p>
             <Button type="button" variant="outline" onClick={() => onCancel?.()}>
               Close
             </Button>
@@ -259,9 +286,9 @@ function SellerProductEditor({
     }
     return (
       <main className="mx-auto max-w-2xl py-12">
-        <p className="text-destructive">Could not load product.</p>
+        <p className="text-destructive">Could not load listing.</p>
         <Button className="mt-4" variant="outline" asChild>
-          <Link to="/$locale/sell/products" params={{ locale }} search={{ new: false, edit: undefined }}>
+          <Link to="/$locale/sell/listings" params={{ locale }} search={{ new: false, edit: undefined }}>
             Back
           </Link>
         </Button>
@@ -271,9 +298,37 @@ function SellerProductEditor({
 
   const descHints = getCategoryDescriptionHints(categorySlug || undefined);
 
+  const updateImageSlot = (id: string, patch: Partial<ImageSlot>) => {
+    setImageSlots((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+  };
+
+  const handleImageFileChosen = async (id: string, file: File) => {
+    updateImageSlot(id, { uploading: true, error: null });
+    try {
+      const url = await uploadImage(file, "listings", locale);
+      updateImageSlot(id, { url, uploading: false, error: null });
+    } catch (err) {
+      updateImageSlot(id, {
+        uploading: false,
+        error: (err as Error).message || "Upload failed",
+      });
+    }
+  };
+
+  const addImageSlot = () => {
+    setImageSlots((prev) => [...prev, makeImageSlot()]);
+  };
+
+  const removeImageSlot = (id: string) => {
+    setImageSlots((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      return next.length > 0 ? next : [makeImageSlot()];
+    });
+  };
+
   const form = (
     <form
-      id={embedded ? SELLER_PRODUCT_EMBEDDED_FORM_ID : undefined}
+      id={embedded ? SELLER_LISTING_EMBEDDED_FORM_ID : undefined}
       className={embedded ? "space-y-4" : "mt-8 space-y-4"}
       onSubmit={onSubmit}
     >
@@ -372,7 +427,7 @@ function SellerProductEditor({
           <Input id="pname" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="pslug">Product slug (URL)</Label>
+          <Label htmlFor="pslug">Listing slug (URL)</Label>
           <Input
             id="pslug"
             value={slug}
@@ -393,16 +448,26 @@ function SellerProductEditor({
           />
           <p className="text-xs text-muted-foreground">{descHints.tip}</p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="imgs">Image URLs (one per line)</Label>
-          <Textarea
-            id="imgs"
-            value={imagesText}
-            onChange={(e) => setImagesText(e.target.value)}
-            required
-            rows={4}
-            placeholder="https://..."
-          />
+        <div className="space-y-3">
+          <Label>Images</Label>
+          <p className="text-xs text-muted-foreground">
+            Attach images one at a time. PNG, JPG, WEBP, or GIF, max 5MB each.
+          </p>
+          <div className="space-y-3">
+            {imageSlots.map((slot, i) => (
+              <ImageSlotRow
+                key={slot.id}
+                slot={slot}
+                index={i}
+                onFileChosen={(file) => void handleImageFileChosen(slot.id, file)}
+                onRemove={() => removeImageSlot(slot.id)}
+              />
+            ))}
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={addImageSlot}>
+            <Plus className="mr-1.5 size-3.5" />
+            Add image
+          </Button>
         </div>
         <div className="space-y-3">
           <Label>Variants</Label>
@@ -501,11 +566,11 @@ function SellerProductEditor({
           <Button type="button" variant="outline" disabled={savePending} onClick={() => onCancel?.()}>
             Cancel
           </Button>
-          <Button type="submit" form={SELLER_PRODUCT_EMBEDDED_FORM_ID} disabled={savePending}>
+          <Button type="submit" form={SELLER_LISTING_EMBEDDED_FORM_ID} disabled={savePending}>
             {mode === "new"
               ? createMut.isPending
                 ? "Creating…"
-                : "Create product"
+                : "Create listing"
               : updateMut.isPending
                 ? "Saving…"
                 : "Save"}
@@ -519,20 +584,92 @@ function SellerProductEditor({
     <main className="mx-auto max-w-2xl py-12">
       <div className="mb-8">
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/$locale/sell/products" params={{ locale }} search={{ new: false, edit: undefined }}>
-            ← Products
+          <Link to="/$locale/sell/listings" params={{ locale }} search={{ new: false, edit: undefined }}>
+            ← Listings
           </Link>
         </Button>
       </div>
       <h1 className="text-2xl font-semibold tracking-tight">
-        {mode === "new" ? "New product" : "Edit product"}
+        {mode === "new" ? "New listing" : "Edit listing"}
       </h1>
       <p className="mt-2 text-xss text-muted-foreground">
         {mode === "new"
           ? "Add category, variants, images, and description for your listing."
-          : "Update this product's details, stock, and publish state."}
+          : "Update this listing's details, stock, and publish state."}
       </p>
       {form}
     </main>
+  );
+}
+
+function ImageSlotRow({
+  slot,
+  index,
+  onFileChosen,
+  onRemove,
+}: {
+  slot: ImageSlot;
+  index: number;
+  onFileChosen: (file: File) => void;
+  onRemove: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/20 p-3">
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+        {slot.url ? (
+          <img src={assetUrl(slot.url)} alt={`Image ${index + 1}`} className="h-full w-full object-cover" />
+        ) : (
+          <span className="text-xs text-muted-foreground">#{index + 1}</span>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onFileChosen(file);
+            e.target.value = "";
+          }}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={slot.uploading}
+            onClick={() => inputRef.current?.click()}
+          >
+            {slot.uploading ? (
+              <>
+                <Loader2 className="mr-1.5 size-3.5 animate-spin" /> Uploading…
+              </>
+            ) : (
+              <>
+                <Upload className="mr-1.5 size-3.5" />
+                {slot.url ? "Replace" : "Choose file"}
+              </>
+            )}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            disabled={slot.uploading}
+          >
+            <Trash2 className="mr-1.5 size-3.5" />
+            Remove
+          </Button>
+        </div>
+        {slot.url && !slot.uploading && (
+          <p className="mt-1 truncate text-xs text-muted-foreground">{slot.url}</p>
+        )}
+        {slot.error && <p className="mt-1 text-xs text-destructive">{slot.error}</p>}
+      </div>
+    </div>
   );
 }

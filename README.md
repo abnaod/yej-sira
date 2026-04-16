@@ -58,9 +58,16 @@ pnpm + Turborepo monorepo: **TanStack Start** (`apps/web`), **Hono** API (`apps/
 ## Workspace layout
 
 - `apps/web` — TanStack Start, Tailwind v4, shadcn-style UI (`src/components/ui`), `auth-client` for Better Auth.
-- `apps/api` — Hono on port **3001**; Better Auth at `/api/auth/*`; storefront JSON API under `/api` (categories, products, cart, checkout, orders).
+- `apps/api` — Hono on port **3001**; Better Auth at `/api/auth/*`; storefront JSON API under `/api` (categories, listings, cart, checkout, orders); static assets at `/static/*` (served from `<repo>/public`).
 - `libs/db` — Prisma schema (PostgreSQL) and shared `PrismaClient`.
 - `libs/tsconfig` — Shared `tsconfig` JSON presets.
+- `public/` — Static image assets served by the API at `/static/*`. Subfolders:
+  - `public/categories/<slug>.jpg` — Category thumbnails (one per category slug).
+  - `public/listings/<listing-slug>-<n>.jpg` — Listing gallery images (1-indexed per listing).
+  - `public/shops/<shop-slug>.jpg` — Shop avatars / logos.
+  - `public/promotions/<promo-slug>.jpg` — Promotion hero images.
+  - `public/storefront/hero-seller.jpg`, `public/storefront/hero-fallback.jpg` — Storefront hero fallbacks.
+  Image URLs are stored in the DB as relative paths (e.g. `/static/categories/pottery.jpg`); the web app prefixes them with `VITE_API_URL` via `assetUrl()` when rendering.
 
 ## Ports
 

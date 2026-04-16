@@ -1,11 +1,11 @@
 import type { Locale } from "@ys/intl";
 import { queryOptions } from "@tanstack/react-query";
 
-import type { ProductCardDto } from "@/features/storefront";
+import type { ListingCardDto } from "@/features/storefront";
 import { apiFetchJson } from "@/lib/api";
 
-export type ProductsListResponse = {
-  products: ProductCardDto[];
+export type ListingsListResponse = {
+  listings: ListingCardDto[];
   page: number;
   pageSize: number;
   total: number;
@@ -30,7 +30,7 @@ export function parseTagSlugsParam(raw: string | undefined): string[] {
     .filter(Boolean);
 }
 
-export const productsForCategoryQuery = (
+export const listingsForCategoryQuery = (
   locale: Locale,
   categorySlug: string,
   sort: CategorySort,
@@ -40,7 +40,7 @@ export const productsForCategoryQuery = (
 ) =>
   queryOptions({
     queryKey: [
-      "products",
+      "listings",
       categorySlug,
       locale,
       sort,
@@ -66,7 +66,7 @@ export const productsForCategoryQuery = (
         params.set("attributeDefinitionKey", attributeFacet.definitionKey);
         params.set("allowedValueKey", attributeFacet.allowedValueKey);
       }
-      return apiFetchJson<ProductsListResponse>(`/api/products?${params.toString()}`, {
+      return apiFetchJson<ListingsListResponse>(`/api/listings?${params.toString()}`, {
         locale,
       });
     },

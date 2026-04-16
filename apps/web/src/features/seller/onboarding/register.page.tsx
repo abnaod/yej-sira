@@ -1,9 +1,11 @@
 import type { Locale } from "@ys/intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Loader2, Trash2, Upload } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -15,20 +17,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { assetUrl, uploadImage } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import type { CreateShopBody } from "../shared/shop.queries";
 import { createShopMutationOptions } from "../shared/shop.queries";
 
-const STEPS = [
-  "Shop basics",
-  "Branding",
-  "Contact",
-  "Social",
-  "Policies",
-  "Business",
-  "Review",
+const STEPS = ["Basics", "Business details", "Review & submit"] as const;
+
+const STEP_DESCRIPTIONS = [
+  "Your name, shop identity, description, and optional logo.",
+  "Legal and location details, and how buyers can reach you.",
+  "Confirm your details and submit your shop application.",
 ] as const;
 
 /** Kebab-case slug from shop name; matches API (min 2, max 80, /^[a-z0-9]+(?:-[a-z0-9]+)*$/). */
@@ -56,24 +58,38 @@ export function SellerRegisterPage() {
   const queryClient = useQueryClient();
   const { data: session, isPending: sessionPending } = authClient.useSession();
 
+  const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
   const [step, setStep] = useState(0);
+  const [fullName, setFullName] = useState("");
+  const fullNameHydrated = useRef(false);
+
   const [form, setForm] = useState<Omit<CreateShopBody, "slug">>({
     name: "",
     description: "",
     imageUrl: undefined,
     contactEmail: undefined,
     contactPhone: undefined,
-    socialLinks: undefined,
-    shippingPolicy: undefined,
-    returnsPolicy: undefined,
+    businessType: "individual",
     businessLegalName: undefined,
     businessTaxId: undefined,
-    businessAddressLine1: undefined,
-    businessAddressLine2: undefined,
     businessCity: undefined,
-    businessPostalCode: undefined,
-    businessCountry: undefined,
+    businessSubcity: undefined,
+    businessWoreda: undefined,
+    businessKebele: undefined,
+    businessHouseNumber: undefined,
+    businessSpecificLocation: undefined,
   });
+
+  useEffect(() => {
+    if (!sessionPending && session?.user && !fullNameHydrated.current) {
+      setFullName(session.user.name ?? "");
+      fullNameHydrated.current = true;
+    }
+  }, [sessionPending, session?.user]);
 
   const createShop = useMutation(createShopMutationOptions(queryClient, locale));
 
@@ -107,7 +123,27 @@ export function SellerRegisterPage() {
     setForm((f) => ({ ...f, ...patch }));
   }
 
+  async function handleLogoSelected(file: File) {
+    setLogoError(null);
+    setLogoUploading(true);
+    try {
+      const url = await uploadImage(file, "shops", locale);
+      updateForm({ imageUrl: url });
+    } catch (e) {
+      setLogoError((e as Error).message || "Upload failed");
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
   async function submit() {
+    if (!session?.user) return;
+    const trimmedName = fullName.trim();
+    const sessionName = (session.user.name ?? "").trim();
+    if (trimmedName !== sessionName) {
+      await authClient.updateUser({ name: trimmedName });
+    }
+
     const body: CreateShopBody = {
       name: form.name.trim(),
       slug: slugifyShopName(form.name.trim()),
@@ -115,37 +151,21 @@ export function SellerRegisterPage() {
       ...(form.imageUrl?.trim() ? { imageUrl: form.imageUrl.trim() } : {}),
       ...(form.contactEmail?.trim() ? { contactEmail: form.contactEmail.trim() } : {}),
       ...(form.contactPhone?.trim() ? { contactPhone: form.contactPhone.trim() } : {}),
-      ...(form.socialLinks && Object.keys(form.socialLinks).length > 0
-        ? {
-            socialLinks: {
-              ...(form.socialLinks.website?.trim()
-                ? { website: form.socialLinks.website.trim() }
-                : {}),
-              ...(form.socialLinks.instagram?.trim()
-                ? { instagram: form.socialLinks.instagram.trim() }
-                : {}),
-              ...(form.socialLinks.facebook?.trim()
-                ? { facebook: form.socialLinks.facebook.trim() }
-                : {}),
-              ...(form.socialLinks.tiktok?.trim() ? { tiktok: form.socialLinks.tiktok.trim() } : {}),
-            },
-          }
+      ...(form.businessType ? { businessType: form.businessType } : {}),
+      ...(form.businessType === "business" && form.businessLegalName?.trim()
+        ? { businessLegalName: form.businessLegalName.trim() }
         : {}),
-      ...(form.shippingPolicy?.trim() ? { shippingPolicy: form.shippingPolicy.trim() } : {}),
-      ...(form.returnsPolicy?.trim() ? { returnsPolicy: form.returnsPolicy.trim() } : {}),
-      ...(form.businessLegalName?.trim() ? { businessLegalName: form.businessLegalName.trim() } : {}),
       ...(form.businessTaxId?.trim() ? { businessTaxId: form.businessTaxId.trim() } : {}),
-      ...(form.businessAddressLine1?.trim()
-        ? { businessAddressLine1: form.businessAddressLine1.trim() }
-        : {}),
-      ...(form.businessAddressLine2?.trim()
-        ? { businessAddressLine2: form.businessAddressLine2.trim() }
-        : {}),
       ...(form.businessCity?.trim() ? { businessCity: form.businessCity.trim() } : {}),
-      ...(form.businessPostalCode?.trim()
-        ? { businessPostalCode: form.businessPostalCode.trim() }
+      ...(form.businessSubcity?.trim() ? { businessSubcity: form.businessSubcity.trim() } : {}),
+      ...(form.businessWoreda?.trim() ? { businessWoreda: form.businessWoreda.trim() } : {}),
+      ...(form.businessKebele?.trim() ? { businessKebele: form.businessKebele.trim() } : {}),
+      ...(form.businessHouseNumber?.trim()
+        ? { businessHouseNumber: form.businessHouseNumber.trim() }
         : {}),
-      ...(form.businessCountry?.trim() ? { businessCountry: form.businessCountry.trim() } : {}),
+      ...(form.businessSpecificLocation?.trim()
+        ? { businessSpecificLocation: form.businessSpecificLocation.trim() }
+        : {}),
     };
 
     await createShop.mutateAsync(body);
@@ -154,33 +174,30 @@ export function SellerRegisterPage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-8 md:px-6 md:py-12">
-      <div className="mb-8">
+      <div className="mb-4">
         <p className="text-sm font-medium text-muted-foreground">
           Step {step + 1} of {STEPS.length}
         </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight">Open your shop</h1>
-        <p className="mt-2 text-xss text-muted-foreground">
-          Complete the steps below—we&apos;ll review your application.
-        </p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">{STEPS[step]}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{STEP_DESCRIPTIONS[step]}</p>
         <Progress className="mt-4 h-1" value={progress} />
       </div>
 
       <Card className="border-0 shadow-none">
-        <CardHeader>
-          <CardTitle>{STEPS[step]}</CardTitle>
-          <CardDescription>
-            {step === 0 && "Name and optional description for your storefront."}
-            {step === 1 && "Logo image URL (optional)."}
-            {step === 2 && "How buyers can reach you (optional)."}
-            {step === 3 && "Social and website links (optional)."}
-            {step === 4 && "Shipping and returns copy (optional)."}
-            {step === 5 && "Business details for our records (optional)."}
-            {step === 6 && "Confirm and submit your application."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex flex-col gap-4 pt-0">
           {step === 0 && (
             <>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="fullName">Your full name</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  maxLength={120}
+                  autoComplete="name"
+                />
+              </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="name">Shop name</Label>
                 <Input
@@ -201,24 +218,202 @@ export function SellerRegisterPage() {
                   maxLength={2000}
                 />
               </div>
+              <div className="flex flex-col gap-3">
+                <Label>Logo image</Label>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleLogoSelected(file);
+                    e.target.value = "";
+                  }}
+                />
+                <div className="flex items-center gap-4 rounded-lg border border-dashed border-border p-4">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
+                    {form.imageUrl ? (
+                      <img
+                        src={assetUrl(form.imageUrl)}
+                        alt="Shop logo preview"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No logo</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={logoUploading}
+                        onClick={() => logoInputRef.current?.click()}
+                      >
+                        {logoUploading ? (
+                          <>
+                            <Loader2 className="mr-1.5 size-3.5 animate-spin" /> Uploading…
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="mr-1.5 size-3.5" />
+                            {form.imageUrl ? "Replace" : "Choose file"}
+                          </>
+                        )}
+                      </Button>
+                      {form.imageUrl && !logoUploading && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => updateForm({ imageUrl: undefined })}
+                        >
+                          <Trash2 className="mr-1.5 size-3.5" />
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, WEBP, or GIF. Max 5MB.</p>
+                    {logoError && <p className="text-xs text-destructive">{logoError}</p>}
+                  </div>
+                </div>
+              </div>
             </>
           )}
 
           {step === 1 && (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="imageUrl">Logo image URL</Label>
-              <Input
-                id="imageUrl"
-                type="url"
-                value={form.imageUrl ?? ""}
-                onChange={(e) => updateForm({ imageUrl: e.target.value || undefined })}
-                placeholder="https://…"
-              />
-            </div>
-          )}
-
-          {step === 2 && (
             <>
+              <div className="flex flex-col gap-2">
+                <Label>Business type</Label>
+                <RadioGroup
+                  value={form.businessType ?? "individual"}
+                  onValueChange={(val) =>
+                    updateForm({
+                      businessType: val as "individual" | "business",
+                      ...(val === "individual" ? { businessLegalName: undefined } : {}),
+                    })
+                  }
+                  className="flex flex-row gap-2"
+                >
+                  <label
+                    htmlFor="businessType-individual"
+                    className={`flex min-w-0 flex-1 cursor-pointer items-start gap-2 rounded-md border bg-white p-3 transition-colors hover:bg-gray-100 dark:bg-transparent dark:hover:bg-gray-800 ${
+                      (form.businessType ?? "individual") === "individual"
+                        ? "border-primary"
+                        : "border-border"
+                    }`}
+                  >
+                    <RadioGroupItem
+                      value="individual"
+                      id="businessType-individual"
+                      className="mt-0.5 size-3.5 shrink-0 origin-center border-[0.5px] transition-transform data-[state=unchecked]:scale-[0.88]"
+                    />
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-sm font-medium leading-tight">Individual</span>
+                      <p className="text-xs leading-snug text-muted-foreground">
+                        You or a sole proprietorship.
+                      </p>
+                    </div>
+                  </label>
+                  <label
+                    htmlFor="businessType-business"
+                    className={`flex min-w-0 flex-1 cursor-pointer items-start gap-2 rounded-md border bg-white p-3 transition-colors hover:bg-gray-100 dark:bg-transparent dark:hover:bg-gray-800 ${
+                      form.businessType === "business" ? "border-primary" : "border-border"
+                    }`}
+                  >
+                    <RadioGroupItem
+                      value="business"
+                      id="businessType-business"
+                      className="mt-0.5 size-3.5 shrink-0 origin-center border-[0.5px] transition-transform data-[state=unchecked]:scale-[0.88]"
+                    />
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <span className="text-sm font-medium leading-tight">Business</span>
+                      <p className="text-xs leading-snug text-muted-foreground">
+                        Registered company or cooperative.
+                      </p>
+                    </div>
+                  </label>
+                </RadioGroup>
+              </div>
+              {form.businessType === "business" ? (
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="businessLegalName">Business name</Label>
+                  <Input
+                    id="businessLegalName"
+                    value={form.businessLegalName ?? ""}
+                    onChange={(e) => updateForm({ businessLegalName: e.target.value || undefined })}
+                    placeholder="e.g. Abeba Trading PLC"
+                  />
+                </div>
+              ) : null}
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="businessTaxId">TIN number</Label>
+                <Input
+                  id="businessTaxId"
+                  value={form.businessTaxId ?? ""}
+                  onChange={(e) => updateForm({ businessTaxId: e.target.value || undefined })}
+                  placeholder="Taxpayer Identification Number"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="businessCity">City</Label>
+                  <Input
+                    id="businessCity"
+                    value={form.businessCity ?? ""}
+                    onChange={(e) => updateForm({ businessCity: e.target.value || undefined })}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="businessSubcity">Subcity</Label>
+                  <Input
+                    id="businessSubcity"
+                    value={form.businessSubcity ?? ""}
+                    onChange={(e) => updateForm({ businessSubcity: e.target.value || undefined })}
+                    placeholder="e.g. Bole, Kirkos"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="businessWoreda">Woreda</Label>
+                  <Input
+                    id="businessWoreda"
+                    value={form.businessWoreda ?? ""}
+                    onChange={(e) => updateForm({ businessWoreda: e.target.value || undefined })}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="businessKebele">Kebele</Label>
+                  <Input
+                    id="businessKebele"
+                    value={form.businessKebele ?? ""}
+                    onChange={(e) => updateForm({ businessKebele: e.target.value || undefined })}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="businessHouseNumber">House number</Label>
+                  <Input
+                    id="businessHouseNumber"
+                    value={form.businessHouseNumber ?? ""}
+                    onChange={(e) =>
+                      updateForm({ businessHouseNumber: e.target.value || undefined })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="businessSpecificLocation">Specific location</Label>
+                <Input
+                  id="businessSpecificLocation"
+                  value={form.businessSpecificLocation ?? ""}
+                  onChange={(e) =>
+                    updateForm({ businessSpecificLocation: e.target.value || undefined })
+                  }
+                  maxLength={500}
+                  placeholder="Building name, floor, landmark, phone entry, etc."
+                />
+              </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="contactEmail">Contact email</Label>
                 <Input
@@ -239,128 +434,54 @@ export function SellerRegisterPage() {
             </>
           )}
 
-          {step === 3 && (
+          {step === 2 && (
             <>
-              {(["website", "instagram", "facebook", "tiktok"] as const).map((key) => (
-                <div key={key} className="flex flex-col gap-2">
-                  <Label htmlFor={key}>{key}</Label>
-                  <Input
-                    id={key}
-                    type="url"
-                    value={form.socialLinks?.[key] ?? ""}
-                    onChange={(e) =>
-                      updateForm({
-                        socialLinks: {
-                          ...form.socialLinks,
-                          [key]: e.target.value || undefined,
-                        },
-                      })
-                    }
-                    placeholder="https://…"
-                  />
-                </div>
-              ))}
-            </>
-          )}
-
-          {step === 4 && (
-            <>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="shippingPolicy">Shipping policy</Label>
-                <Textarea
-                  id="shippingPolicy"
-                  value={form.shippingPolicy ?? ""}
-                  onChange={(e) => updateForm({ shippingPolicy: e.target.value || undefined })}
-                  rows={5}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="returnsPolicy">Returns policy</Label>
-                <Textarea
-                  id="returnsPolicy"
-                  value={form.returnsPolicy ?? ""}
-                  onChange={(e) => updateForm({ returnsPolicy: e.target.value || undefined })}
-                  rows={5}
-                />
-              </div>
-            </>
-          )}
-
-          {step === 5 && (
-            <>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="businessLegalName">Legal / business name</Label>
-                <Input
-                  id="businessLegalName"
-                  value={form.businessLegalName ?? ""}
-                  onChange={(e) => updateForm({ businessLegalName: e.target.value || undefined })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="businessTaxId">Tax ID</Label>
-                <Input
-                  id="businessTaxId"
-                  value={form.businessTaxId ?? ""}
-                  onChange={(e) => updateForm({ businessTaxId: e.target.value || undefined })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="businessAddressLine1">Address line 1</Label>
-                <Input
-                  id="businessAddressLine1"
-                  value={form.businessAddressLine1 ?? ""}
-                  onChange={(e) => updateForm({ businessAddressLine1: e.target.value || undefined })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="businessAddressLine2">Address line 2</Label>
-                <Input
-                  id="businessAddressLine2"
-                  value={form.businessAddressLine2 ?? ""}
-                  onChange={(e) => updateForm({ businessAddressLine2: e.target.value || undefined })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="businessCity">City</Label>
-                <Input
-                  id="businessCity"
-                  value={form.businessCity ?? ""}
-                  onChange={(e) => updateForm({ businessCity: e.target.value || undefined })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="businessPostalCode">Postal code</Label>
-                <Input
-                  id="businessPostalCode"
-                  value={form.businessPostalCode ?? ""}
-                  onChange={(e) => updateForm({ businessPostalCode: e.target.value || undefined })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="businessCountry">Country</Label>
-                <Input
-                  id="businessCountry"
-                  value={form.businessCountry ?? ""}
-                  onChange={(e) => updateForm({ businessCountry: e.target.value || undefined })}
-                />
-              </div>
-            </>
-          )}
-
-          {step === 6 && (
             <div className="rounded-lg bg-muted/30 p-4 text-sm leading-relaxed">
               <p>
                 <strong>{form.name.trim() || "—"}</strong> ·{" "}
                 <span className="text-muted-foreground">{shopSlug || "—"}</span>
               </p>
+              <p className="text-xs text-muted-foreground">Owner: {fullName.trim() || "—"}</p>
               {form.description?.trim() ? (
                 <p className="mt-2 text-muted-foreground">{form.description.trim()}</p>
               ) : null}
               <p className="mt-4 text-xs text-muted-foreground">
-                Submitting creates your shop with the details you entered. You can manage products from the
+                Submitting creates your shop with the details you entered. You can manage listings from the
                 dashboard.
               </p>
             </div>
+
+            <div className="flex items-start gap-3 rounded-lg border border-border p-4">
+              <Checkbox
+                id="terms"
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+                className="mt-0.5"
+              />
+              <label htmlFor="terms" className="text-sm leading-snug">
+                I agree to the{" "}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline underline-offset-4 hover:text-primary"
+                >
+                  Terms and Conditions
+                </a>{" "}
+                and{" "}
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline underline-offset-4 hover:text-primary"
+                >
+                  Privacy Policy
+                </a>
+                . I understand that my shop is subject to review and must comply with the seller
+                guidelines.
+              </label>
+            </div>
+            </>
           )}
 
           {createShop.isError && (
@@ -382,7 +503,9 @@ export function SellerRegisterPage() {
             <Button
               type="button"
               disabled={
-                (step === 0 && (!form.name.trim() || !shopSlug)) || createShop.isPending
+                (step === 0 &&
+                  (!fullName.trim() || !form.name.trim() || !shopSlug || logoUploading)) ||
+                createShop.isPending
               }
               onClick={() => setStep((s) => s + 1)}
             >
@@ -391,7 +514,9 @@ export function SellerRegisterPage() {
           ) : (
             <Button
               type="button"
-              disabled={!form.name.trim() || !shopSlug || createShop.isPending}
+              disabled={
+                !fullName.trim() || !form.name.trim() || !shopSlug || !agreedToTerms || createShop.isPending
+              }
               onClick={() => void submit()}
             >
               {createShop.isPending ? "Submitting…" : "Submit application"}

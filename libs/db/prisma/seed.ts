@@ -8,47 +8,45 @@ import {
 
 config({ path: "../../.env" });
 
+/**
+ * Category image paths reference the API's static folder at `<repo>/public/categories/`.
+ * Drop a file named `<slug>.jpg` (matches the `slug` below) into that folder.
+ */
 const categories = [
   {
-    slug: "jewelry-accessories",
-    name: "Jewelry & Accessories",
-    imageUrl:
-      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&q=80",
+    slug: "crochet",
+    name: "Crochet",
+    imageUrl: "/static/categories/crochet.jpg",
     sortOrder: 0,
   },
   {
-    slug: "home-living",
-    name: "Home & Living",
-    imageUrl:
-      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&q=80",
+    slug: "jewelry",
+    name: "Jewelry",
+    imageUrl: "/static/categories/jewelry.jpg",
     sortOrder: 1,
   },
   {
-    slug: "art-collectibles",
-    name: "Art & Collectibles",
-    imageUrl:
-      "https://images.unsplash.com/photo-1503602642458-232111445657?w=400&q=80",
+    slug: "basketry",
+    name: "Basketry",
+    imageUrl: "/static/categories/basketry.jpg",
     sortOrder: 2,
   },
   {
-    slug: "paper-party",
-    name: "Paper & Party",
-    imageUrl:
-      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400&q=80",
+    slug: "pottery",
+    name: "Pottery",
+    imageUrl: "/static/categories/pottery.jpg",
     sortOrder: 3,
-  },
-  {
-    slug: "vintage",
-    name: "Vintage",
-    imageUrl:
-      "https://images.unsplash.com/photo-1461360228754-6e81c478b882?w=400&q=80",
-    sortOrder: 4,
   },
   {
     slug: "clothing",
     name: "Clothing",
-    imageUrl:
-      "https://images.unsplash.com/photo-1445205170230-053b83016050?w=400&q=80",
+    imageUrl: "/static/categories/clothing.jpg",
+    sortOrder: 4,
+  },
+  {
+    slug: "art-collectibles",
+    name: "Art & Collectibles",
+    imageUrl: "/static/categories/art-collectibles.jpg",
     sortOrder: 5,
   },
 ] as const;
@@ -60,7 +58,7 @@ const tagDefinitions = [
   { slug: "editors-pick", name: "Editor's pick" },
 ] as const;
 
-type SeedProduct = {
+type SeedListing = {
   slug: string;
   categorySlug: (typeof categories)[number]["slug"];
   name: string;
@@ -86,11 +84,10 @@ const promotionSeeds = [
     badgeLabel: "Spring deal",
     startsAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
     endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    heroImageUrl:
-      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=900&q=80",
+    heroImageUrl: "/static/promotions/spring-home-edit.jpg",
     sortOrder: 0,
     priority: 10,
-    productSlugs: [
+    listingSlugs: [
       "hand-glazed-stoneware-mug",
       "block-print-linen-pillow-cover",
       "olive-wood-serving-board",
@@ -103,11 +100,10 @@ const promotionSeeds = [
     badgeLabel: "Winter sale",
     startsAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
     endsAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-    heroImageUrl:
-      "https://images.unsplash.com/photo-1461360228754-6e81c478b882?w=900&q=80",
+    heroImageUrl: "/static/promotions/winter-sale-2024.jpg",
     sortOrder: 1,
     priority: 0,
-    productSlugs: ["botanical-embroidery-hoop-art", "original-watercolor-mini"] as const,
+    listingSlugs: ["botanical-embroidery-hoop-art", "original-watercolor-mini"] as const,
   },
 ] as const;
 
@@ -120,19 +116,19 @@ const SEED_REVIEWER_USERS = [
 const SEED_REVIEW_COMMENTS = [
   "Exceeded expectations — would buy again.",
   "Beautiful quality and fast shipping.",
-  "Great value; the product itself is lovely.",
+  "Great value; the listing itself is lovely.",
 ] as const;
 
-async function recalculateProductRatingAggregate(prisma: PrismaClient, productId: string) {
-  const agg = await prisma.productRating.aggregate({
-    where: { productId },
+async function recalculateListingRatingAggregate(prisma: PrismaClient, listingId: string) {
+  const agg = await prisma.listingRating.aggregate({
+    where: { listingId },
     _avg: { stars: true },
     _count: true,
   });
   const avg = agg._avg.stars ?? 0;
   const count = agg._count;
-  await prisma.product.update({
-    where: { id: productId },
+  await prisma.listing.update({
+    where: { id: listingId },
     data: {
       rating: new Prisma.Decimal(count === 0 ? "0.00" : avg.toFixed(2)),
       reviewCount: count,
@@ -140,17 +136,17 @@ async function recalculateProductRatingAggregate(prisma: PrismaClient, productId
   });
 }
 
-const products: SeedProduct[] = [
+const listings: SeedListing[] = [
   {
     slug: "hand-glazed-stoneware-mug",
-    categorySlug: "home-living",
+    categorySlug: "pottery",
     name: "Hand-glazed stoneware mug",
     description: "Wheel-thrown, food-safe glaze · Made in Vermont",
     featured: true,
     tagSlugs: ["handmade", "new"],
     images: [
-      "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?w=600&q=80",
-      "https://images.unsplash.com/photo-1503602642458-232111445657?w=600&q=80",
+      "/static/listings/hand-glazed-stoneware-mug-1.jpg",
+      "/static/listings/hand-glazed-stoneware-mug-2.jpg",
     ],
     variants: [
       { label: "Celadon", colorHex: "#A8C5BB", price: new Prisma.Decimal("36.00"), stock: 24 },
@@ -159,13 +155,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "block-print-linen-pillow-cover",
-    categorySlug: "home-living",
+    categorySlug: "clothing",
     name: "Block-print linen pillow cover",
     description: "Natural linen · Hand block printed in small batches",
     featured: true,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
-      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&q=80",
+      "/static/listings/block-print-linen-pillow-cover-1.jpg",
     ],
     variants: [
       { label: "Indigo", colorHex: "#4A5D6B", price: new Prisma.Decimal("48.00"), stock: 30 },
@@ -173,13 +169,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "hammered-sterling-silver-earrings",
-    categorySlug: "jewelry-accessories",
+    categorySlug: "jewelry",
     name: "Hammered sterling silver earrings",
     description: "Solid sterling · Each pair slightly unique",
     featured: true,
     tagSlugs: ["handmade", "editors-pick"],
     images: [
-      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=600&q=80",
+      "/static/listings/hammered-sterling-silver-earrings-1.jpg",
     ],
     variants: [
       { label: "Silver", colorHex: "#C0C0C0", price: new Prisma.Decimal("62.00"), stock: 18 },
@@ -187,13 +183,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "olive-wood-serving-board",
-    categorySlug: "home-living",
+    categorySlug: "art-collectibles",
     name: "Olive wood serving board",
     description: "Single piece of olive wood, hand oiled",
     featured: true,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
-      "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=600&q=80",
+      "/static/listings/olive-wood-serving-board-1.jpg",
     ],
     variants: [
       { label: "Natural", colorHex: "#D4C4B0", price: new Prisma.Decimal("54.00"), stock: 15 },
@@ -207,7 +203,7 @@ const products: SeedProduct[] = [
     featured: true,
     tagSlugs: ["handmade", "new"],
     images: [
-      "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=600&q=80",
+      "/static/listings/botanical-embroidery-hoop-art-1.jpg",
     ],
     variants: [
       {
@@ -227,7 +223,7 @@ const products: SeedProduct[] = [
     featured: true,
     tagSlugs: ["new", "editors-pick"],
     images: [
-      "https://images.unsplash.com/photo-1503602642458-232111445657?w=600&q=80",
+      "/static/listings/original-watercolor-mini-1.jpg",
     ],
     variants: [
       { label: "One of a kind", price: new Prisma.Decimal("28.00"), stock: 8 },
@@ -241,7 +237,7 @@ const products: SeedProduct[] = [
     featured: true,
     tagSlugs: ["handmade"],
     images: [
-      "https://images.unsplash.com/photo-1506806732259-39c2d0268443?w=600&q=80",
+      "/static/listings/handwoven-cotton-market-tote-1.jpg",
     ],
     variants: [
       { label: "Natural undyed", colorHex: "#E8E4DC", price: new Prisma.Decimal("42.00"), stock: 40 },
@@ -249,13 +245,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "soy-wax-candle-trio-gift-set",
-    categorySlug: "paper-party",
+    categorySlug: "art-collectibles",
     name: "Soy wax candle trio, gift set",
     description: "Three 4 oz tins · Essential oil blends",
     featured: true,
     tagSlugs: ["gift-ready", "handmade"],
     images: [
-      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=600&q=80",
+      "/static/listings/soy-wax-candle-trio-gift-set-1.jpg",
     ],
     variants: [
       { label: "Lavender trio", price: new Prisma.Decimal("38.00"), stock: 22 },
@@ -263,13 +259,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "hand-carved-wooden-coffee-scoop",
-    categorySlug: "home-living",
+    categorySlug: "pottery",
     name: "Hand-carved wooden coffee scoop",
     description: "Olive wood · For your jebena ritual",
     featured: true,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
-      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&q=80",
+      "/static/listings/hand-carved-wooden-coffee-scoop-1.jpg",
     ],
     variants: [
       { label: "Olive", colorHex: "#6B5A45", price: new Prisma.Decimal("22.00"), stock: 50 },
@@ -277,13 +273,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "natural-beeswax-taper-pair",
-    categorySlug: "paper-party",
+    categorySlug: "art-collectibles",
     name: "Natural beeswax taper pair",
     description: "Dipped by hand · Unscented",
     featured: true,
     tagSlugs: ["handmade"],
     images: [
-      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80",
+      "/static/listings/natural-beeswax-taper-pair-1.jpg",
     ],
     variants: [
       { label: "Natural", price: new Prisma.Decimal("18.00"), stock: 60 },
@@ -291,13 +287,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "woven-grass-storage-basket",
-    categorySlug: "home-living",
+    categorySlug: "basketry",
     name: "Woven grass storage basket",
     description: "Fair trade · Natural dye accents",
     featured: true,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80",
+      "/static/listings/woven-grass-storage-basket-1.jpg",
     ],
     variants: [
       { label: "Natural", price: new Prisma.Decimal("34.00"), stock: 25 },
@@ -305,13 +301,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "screen-printed-cotton-tea-towel",
-    categorySlug: "paper-party",
+    categorySlug: "clothing",
     name: "Screen-printed cotton tea towel",
     description: "Ethiopian motifs · Machine washable",
     featured: true,
     tagSlugs: ["handmade"],
     images: [
-      "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&q=80",
+      "/static/listings/screen-printed-cotton-tea-towel-1.jpg",
     ],
     variants: [
       { label: "Ivory", price: new Prisma.Decimal("16.00"), stock: 100 },
@@ -319,13 +315,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "macrame-wall-hanging",
-    categorySlug: "home-living",
+    categorySlug: "crochet",
     name: "Macramé wall hanging",
     description: "100% cotton cord · Handwoven to order",
     featured: false,
     tagSlugs: ["handmade", "new"],
     images: [
-      "https://images.unsplash.com/photo-1622372738946-62e02505feb3?w=600&q=80",
+      "/static/listings/macrame-wall-hanging-1.jpg",
     ],
     variants: [
       { label: "Natural", price: new Prisma.Decimal("78.00"), stock: 10 },
@@ -333,13 +329,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "ceramic-speckled-vase",
-    categorySlug: "home-living",
+    categorySlug: "pottery",
     name: "Ceramic speckled vase",
     description: "Hand-thrown stoneware · Matte finish",
     featured: false,
     tagSlugs: ["handmade"],
     images: [
-      "https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?w=600&q=80",
+      "/static/listings/ceramic-speckled-vase-1.jpg",
     ],
     variants: [
       { label: "Speckled white", price: new Prisma.Decimal("44.00"), stock: 14 },
@@ -347,13 +343,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "woven-rattan-basket-set",
-    categorySlug: "home-living",
+    categorySlug: "basketry",
     name: "Woven rattan basket set",
     description: "Set of 3 · Natural rattan · Fair trade",
     featured: false,
     tagSlugs: ["gift-ready", "handmade"],
     images: [
-      "https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=600&q=80",
+      "/static/listings/woven-rattan-basket-set-1.jpg",
     ],
     variants: [
       { label: "Natural", price: new Prisma.Decimal("56.00"), stock: 9 },
@@ -361,13 +357,13 @@ const products: SeedProduct[] = [
   },
   {
     slug: "hand-poured-soy-candle",
-    categorySlug: "paper-party",
+    categorySlug: "art-collectibles",
     name: "Hand-poured soy candle",
     description: "Lavender & sage · 50-hour burn time",
     featured: false,
     tagSlugs: ["handmade", "gift-ready"],
     images: [
-      "https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=600&q=80",
+      "/static/listings/hand-poured-soy-candle-1.jpg",
     ],
     variants: [
       { label: "Lavender & sage", price: new Prisma.Decimal("28.00"), stock: 45 },
@@ -375,18 +371,18 @@ const products: SeedProduct[] = [
   },
   {
     slug: "airpods-max",
-    categorySlug: "jewelry-accessories",
+    categorySlug: "jewelry",
     name: "Airpods Max",
     description:
       "A perfect balance of exhilarating high-fidelity audio and the effortless magic of AirPods.",
     featured: false,
     tagSlugs: ["new", "editors-pick"],
     images: [
-      "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?w=600&q=80",
-      "https://images.unsplash.com/photo-1503602642458-232111445657?w=600&q=80",
-      "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=600&q=80",
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&q=80",
-      "https://images.unsplash.com/photo-1484704849700-f032a568e944?w=600&q=80",
+      "/static/listings/airpods-max-1.jpg",
+      "/static/listings/airpods-max-2.jpg",
+      "/static/listings/airpods-max-3.jpg",
+      "/static/listings/airpods-max-4.jpg",
+      "/static/listings/airpods-max-5.jpg",
     ],
     variants: [
       { sku: "APM-RED", label: "Red", colorHex: "#E4605E", price: new Prisma.Decimal("549.00"), stock: 12 },
@@ -442,7 +438,31 @@ async function seedCategoryAttributeDefinitions(
 
   const byCategory: Array<{ slug: (typeof categories)[number]["slug"]; defs: Def[] }> = [
     {
-      slug: "jewelry-accessories",
+      slug: "crochet",
+      defs: [
+        {
+          key: "fiber_content",
+          inputType: CategoryAttributeInputType.select,
+          sortOrder: 0,
+          isRequired: false,
+          labels: { en: "Fiber content", am: "የስፒ አይነት" },
+          options: [
+            { key: "cotton", labels: { en: "Cotton", am: "ኮቶን" } },
+            { key: "wool", labels: { en: "Wool", am: "ስእድ" } },
+            { key: "blend", labels: { en: "Blend", am: "ቅልቅል" } },
+          ],
+        },
+        {
+          key: "care_instructions",
+          inputType: CategoryAttributeInputType.text,
+          sortOrder: 1,
+          isRequired: false,
+          labels: { en: "Care instructions", am: "የአጠባበቅ መመሪያ" },
+        },
+      ],
+    },
+    {
+      slug: "jewelry",
       defs: [
         {
           key: "material",
@@ -466,18 +486,18 @@ async function seedCategoryAttributeDefinitions(
       ],
     },
     {
-      slug: "home-living",
+      slug: "basketry",
       defs: [
         {
-          key: "room",
+          key: "material",
           inputType: CategoryAttributeInputType.select,
           sortOrder: 0,
           isRequired: false,
-          labels: { en: "Room", am: "ክፍል" },
+          labels: { en: "Material", am: "ቁስ" },
           options: [
-            { key: "kitchen", labels: { en: "Kitchen", am: "ማዕድ" } },
-            { key: "living", labels: { en: "Living room", am: "መኖሪያ" } },
-            { key: "bedroom", labels: { en: "Bedroom", am: "መኝታ" } },
+            { key: "grass", labels: { en: "Grass / reed", am: "ሣር / ቀንድ" } },
+            { key: "rattan", labels: { en: "Rattan", am: "ራታን" } },
+            { key: "bamboo", labels: { en: "Bamboo", am: "ባምቡ" } },
           ],
         },
         {
@@ -490,53 +510,26 @@ async function seedCategoryAttributeDefinitions(
       ],
     },
     {
-      slug: "art-collectibles",
+      slug: "pottery",
       defs: [
         {
-          key: "medium",
-          inputType: CategoryAttributeInputType.select,
-          sortOrder: 0,
-          isRequired: true,
-          labels: { en: "Medium", am: "መስመር" },
-          options: [
-            { key: "paper", labels: { en: "Paper", am: "ወረቀት" } },
-            { key: "canvas", labels: { en: "Canvas", am: "ካንቫስ" } },
-            { key: "digital", labels: { en: "Digital", am: "ዲጂታል" } },
-          ],
-        },
-      ],
-    },
-    {
-      slug: "paper-party",
-      defs: [
-        {
-          key: "occasion",
+          key: "finish",
           inputType: CategoryAttributeInputType.select,
           sortOrder: 0,
           isRequired: false,
-          labels: { en: "Occasion", am: "ዝግጅት" },
+          labels: { en: "Finish", am: "ማብራሪያ" },
           options: [
-            { key: "wedding", labels: { en: "Wedding", am: "ሰርግ" } },
-            { key: "birthday", labels: { en: "Birthday", am: "የልደት" } },
-            { key: "holiday", labels: { en: "Holiday", am: "በዓል" } },
+            { key: "matte", labels: { en: "Matte", am: "ማት" } },
+            { key: "glossy", labels: { en: "Glossy", am: "ያንጸባርቅ" } },
+            { key: "unglazed", labels: { en: "Unglazed", am: "ያልተነከረ" } },
           ],
         },
-      ],
-    },
-    {
-      slug: "vintage",
-      defs: [
         {
-          key: "era",
-          inputType: CategoryAttributeInputType.select,
-          sortOrder: 0,
+          key: "food_safe_note",
+          inputType: CategoryAttributeInputType.text,
+          sortOrder: 1,
           isRequired: false,
-          labels: { en: "Era", am: "ዘመን" },
-          options: [
-            { key: "pre1950", labels: { en: "Pre-1950", am: "ከ1950 በፊት" } },
-            { key: "1950-1990", labels: { en: "1950–1990", am: "1950–1990" } },
-            { key: "1990plus", labels: { en: "1990+", am: "1990+" } },
-          ],
+          labels: { en: "Food safety / use", am: "ለምግብ / አጠቃቀም" },
         },
       ],
     },
@@ -563,6 +556,23 @@ async function seedCategoryAttributeDefinitions(
           sortOrder: 1,
           isRequired: false,
           labels: { en: "Fabric", am: "ጨርቅ" },
+        },
+      ],
+    },
+    {
+      slug: "art-collectibles",
+      defs: [
+        {
+          key: "medium",
+          inputType: CategoryAttributeInputType.select,
+          sortOrder: 0,
+          isRequired: true,
+          labels: { en: "Medium", am: "መስመር" },
+          options: [
+            { key: "paper", labels: { en: "Paper", am: "ወረቀት" } },
+            { key: "canvas", labels: { en: "Canvas", am: "ካንቫስ" } },
+            { key: "digital", labels: { en: "Digital", am: "ዲጂታል" } },
+          ],
         },
       ],
     },
@@ -607,13 +617,13 @@ async function seedCategoryAttributeDefinitions(
   }
 }
 
-async function seedSampleProductAttributes(
+async function seedSampleListingAttributes(
   prisma: PrismaClient,
-  slugToProductId: Record<string, string>,
+  slugToListingId: Record<string, string>,
   slugToCategoryId: Record<string, string>,
 ) {
-  const jewelryId = slugToCategoryId["jewelry-accessories"];
-  const earringsId = slugToProductId["hammered-sterling-silver-earrings"];
+  const jewelryId = slugToCategoryId["jewelry"];
+  const earringsId = slugToListingId["hammered-sterling-silver-earrings"];
   if (!jewelryId || !earringsId) return;
 
   const matDef = await prisma.categoryAttributeDefinition.findFirst({
@@ -622,9 +632,9 @@ async function seedSampleProductAttributes(
   });
   const silver = matDef?.allowedValues.find((v) => v.key === "silver");
   if (matDef && silver) {
-    await prisma.productAttributeValue.create({
+    await prisma.listingAttributeValue.create({
       data: {
-        productId: earringsId,
+        listingId: earringsId,
         definitionId: matDef.id,
         allowedValueId: silver.id,
       },
@@ -635,9 +645,9 @@ async function seedSampleProductAttributes(
     where: { categoryId: jewelryId, key: "care_instructions" },
   });
   if (careDef) {
-    await prisma.productAttributeValue.create({
+    await prisma.listingAttributeValue.create({
       data: {
-        productId: earringsId,
+        listingId: earringsId,
         definitionId: careDef.id,
         textValue: "Store in a dry place; polish with a soft cloth.",
       },
@@ -681,9 +691,9 @@ async function main() {
     prisma.cartItem.deleteMany(),
     prisma.cart.deleteMany(),
     prisma.promotion.deleteMany(),
-    prisma.productImage.deleteMany(),
-    prisma.productVariant.deleteMany(),
-    prisma.product.deleteMany(),
+    prisma.listingImage.deleteMany(),
+    prisma.listingVariant.deleteMany(),
+    prisma.listing.deleteMany(),
     prisma.shop.deleteMany(),
     prisma.tag.deleteMany(),
     prisma.category.deleteMany(),
@@ -713,6 +723,7 @@ async function main() {
       description: "Curated marketplace catalog",
       status: "active",
       ownerUserId: null,
+      imageUrl: "/static/shops/yej-sira.jpg",
     },
   });
 
@@ -769,11 +780,11 @@ async function main() {
     data: tagDefinitions.map((t) => ({ slug: t.slug, name: t.name })),
   });
 
-  for (const p of products) {
+  for (const p of listings) {
     const categoryId = slugToCategoryId[p.categorySlug];
     if (!categoryId) throw new Error(`Missing category ${p.categorySlug}`);
 
-    await prisma.product.create({
+    await prisma.listing.create({
       data: {
         slug: p.slug,
         shopId: platformShop.id,
@@ -800,7 +811,7 @@ async function main() {
             stock: v.stock,
           })),
         },
-        productTags: {
+        listingTags: {
           create: p.tagSlugs.map((slug) => ({
             tag: { connect: { slug } },
           })),
@@ -809,16 +820,16 @@ async function main() {
     });
   }
 
-  const slugToProductId: Record<string, string> = {};
-  for (const p of products) {
-    const row = await prisma.product.findUnique({
+  const slugToListingId: Record<string, string> = {};
+  for (const p of listings) {
+    const row = await prisma.listing.findUnique({
       where: { slug: p.slug },
       select: { id: true },
     });
-    if (row) slugToProductId[p.slug] = row.id;
+    if (row) slugToListingId[p.slug] = row.id;
   }
 
-  await seedSampleProductAttributes(prisma, slugToProductId, slugToCategoryId);
+  await seedSampleListingAttributes(prisma, slugToListingId, slugToCategoryId);
 
   const now = new Date();
   await prisma.user.createMany({
@@ -844,22 +855,22 @@ async function main() {
     },
   });
 
-  for (let pi = 0; pi < products.length; pi++) {
-    const p = products[pi];
-    const productId = slugToProductId[p.slug];
-    if (!productId) continue;
+  for (let pi = 0; pi < listings.length; pi++) {
+    const p = listings[pi];
+    const listingId = slugToListingId[p.slug];
+    if (!listingId) continue;
     for (let ui = 0; ui < SEED_REVIEWER_USERS.length; ui++) {
       const stars = 4 + ((pi + ui) % 2);
-      await prisma.productRating.create({
+      await prisma.listingRating.create({
         data: {
           userId: SEED_REVIEWER_USERS[ui].id,
-          productId,
+          listingId,
           stars,
           comment: SEED_REVIEW_COMMENTS[ui],
         },
       });
     }
-    await recalculateProductRatingAggregate(prisma, productId);
+    await recalculateListingRatingAggregate(prisma, listingId);
   }
 
   for (const promo of promotionSeeds) {
@@ -876,36 +887,30 @@ async function main() {
         priority: promo.priority,
       },
     });
-    await prisma.promotionProduct.createMany({
-      data: promo.productSlugs.map((slug, i) => ({
+    await prisma.promotionListing.createMany({
+      data: promo.listingSlugs.map((slug, i) => ({
         promotionId: created.id,
-        productId: slugToProductId[slug],
+        listingId: slugToListingId[slug],
         sortOrder: i,
       })),
     });
   }
 
-  const categoryAmharic: Partial<Record<(typeof categories)[number]["slug"], string>> = {
-    "jewelry-accessories": "ጌ ውላጅ እና ማስዋቢያዎች",
-    "home-living": "ቤት እና ህይወት",
-    "art-collectibles": "ጥበብ እና ስብስቦች",
-    "paper-party": "ወረቀት እና ድግስ",
-    vintage: "ቬንቴጅ",
+  const categoryAmharic: Record<(typeof categories)[number]["slug"], string> = {
+    crochet: "ክሮሼ",
+    jewelry: "ጌጣጌጥ",
+    basketry: "የቅርብ ስራ",
+    pottery: "የሸክራ ስራ",
     clothing: "ልብስ",
+    "art-collectibles": "ጥበብ እና ስብስቦች",
   };
 
   await prisma.categoryTranslation.createMany({
-    data: categoryRows
-      .map((row) => {
-        const name = categoryAmharic[row.slug as keyof typeof categoryAmharic];
-        if (!name) return null;
-        return {
-          categoryId: row.id,
-          locale: ContentLocale.am,
-          name,
-        };
-      })
-      .filter((x): x is NonNullable<typeof x> => x != null),
+    data: categoryRows.map((row) => ({
+      categoryId: row.id,
+      locale: ContentLocale.am,
+      name: categoryAmharic[row.slug as (typeof categories)[number]["slug"]],
+    })),
   });
 
   const tagAmharic: Partial<Record<(typeof tagDefinitions)[number]["slug"], string>> = {
@@ -929,9 +934,9 @@ async function main() {
     });
   }
 
-  const productAmharic: Partial<
+  const listingAmharic: Partial<
     Record<
-      SeedProduct["slug"],
+      SeedListing["slug"],
       { name: string; description: string; variants?: Record<string, string> }
     >
   > = {
@@ -950,25 +955,25 @@ async function main() {
     },
   };
 
-  for (const [slug, am] of Object.entries(productAmharic)) {
-    const product = await prisma.product.findUnique({
+  for (const [slug, am] of Object.entries(listingAmharic)) {
+    const listing = await prisma.listing.findUnique({
       where: { slug },
       include: { variants: true },
     });
-    if (!product) continue;
-    await prisma.productTranslation.create({
+    if (!listing) continue;
+    await prisma.listingTranslation.create({
       data: {
-        productId: product.id,
+        listingId: listing.id,
         locale: ContentLocale.am,
         name: am.name,
         description: am.description,
       },
     });
     if (am.variants) {
-      for (const v of product.variants) {
+      for (const v of listing.variants) {
         const labelAm = am.variants[v.label];
         if (!labelAm) continue;
-        await prisma.productVariantTranslation.create({
+        await prisma.listingVariantTranslation.create({
           data: {
             variantId: v.id,
             locale: ContentLocale.am,
@@ -995,7 +1000,7 @@ async function main() {
   }
 
   console.log(
-    `Seeded ${categories.length} categories, ${products.length} products, ${promotionSeeds.length} promotions.`,
+    `Seeded ${categories.length} categories, ${listings.length} listings, ${promotionSeeds.length} promotions.`,
   );
 }
 

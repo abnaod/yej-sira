@@ -3,7 +3,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { parseTagSlugsParam } from "@/features/category";
 import type { CategorySort } from "@/features/category";
-import { SearchPage, productsSearchQuery } from "@/features/search";
+import { SearchPage, listingsSearchQuery } from "@/features/search";
 import { tagsQuery } from "@/features/storefront";
 
 const sortValues = ["relevancy", "price-asc", "price-desc", "newest"] as const;
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/$locale/(store)/search/")({
     const locale = params.locale as Locale;
     await Promise.all([
       context.queryClient.ensureQueryData(
-        productsSearchQuery(
+        listingsSearchQuery(
           locale,
           deps.q,
           deps.sort,

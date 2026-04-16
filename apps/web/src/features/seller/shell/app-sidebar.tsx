@@ -97,11 +97,11 @@ export function SellerAppSidebar() {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  isActive={matchesSellPath(pathname, locale, "/products")}
+                  isActive={matchesSellPath(pathname, locale, "/listings")}
                 >
-                  <Link to="/$locale/sell/products" params={{ locale }} search={{ new: false, edit: undefined }}>
+                  <Link to="/$locale/sell/listings" params={{ locale }} search={{ new: false, edit: undefined }}>
                     <Package />
-                    <span>Products</span>
+                    <span>Listings</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

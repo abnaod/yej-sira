@@ -12,7 +12,7 @@ export function BrandLogo({
       )}
       {...props}
     >
-      YEJSRA
+      YEJSIRA
     </span>
   );
 }

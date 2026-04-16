@@ -30,7 +30,7 @@ export function assertSellerCanManageShop(shop: Shop, userId: string): void {
     throw new HTTPException(403, { message: "Forbidden" });
   }
   if (shop.status === "rejected" || shop.status === "suspended") {
-    throw new HTTPException(403, { message: "Shop cannot list products" });
+    throw new HTTPException(403, { message: "Shop cannot list listings" });
   }
 }
 

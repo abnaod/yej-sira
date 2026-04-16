@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { prisma, publicProductVisibilityWhere } from "../../lib/db";
+import { prisma, publicListingVisibilityWhere } from "../../lib/db";
 import { auth } from "../auth/auth";
-import { getProductCardInclude, mapProductCard } from "../catalog/product-card.mapper";
+import { getListingCardInclude, mapListingCard } from "../catalog/listing-card.mapper";
 import { favoriteBodySchema } from "./favorites.schema";
 
 export const favoritesRouter = new Hono();
@@ -19,18 +19,18 @@ favoritesRouter.get("/favorites", async (c) => {
   const rows = await prisma.favorite.findMany({
     where: {
       userId: session.user.id,
-      product: publicProductVisibilityWhere,
+      listing: publicListingVisibilityWhere,
     },
     include: {
-      product: { include: getProductCardInclude(now, locale) },
+      listing: { include: getListingCardInclude(now, locale) },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  const products = rows.map((r) => mapProductCard(r.product, locale));
+  const listings = rows.map((r) => mapListingCard(r.listing, locale));
   return c.json({
-    products,
-    slugs: products.map((p) => p.slug),
+    listings,
+    slugs: listings.map((p) => p.slug),
   });
 });
 
@@ -46,18 +46,18 @@ favoritesRouter.post("/favorites", async (c) => {
     throw new HTTPException(400, { message: "Invalid body" });
   }
 
-  const product = await prisma.product.findFirst({
-    where: { slug: parsed.data.slug, ...publicProductVisibilityWhere },
+  const listing = await prisma.listing.findFirst({
+    where: { slug: parsed.data.slug, ...publicListingVisibilityWhere },
   });
-  if (!product) {
-    throw new HTTPException(404, { message: "Product not found" });
+  if (!listing) {
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
   const existing = await prisma.favorite.findUnique({
     where: {
-      userId_productId: {
+      userId_listingId: {
         userId: session.user.id,
-        productId: product.id,
+        listingId: listing.id,
       },
     },
   });
@@ -65,7 +65,7 @@ favoritesRouter.post("/favorites", async (c) => {
     await prisma.favorite.create({
       data: {
         userId: session.user.id,
-        productId: product.id,
+        listingId: listing.id,
       },
     });
   }
@@ -80,18 +80,18 @@ favoritesRouter.delete("/favorites/:slug", async (c) => {
   }
 
   const slug = c.req.param("slug");
-  const product = await prisma.product.findUnique({
+  const listing = await prisma.listing.findUnique({
     where: { slug },
     select: { id: true },
   });
-  if (!product) {
-    throw new HTTPException(404, { message: "Product not found" });
+  if (!listing) {
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
   const deleted = await prisma.favorite.deleteMany({
     where: {
       userId: session.user.id,
-      productId: product.id,
+      listingId: listing.id,
     },
   });
   if (deleted.count === 0) {

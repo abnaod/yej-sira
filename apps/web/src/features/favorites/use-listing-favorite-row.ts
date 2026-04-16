@@ -10,7 +10,7 @@ import {
   removeFavoriteMutationOptions,
 } from "./favorites.queries";
 
-export function useProductFavoriteRow(slug: string) {
+export function useListingFavoriteRow(slug: string) {
   const locale = useLocale();
   const { data: session } = authClient.useSession();
   const { openAuth } = useAuthDialog();

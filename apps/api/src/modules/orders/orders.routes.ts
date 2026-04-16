@@ -3,7 +3,7 @@ import type { Locale } from "@ys/intl";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { pickProductName, pickVariantLabel } from "../../lib/localized-catalog";
+import { pickListingName, pickVariantLabel } from "../../lib/localized-catalog";
 import { getOwnedShop } from "../../lib/authz";
 import { auth } from "../auth/auth";
 import { prisma } from "../../lib/db";
@@ -24,7 +24,7 @@ function orderLineInclude(locale: Locale) {
     variant: {
       include: {
         ...(tr ? { translations: tr } : {}),
-        product: {
+        listing: {
           include: {
             ...(tr ? { translations: tr } : {}),
             images: { orderBy: { sortOrder: "asc" } },
@@ -135,10 +135,10 @@ ordersRouter.post("/checkout", async (c) => {
 
   for (const line of itemsPreview) {
     if (line.quantity > line.variant.stock) {
-      const pname = pickProductName(
+      const pname = pickListingName(
         {
-          name: line.variant.product.name,
-          translations: line.variant.product.translations ?? [],
+          name: line.variant.listing.name,
+          translations: line.variant.listing.translations ?? [],
         },
         locale,
       );
@@ -187,13 +187,13 @@ ordersRouter.post("/checkout", async (c) => {
         ...shippingSnapshot,
         items: {
           create: items.map((line) => {
-            const imageUrl = line.variant.product.images[0]?.url ?? "";
+            const imageUrl = line.variant.listing.images[0]?.url ?? "";
             return {
-              productId: line.variant.productId,
-              productName: pickProductName(
+              listingId: line.variant.listingId,
+              listingName: pickListingName(
                 {
-                  name: line.variant.product.name,
-                  translations: line.variant.product.translations ?? [],
+                  name: line.variant.listing.name,
+                  translations: line.variant.listing.translations ?? [],
                 },
                 locale,
               ),
@@ -224,7 +224,7 @@ ordersRouter.post("/checkout", async (c) => {
     });
 
     for (const line of items) {
-      await tx.productVariant.update({
+      await tx.listingVariant.update({
         where: { id: line.variantId },
         data: { stock: { decrement: line.quantity } },
       });
@@ -329,14 +329,14 @@ ordersRouter.get("/orders/:id", async (c) => {
   if (!isBuyer) {
     const shop = await getOwnedShop(session.user.id);
     if (shop) {
-      const productIds = await prisma.product.findMany({
+      const listingIds = await prisma.listing.findMany({
         where: { shopId: shop.id },
         select: { id: true },
       });
-      const shopIds = productIds.map((p) => p.id);
+      const shopIds = listingIds.map((p) => p.id);
       if (shopIds.length > 0) {
         const hit = await prisma.orderItem.findFirst({
-          where: { orderId: id, productId: { in: shopIds } },
+          where: { orderId: id, listingId: { in: shopIds } },
         });
         isSeller = Boolean(hit);
       }
@@ -373,7 +373,7 @@ ordersRouter.get("/orders/:id", async (c) => {
         : null,
       items: order.items.map((i) => ({
         id: i.id,
-        productName: i.productName,
+        listingName: i.listingName,
         variantLabel: i.variantLabel,
         unitPrice: toNumber(i.unitPrice),
         quantity: i.quantity,

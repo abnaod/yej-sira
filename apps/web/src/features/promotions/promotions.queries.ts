@@ -1,7 +1,7 @@
 import type { Locale } from "@ys/intl";
 import { queryOptions } from "@tanstack/react-query";
 
-import type { ProductCardDto } from "@/features/storefront/storefront.queries";
+import type { ListingCardDto } from "@/features/storefront/storefront.queries";
 import { apiFetchJson } from "@/lib/api";
 
 export type PromotionSummaryDto = {
@@ -34,7 +34,7 @@ export type PromotionDetailResponse = {
     heroImageUrl?: string;
     active: boolean;
   };
-  products: ProductCardDto[];
+  listings: ListingCardDto[];
   page: number;
   pageSize: number;
   total: number;

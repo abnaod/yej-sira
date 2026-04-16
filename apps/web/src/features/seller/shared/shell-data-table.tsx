@@ -40,8 +40,8 @@ export type SellerTableEmptyState = {
 
 function defaultFilterLabel(countNoun: string): string {
   switch (countNoun) {
-    case "product":
-      return "Product name";
+    case "listing":
+      return "Listing name";
     case "order":
       return "Order ID";
     default:
@@ -55,14 +55,14 @@ function defaultEmptyState(countNoun: string): SellerTableEmptyState {
       return {
         icon: ShoppingBag,
         title: "No orders yet",
-        description: "When customers buy your products, their orders will show up here.",
+        description: "When customers buy your listings, their orders will show up here.",
       };
-    case "product":
+    case "listing":
     default:
       return {
         icon: Package,
-        title: "No products yet",
-        description: "Add your first product to start selling from your shop.",
+        title: "No listings yet",
+        description: "Add your first listing to start selling from your shop.",
       };
   }
 }
@@ -71,8 +71,8 @@ function defaultLoadingTitle(countNoun: string): string {
   switch (countNoun) {
     case "order":
       return "Loading orders…";
-    case "product":
-      return "Loading products…";
+    case "listing":
+      return "Loading listings…";
     default:
       return "Loading…";
   }
@@ -86,7 +86,7 @@ export type SellerShellDataTableProps<TData, TValue> = {
   /** Visible label for the filter field (defaults from `countNoun`). */
   filterLabel?: string;
   filterPlaceholder: string;
-  /** Singular noun for row counts (e.g. `product`, `order`). */
+  /** Singular noun for row counts (e.g. `listing`, `order`). */
   countNoun: string;
   toolbarEnd?: React.ReactNode;
   /** Overrides the default empty copy for this `countNoun`. */

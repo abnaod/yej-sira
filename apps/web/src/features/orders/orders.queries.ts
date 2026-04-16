@@ -57,7 +57,7 @@ export type OrderDetailResponse = {
     } | null;
     items: {
       id: string;
-      productName: string;
+      listingName: string;
       variantLabel: string | null;
       unitPrice: number;
       quantity: number;

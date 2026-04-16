@@ -3,36 +3,36 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { getRouteApi } from "@tanstack/react-router";
 
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { ProductCard } from "@/components/ui/product-card";
+import { ListingCard } from "@/components/ui/listing-card";
 import { addToCartMutationOptions } from "@/features/cart/cart.queries";
-import { useProductFavoriteRow } from "@/features/favorites/use-product-favorite-row";
-import { productDetailQuery, relatedProductsQuery } from "./product.queries";
+import { useListingFavoriteRow } from "@/features/favorites/use-listing-favorite-row";
+import { listingDetailQuery, relatedListingsQuery } from "./listings.queries";
 
 import { BuyBox } from "./components/buy-box";
-import { ProductDetailTabs } from "./components/product-detail-tabs";
-import { ProductGallery } from "./components/product-gallery";
+import { ListingDetailTabs } from "./components/listings-detail-tabs";
+import { ListingGallery } from "./components/listings-gallery";
 
-const routeApi = getRouteApi("/$locale/(store)/products/$productId");
+const routeApi = getRouteApi("/$locale/(store)/listings/$listingId");
 
-export function ProductPage() {
-  const { productId, locale: localeParam } = routeApi.useParams();
+export function ListingPage() {
+  const { listingId, locale: localeParam } = routeApi.useParams();
   const locale = localeParam as Locale;
   const navigate = routeApi.useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: productData } = useSuspenseQuery(productDetailQuery(locale, productId));
-  const { data: relatedData } = useSuspenseQuery(relatedProductsQuery(locale, productId));
+  const { data: listingData } = useSuspenseQuery(listingDetailQuery(locale, listingId));
+  const { data: relatedData } = useSuspenseQuery(relatedListingsQuery(locale, listingId));
 
   const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
-  const favorite = useProductFavoriteRow(productData.product.slug);
+  const favorite = useListingFavoriteRow(listingData.listing.slug);
 
-  const { product } = productData;
+  const { listing } = listingData;
 
   const breadcrumbItems = [
     {
-      label: product.category.name,
+      label: listing.category.name,
       to: "/$locale/categories/$categoryId",
-      params: { locale, categoryId: product.category.slug },
+      params: { locale, categoryId: listing.category.slug },
       search: {
         sort: "relevancy",
         tagSlugs: "",
@@ -41,7 +41,7 @@ export function ProductPage() {
         allowedValueKey: undefined,
       },
     },
-    { label: product.name },
+    { label: listing.name },
   ];
 
   return (
@@ -49,17 +49,17 @@ export function ProductPage() {
       <Breadcrumb items={breadcrumbItems} className="mb-6" />
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <ProductGallery images={product.images} productName={product.name} />
+        <ListingGallery images={listing.images} listingName={listing.name} />
 
         <BuyBox
-          name={product.name}
-          shop={product.shop}
+          name={listing.name}
+          shop={listing.shop}
           monthlyPrice={99.99}
           financingNote="Suggested payments with 6 months special financing"
-          rating={product.rating}
-          reviewCount={product.reviewCount}
-          promotion={product.promotion}
-          variants={product.variants.map((v) => ({
+          rating={listing.rating}
+          reviewCount={listing.reviewCount}
+          promotion={listing.promotion}
+          variants={listing.variants.map((v) => ({
             id: v.id,
             label: v.label,
             colorHex: v.colorHex ?? undefined,
@@ -77,23 +77,23 @@ export function ProductPage() {
         />
       </div>
 
-      <ProductDetailTabs
+      <ListingDetailTabs
         locale={locale}
-        productSlug={productId}
-        description={product.description}
-        shopName={product.shop.name}
-        attributes={product.attributes}
+        listingSlug={listingId}
+        description={listing.description}
+        shopName={listing.shop.name}
+        attributes={listing.attributes}
       />
 
       <section className="mt-10">
         <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground md:text-xl">
-          Related Products
+          Related Listings
         </h2>
         <div
           className="-mx-1 flex gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
         >
-          {relatedData.products.map((p) => (
-            <ProductCard
+          {relatedData.listings.map((p) => (
+            <ListingCard
               key={p.id}
               variant="compact"
               slug={p.slug}
@@ -113,7 +113,7 @@ export function ProductPage() {
                       addToCart.mutate({
                         variantId: p.defaultVariantId!,
                         quantity: 1,
-                        productName: p.name,
+                        listingName: p.name,
                       })
                   : undefined
               }

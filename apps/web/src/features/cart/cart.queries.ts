@@ -40,11 +40,11 @@ function invalidateCart(queryClient: QueryClient, locale: Locale) {
   void queryClient.invalidateQueries({ queryKey: ["cart", locale] });
 }
 
-/** `productName` is optional UI-only copy for toasts; it is not sent to the API. */
+/** `listingName` is optional UI-only copy for toasts; it is not sent to the API. */
 export type AddToCartInput = {
   variantId: string;
   quantity: number;
-  productName?: string;
+  listingName?: string;
 };
 
 export function addToCartMutationOptions(queryClient: QueryClient, locale: Locale) {
@@ -60,7 +60,7 @@ export function addToCartMutationOptions(queryClient: QueryClient, locale: Local
     },
     onSuccess: (_data, variables) => {
       invalidateCart(queryClient, locale);
-      const label = variables.productName?.trim();
+      const label = variables.listingName?.trim();
       toast.success(label ? `${label} added to cart` : "Added to cart");
     },
     onError: (err) => {

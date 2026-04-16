@@ -210,7 +210,7 @@ export function CheckoutPage() {
             <ShoppingBag className="size-7" strokeWidth={1.5} />
           </div>
           <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
-            Your cart is empty. Add products to your cart before you can check out.
+            Your cart is empty. Add listings to your cart before you can check out.
           </p>
         </div>
       </main>

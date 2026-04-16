@@ -17,10 +17,10 @@ export function activePromotionWhere(now: Date) {
 }
 
 /**
- * When a product is in multiple overlapping active promotions, pick one ribbon:
+ * When a listing is in multiple overlapping active promotions, pick one ribbon:
  * highest priority, then soonest endsAt (tie-break).
  */
-export function pickPromotionForProduct<
+export function pickPromotionForListing<
   T extends { priority: number; endsAt: Date },
 >(candidates: T[]): T | undefined {
   if (candidates.length === 0) return undefined;

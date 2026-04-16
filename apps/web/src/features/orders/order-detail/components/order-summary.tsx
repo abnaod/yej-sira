@@ -1,5 +1,6 @@
 import { Minus, Plus, TicketPercent } from "lucide-react";
 
+import { assetUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,7 +78,7 @@ export function OrderSummary({
                 <div key={item.id} className="flex items-start gap-2 sm:gap-3">
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-neutral-50">
                     <img
-                      src={item.imageUrl}
+                      src={assetUrl(item.imageUrl)}
                       alt=""
                       className="h-full w-full object-cover object-center"
                     />

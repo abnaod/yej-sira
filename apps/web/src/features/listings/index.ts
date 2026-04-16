@@ -1,2 +1,2 @@
-export * from "./product.queries";
-export { ProductPage } from "./product.page";
+export * from "./listings.queries";
+export { ListingPage } from "./listings.page";

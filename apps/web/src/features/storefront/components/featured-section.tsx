@@ -1,17 +1,17 @@
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import { ProductCard } from "@/components/ui/product-card";
+import { ListingCard } from "@/components/ui/listing-card";
 import { addToCartMutationOptions } from "@/features/cart/cart.queries";
 import { useLocale } from "@/lib/locale-path";
 
-import { featuredProductsQuery } from "../storefront.queries";
+import { featuredListingsQuery } from "../storefront.queries";
 
 export function FeaturedSection() {
   const { t } = useTranslation("common");
   const locale = useLocale();
   const queryClient = useQueryClient();
-  const { data } = useSuspenseQuery(featuredProductsQuery(locale, 12));
+  const { data } = useSuspenseQuery(featuredListingsQuery(locale, 12));
 
   const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
 
@@ -21,27 +21,27 @@ export function FeaturedSection() {
         {t("popularPicks")}
       </h2>
       <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-6 sm:mt-10 sm:grid-cols-3 lg:grid-cols-4">
-        {data.products.map((product) => (
-          <ProductCard
-            key={product.id}
-            slug={product.slug}
-            defaultVariantId={product.defaultVariantId}
-            name={product.name}
-            price={product.price}
-            originalPrice={product.originalPrice}
-            description={product.description}
-            imageUrl={product.imageUrl}
-            rating={product.rating}
-            reviewCount={product.reviewCount}
-            shop={product.shop}
-            promotion={product.promotion}
+        {data.listings.map((listing) => (
+          <ListingCard
+            key={listing.id}
+            slug={listing.slug}
+            defaultVariantId={listing.defaultVariantId}
+            name={listing.name}
+            price={listing.price}
+            originalPrice={listing.originalPrice}
+            description={listing.description}
+            imageUrl={listing.imageUrl}
+            rating={listing.rating}
+            reviewCount={listing.reviewCount}
+            shop={listing.shop}
+            promotion={listing.promotion}
             onAddToCart={
-              product.defaultVariantId
+              listing.defaultVariantId
                 ? () =>
                     addToCart.mutate({
-                      variantId: product.defaultVariantId!,
+                      variantId: listing.defaultVariantId!,
                       quantity: 1,
-                      productName: product.name,
+                      listingName: listing.name,
                     })
                 : undefined
             }

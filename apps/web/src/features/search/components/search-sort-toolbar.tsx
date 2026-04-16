@@ -40,7 +40,7 @@ export function SearchSortToolbar({
                 "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full bg-white py-2 pl-4 pr-3 text-sm text-foreground shadow-sm",
                 "transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 dark:hover:bg-gray-800",
               )}
-              aria-label="Sort products"
+              aria-label="Sort listings"
             >
               <span className="shrink-0 text-muted-foreground">Sort by:</span>
               <span className="min-w-0 max-w-48 truncate font-semibold sm:max-w-none">

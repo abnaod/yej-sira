@@ -212,7 +212,7 @@ export function CategoryFilterDrawer({
                   <div className="flex items-center gap-3">
                     <RadioGroupItem value="_all" id="promo-all" />
                     <Label htmlFor="promo-all" className="font-normal">
-                      All products
+                      All listings
                     </Label>
                   </div>
                   {(promotionsData?.promotions ?? []).map((p) => (

@@ -3,12 +3,12 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 import { pickPromotionCopy } from "../../lib/localized-catalog";
-import { prisma, publicProductVisibilityWhere } from "../../lib/db";
+import { prisma, publicListingVisibilityWhere } from "../../lib/db";
 import {
-  getProductCardInclude,
-  mapProductCard,
+  getListingCardInclude,
+  mapListingCard,
   minVariantPrice,
-} from "../catalog/product-card.mapper";
+} from "../catalog/listing-card.mapper";
 import { activePromotionWhere, isPromotionActive } from "./promotion.utils";
 import { promotionDetailQuerySchema } from "./promotions.schema";
 
@@ -83,15 +83,15 @@ promotionsRouter.get("/promotions/:slug", async (c) => {
 
   const now = new Date();
   const active = isPromotionActive(promotion, now);
-  const cardInclude = getProductCardInclude(now, locale);
+  const cardInclude = getListingCardInclude(now, locale);
 
-  const enrollment = await prisma.promotionProduct.findMany({
+  const enrollment = await prisma.promotionListing.findMany({
     where: {
       promotionId: promotion.id,
-      product: publicProductVisibilityWhere,
+      listing: publicListingVisibilityWhere,
     },
     include: {
-      product: {
+      listing: {
         include: cardInclude,
       },
     },
@@ -100,7 +100,7 @@ promotionsRouter.get("/promotions/:slug", async (c) => {
 
   const withPrice = enrollment.map((e) => ({
     enrollment: e,
-    minPrice: minVariantPrice(e.product.variants),
+    minPrice: minVariantPrice(e.listing.variants),
   }));
 
   const total = withPrice.length;
@@ -129,8 +129,8 @@ promotionsRouter.get("/promotions/:slug", async (c) => {
       heroImageUrl: promotion.heroImageUrl ?? undefined,
       active,
     },
-    products: slice.map((x) => {
-      const card = mapProductCard(x.enrollment.product, locale);
+    listings: slice.map((x) => {
+      const card = mapListingCard(x.enrollment.listing, locale);
       if (!active) {
         return card;
       }

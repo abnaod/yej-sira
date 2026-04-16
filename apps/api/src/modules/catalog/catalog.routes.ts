@@ -6,38 +6,38 @@ import { HTTPException } from "hono/http-exception";
 import {
   getCategoryDefinitionsForApi,
   mapDefinitionsToJson,
-  mapProductAttributeValuesForDetail,
+  mapListingAttributeValuesForDetail,
 } from "../../lib/category-attributes";
-import { prisma, publicProductVisibilityWhere } from "../../lib/db";
-import { recalculateProductRatingAggregate } from "../../lib/product-rating-aggregate";
+import { prisma, publicListingVisibilityWhere } from "../../lib/db";
+import { recalculateListingRatingAggregate } from "../../lib/listing-rating-aggregate";
 import {
   pickCategoryName,
-  pickProductDescription,
-  pickProductName,
+  pickListingDescription,
+  pickListingName,
   pickTagName,
   pickVariantLabel,
 } from "../../lib/localized-catalog";
 import { toNumber } from "../../lib/money";
 import {
   featuredQuerySchema,
-  productListQuerySchema,
-  productSearchQuerySchema,
+  listingListQuerySchema,
+  listingSearchQuerySchema,
 } from "./catalog.schema";
 import {
-  getProductCardInclude,
-  getProductDetailInclude,
-  mapProductCard,
+  getListingCardInclude,
+  getListingDetailInclude,
+  mapListingCard,
   minVariantPrice,
-} from "./product-card.mapper";
-import { productReviewPostSchema, productReviewsQuerySchema } from "./product-reviews.schema";
+} from "./listing-card.mapper";
+import { listingReviewPostSchema, listingReviewsQuerySchema } from "./listing-reviews.schema";
 import { auth } from "../auth/auth";
 import {
   activePromotionWhere,
-  pickPromotionForProduct,
+  pickPromotionForListing,
 } from "../promotions/promotion.utils";
 
-function productSearchWhere(q: string, locale: Locale): Prisma.ProductWhereInput {
-  const or: Prisma.ProductWhereInput[] = [
+function listingSearchWhere(q: string, locale: Locale): Prisma.ListingWhereInput {
+  const or: Prisma.ListingWhereInput[] = [
     { name: { contains: q, mode: "insensitive" } },
     { description: { contains: q, mode: "insensitive" } },
   ];
@@ -57,7 +57,7 @@ function productSearchWhere(q: string, locale: Locale): Prisma.ProductWhereInput
   return { OR: or };
 }
 
-function productListWhere(args: {
+function listingListWhere(args: {
   categorySlug?: string;
   q?: string;
   tagSlugs?: string[];
@@ -66,8 +66,8 @@ function productListWhere(args: {
   allowedValueKey?: string;
   now: Date;
   locale: Locale;
-}): Prisma.ProductWhereInput {
-  const clauses: Prisma.ProductWhereInput[] = [publicProductVisibilityWhere];
+}): Prisma.ListingWhereInput {
+  const clauses: Prisma.ListingWhereInput[] = [publicListingVisibilityWhere];
   if (args.categorySlug) {
     clauses.push({ category: { slug: args.categorySlug } });
   }
@@ -85,16 +85,16 @@ function productListWhere(args: {
     });
   }
   if (args.q) {
-    clauses.push(productSearchWhere(args.q, args.locale));
+    clauses.push(listingSearchWhere(args.q, args.locale));
   }
   if (args.tagSlugs?.length) {
     for (const slug of args.tagSlugs) {
-      clauses.push({ productTags: { some: { tag: { slug } } } });
+      clauses.push({ listingTags: { some: { tag: { slug } } } });
     }
   }
   if (args.promotionSlug) {
     clauses.push({
-      promotionProducts: {
+      promotionListings: {
         some: {
           promotion: {
             slug: args.promotionSlug,
@@ -171,8 +171,8 @@ catalogRouter.get("/categories/:slug", async (c) => {
     include: {
       _count: {
         select: {
-          products: {
-            where: publicProductVisibilityWhere,
+          listings: {
+            where: publicListingVisibilityWhere,
           },
         },
       },
@@ -195,7 +195,7 @@ catalogRouter.get("/categories/:slug", async (c) => {
       ),
       imageUrl: row.imageUrl,
       sortOrder: row.sortOrder,
-      productCount: row._count.products,
+      listingCount: row._count.listings,
     },
   });
 });
@@ -228,7 +228,7 @@ catalogRouter.get("/tags", async (c) => {
   });
 });
 
-catalogRouter.get("/products/featured", async (c) => {
+catalogRouter.get("/listings/featured", async (c) => {
   const locale = c.get("locale");
   const query = featuredQuerySchema.safeParse({
     limit: c.req.query("limit"),
@@ -239,19 +239,19 @@ catalogRouter.get("/products/featured", async (c) => {
   const { limit } = query.data;
   const now = new Date();
 
-  const products = await prisma.product.findMany({
-    where: { AND: [publicProductVisibilityWhere, { featured: true }] },
-    include: getProductCardInclude(now, locale),
+  const listings = await prisma.listing.findMany({
+    where: { AND: [publicListingVisibilityWhere, { featured: true }] },
+    include: getListingCardInclude(now, locale),
     orderBy: [{ rating: "desc" }, { createdAt: "desc" }],
     take: limit,
   });
 
   return c.json({
-    products: products.map((p) => mapProductCard(p, locale)),
+    listings: listings.map((p) => mapListingCard(p, locale)),
   });
 });
 
-catalogRouter.get("/products", async (c) => {
+catalogRouter.get("/listings", async (c) => {
   const locale = c.get("locale");
   const tagSlugsList = c.req.queries("tagSlugs") ?? [];
   const tagSlugsParam =
@@ -261,7 +261,7 @@ catalogRouter.get("/products", async (c) => {
         ? tagSlugsList[0]
         : c.req.query("tagSlugs");
 
-  const query = productListQuerySchema.safeParse({
+  const query = listingListQuerySchema.safeParse({
     categorySlug: c.req.query("categorySlug"),
     q: c.req.query("q"),
     tagSlugs: tagSlugsParam,
@@ -289,7 +289,7 @@ catalogRouter.get("/products", async (c) => {
   } = query.data;
   const now = new Date();
 
-  const where = productListWhere({
+  const where = listingListWhere({
     categorySlug,
     q,
     tagSlugs,
@@ -300,13 +300,13 @@ catalogRouter.get("/products", async (c) => {
     locale,
   });
 
-  const products = await prisma.product.findMany({
+  const listings = await prisma.listing.findMany({
     where,
-    include: getProductCardInclude(now, locale),
+    include: getListingCardInclude(now, locale),
   });
 
-  const withPrice = products.map((p) => ({
-    product: p,
+  const withPrice = listings.map((p) => ({
+    listing: p,
     minPrice: minVariantPrice(p.variants),
   }));
 
@@ -316,15 +316,15 @@ catalogRouter.get("/products", async (c) => {
     withPrice.sort((a, b) => b.minPrice - a.minPrice);
   } else if (sort === "newest") {
     withPrice.sort(
-      (a, b) => b.product.createdAt.getTime() - a.product.createdAt.getTime(),
+      (a, b) => b.listing.createdAt.getTime() - a.listing.createdAt.getTime(),
     );
   } else {
     withPrice.sort((a, b) => {
-      const feat = Number(b.product.featured) - Number(a.product.featured);
+      const feat = Number(b.listing.featured) - Number(a.listing.featured);
       if (feat !== 0) return feat;
-      const r = toNumber(b.product.rating) - toNumber(a.product.rating);
+      const r = toNumber(b.listing.rating) - toNumber(a.listing.rating);
       if (r !== 0) return r;
-      return b.product.createdAt.getTime() - a.product.createdAt.getTime();
+      return b.listing.createdAt.getTime() - a.listing.createdAt.getTime();
     });
   }
 
@@ -332,7 +332,7 @@ catalogRouter.get("/products", async (c) => {
   const slice = withPrice.slice((page - 1) * pageSize, page * pageSize);
 
   return c.json({
-    products: slice.map((x) => mapProductCard(x.product, locale)),
+    listings: slice.map((x) => mapListingCard(x.listing, locale)),
     page,
     pageSize,
     total,
@@ -340,9 +340,9 @@ catalogRouter.get("/products", async (c) => {
   });
 });
 
-catalogRouter.get("/products/search", async (c) => {
+catalogRouter.get("/listings/search", async (c) => {
   const locale = c.get("locale");
-  const query = productSearchQuerySchema.safeParse({
+  const query = listingSearchQuerySchema.safeParse({
     q: c.req.query("q"),
     limit: c.req.query("limit"),
   });
@@ -353,91 +353,91 @@ catalogRouter.get("/products/search", async (c) => {
   const { q, limit } = query.data;
   const now = new Date();
 
-  const products = await prisma.product.findMany({
+  const listings = await prisma.listing.findMany({
     where: {
-      AND: [publicProductVisibilityWhere, productSearchWhere(q, locale)],
+      AND: [publicListingVisibilityWhere, listingSearchWhere(q, locale)],
     },
-    include: getProductCardInclude(now, locale),
+    include: getListingCardInclude(now, locale),
     orderBy: [{ rating: "desc" }, { createdAt: "desc" }],
     take: limit,
   });
 
   return c.json({
-    products: products.map((p) => mapProductCard(p, locale)),
+    listings: listings.map((p) => mapListingCard(p, locale)),
   });
 });
 
-catalogRouter.get("/products/:slug/related", async (c) => {
+catalogRouter.get("/listings/:slug/related", async (c) => {
   const locale = c.get("locale");
   const slug = c.req.param("slug");
-  const product = await prisma.product.findFirst({
-    where: { slug, ...publicProductVisibilityWhere },
+  const listing = await prisma.listing.findFirst({
+    where: { slug, ...publicListingVisibilityWhere },
     select: { id: true, categoryId: true },
   });
-  if (!product) {
-    throw new HTTPException(404, { message: "Product not found" });
+  if (!listing) {
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
   const now = new Date();
-  const related = await prisma.product.findMany({
+  const related = await prisma.listing.findMany({
     where: {
       AND: [
-        publicProductVisibilityWhere,
-        { categoryId: product.categoryId },
-        { id: { not: product.id } },
+        publicListingVisibilityWhere,
+        { categoryId: listing.categoryId },
+        { id: { not: listing.id } },
       ],
     },
-    include: getProductCardInclude(now, locale),
+    include: getListingCardInclude(now, locale),
     take: 8,
     orderBy: { rating: "desc" },
   });
 
   return c.json({
-    products: related.map((p) => mapProductCard(p, locale)),
+    listings: related.map((p) => mapListingCard(p, locale)),
   });
 });
 
-catalogRouter.get("/products/:slug/more-from-shop", async (c) => {
+catalogRouter.get("/listings/:slug/more-from-shop", async (c) => {
   const locale = c.get("locale");
   const slug = c.req.param("slug");
-  const product = await prisma.product.findFirst({
-    where: { slug, ...publicProductVisibilityWhere },
+  const listing = await prisma.listing.findFirst({
+    where: { slug, ...publicListingVisibilityWhere },
     select: { id: true, shopId: true },
   });
-  if (!product) {
-    throw new HTTPException(404, { message: "Product not found" });
+  if (!listing) {
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
   const now = new Date();
-  const fromShop = await prisma.product.findMany({
+  const fromShop = await prisma.listing.findMany({
     where: {
       AND: [
-        publicProductVisibilityWhere,
-        { shopId: product.shopId },
-        { id: { not: product.id } },
+        publicListingVisibilityWhere,
+        { shopId: listing.shopId },
+        { id: { not: listing.id } },
       ],
     },
-    include: getProductCardInclude(now, locale),
+    include: getListingCardInclude(now, locale),
     take: 8,
     orderBy: [{ rating: "desc" }, { createdAt: "desc" }],
   });
 
   return c.json({
-    products: fromShop.map((p) => mapProductCard(p, locale)),
+    listings: fromShop.map((p) => mapListingCard(p, locale)),
   });
 });
 
-catalogRouter.get("/products/:slug/reviews", async (c) => {
+catalogRouter.get("/listings/:slug/reviews", async (c) => {
   const slug = c.req.param("slug");
-  const product = await prisma.product.findFirst({
-    where: { slug, ...publicProductVisibilityWhere },
+  const listing = await prisma.listing.findFirst({
+    where: { slug, ...publicListingVisibilityWhere },
     select: { id: true, rating: true, reviewCount: true },
   });
-  if (!product) {
-    throw new HTTPException(404, { message: "Product not found" });
+  if (!listing) {
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
-  const parsed = productReviewsQuerySchema.safeParse({
+  const parsed = listingReviewsQuerySchema.safeParse({
     take: c.req.query("take"),
     cursor: c.req.query("cursor") ?? undefined,
   });
@@ -447,16 +447,16 @@ catalogRouter.get("/products/:slug/reviews", async (c) => {
   const { take, cursor } = parsed.data;
 
   const [rows, starGroups] = await Promise.all([
-    prisma.productRating.findMany({
-      where: { productId: product.id },
+    prisma.listingRating.findMany({
+      where: { listingId: listing.id },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: take + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { user: { select: { name: true } } },
     }),
-    prisma.productRating.groupBy({
+    prisma.listingRating.groupBy({
       by: ["stars"],
-      where: { productId: product.id },
+      where: { listingId: listing.id },
       _count: { _all: true },
     }),
   ]);
@@ -475,11 +475,11 @@ catalogRouter.get("/products/:slug/reviews", async (c) => {
     createdAt: string;
   } | null = null;
   if (session?.user) {
-    const mine = await prisma.productRating.findUnique({
+    const mine = await prisma.listingRating.findUnique({
       where: {
-        userId_productId: {
+        userId_listingId: {
           userId: session.user.id,
-          productId: product.id,
+          listingId: listing.id,
         },
       },
       select: { id: true, stars: true, comment: true, createdAt: true },
@@ -512,44 +512,44 @@ catalogRouter.get("/products/:slug/reviews", async (c) => {
     nextCursor,
     viewerReview,
     summary: {
-      average: toNumber(product.rating),
-      total: product.reviewCount,
+      average: toNumber(listing.rating),
+      total: listing.reviewCount,
       counts,
     },
   });
 });
 
-catalogRouter.post("/products/:slug/reviews", async (c) => {
+catalogRouter.post("/listings/:slug/reviews", async (c) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Unauthorized" });
   }
 
   const slug = c.req.param("slug");
-  const product = await prisma.product.findFirst({
-    where: { slug, ...publicProductVisibilityWhere },
+  const listing = await prisma.listing.findFirst({
+    where: { slug, ...publicListingVisibilityWhere },
     select: { id: true },
   });
-  if (!product) {
-    throw new HTTPException(404, { message: "Product not found" });
+  if (!listing) {
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
   const body = await c.req.json().catch(() => null);
-  const parsed = productReviewPostSchema.safeParse(body);
+  const parsed = listingReviewPostSchema.safeParse(body);
   if (!parsed.success) {
     throw new HTTPException(400, { message: "Invalid body" });
   }
 
-  const row = await prisma.productRating.upsert({
+  const row = await prisma.listingRating.upsert({
     where: {
-      userId_productId: {
+      userId_listingId: {
         userId: session.user.id,
-        productId: product.id,
+        listingId: listing.id,
       },
     },
     create: {
       userId: session.user.id,
-      productId: product.id,
+      listingId: listing.id,
       stars: parsed.data.stars,
       comment: parsed.data.comment,
     },
@@ -560,7 +560,7 @@ catalogRouter.post("/products/:slug/reviews", async (c) => {
     include: { user: { select: { name: true } } },
   });
 
-  const summary = await recalculateProductRatingAggregate(product.id);
+  const summary = await recalculateListingRatingAggregate(listing.id);
 
   return c.json({
     review: {
@@ -570,66 +570,66 @@ catalogRouter.post("/products/:slug/reviews", async (c) => {
       createdAt: row.createdAt.toISOString(),
       authorName: row.user.name,
     },
-    product: {
+    listing: {
       rating: summary.rating,
       reviewCount: summary.reviewCount,
     },
   });
 });
 
-catalogRouter.delete("/products/:slug/reviews", async (c) => {
+catalogRouter.delete("/listings/:slug/reviews", async (c) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Unauthorized" });
   }
 
   const slug = c.req.param("slug");
-  const product = await prisma.product.findFirst({
-    where: { slug, ...publicProductVisibilityWhere },
+  const listing = await prisma.listing.findFirst({
+    where: { slug, ...publicListingVisibilityWhere },
     select: { id: true },
   });
-  if (!product) {
-    throw new HTTPException(404, { message: "Product not found" });
+  if (!listing) {
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
-  const deleted = await prisma.productRating.deleteMany({
+  const deleted = await prisma.listingRating.deleteMany({
     where: {
       userId: session.user.id,
-      productId: product.id,
+      listingId: listing.id,
     },
   });
   if (deleted.count === 0) {
     throw new HTTPException(404, { message: "Review not found" });
   }
 
-  await recalculateProductRatingAggregate(product.id);
+  await recalculateListingRatingAggregate(listing.id);
 
   return c.json({ ok: true });
 });
 
-catalogRouter.get("/products/:slug", async (c) => {
+catalogRouter.get("/listings/:slug", async (c) => {
   const locale = c.get("locale");
   const slug = c.req.param("slug");
   const now = new Date();
-  const product = await prisma.product.findFirst({
+  const listing = await prisma.listing.findFirst({
     where: {
       slug,
-      ...publicProductVisibilityWhere,
+      ...publicListingVisibilityWhere,
     },
-    include: getProductDetailInclude(now, locale),
+    include: getListingDetailInclude(now, locale),
   });
-  if (!product) {
-    throw new HTTPException(404, { message: "Product not found" });
+  if (!listing) {
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
-  const minPrice = minVariantPrice(product.variants);
-  const promotionPick = pickPromotionForProduct(
-    product.promotionProducts.map((pp) => pp.promotion),
+  const minPrice = minVariantPrice(listing.variants);
+  const promotionPick = pickPromotionForListing(
+    listing.promotionListings.map((pp) => pp.promotion),
   );
 
-  const attributes = mapProductAttributeValuesForDetail(
+  const attributes = mapListingAttributeValuesForDetail(
     locale,
-    product.attributeValues.map((av) => ({
+    listing.attributeValues.map((av) => ({
       definition: av.definition,
       allowedValue: av.allowedValue,
       textValue: av.textValue,
@@ -638,23 +638,23 @@ catalogRouter.get("/products/:slug", async (c) => {
     })),
   );
 
-  const tr = product.translations ?? [];
-  const category = product.category as typeof product.category & {
+  const tr = listing.translations ?? [];
+  const category = listing.category as typeof listing.category & {
     translations?: { name: string }[];
   };
   const categoryTr = category.translations ?? [];
 
   return c.json({
-    product: {
-      id: product.id,
-      slug: product.slug,
-      name: pickProductName({ name: product.name, translations: tr }, locale),
-      description: pickProductDescription(
-        { description: product.description, translations: tr },
+    listing: {
+      id: listing.id,
+      slug: listing.slug,
+      name: pickListingName({ name: listing.name, translations: tr }, locale),
+      description: pickListingDescription(
+        { description: listing.description, translations: tr },
         locale,
       ),
-      rating: toNumber(product.rating),
-      reviewCount: product.reviewCount,
+      rating: toNumber(listing.rating),
+      reviewCount: listing.reviewCount,
       category: {
         id: category.id,
         slug: category.slug,
@@ -664,12 +664,12 @@ catalogRouter.get("/products/:slug", async (c) => {
         ),
       },
       shop: {
-        slug: product.shop.slug,
-        name: product.shop.name,
-        imageUrl: product.shop.imageUrl,
+        slug: listing.shop.slug,
+        name: listing.shop.name,
+        imageUrl: listing.shop.imageUrl,
       },
-      images: product.images.map((i) => i.url),
-      variants: product.variants.map((v) => {
+      images: listing.images.map((i) => i.url),
+      variants: listing.variants.map((v) => {
         const vt = v as typeof v & { translations?: { label: string }[] };
         return {
           id: v.id,
@@ -684,7 +684,7 @@ catalogRouter.get("/products/:slug", async (c) => {
         };
       }),
       priceFrom: minPrice,
-      tags: product.productTags.map((pt) => {
+      tags: listing.listingTags.map((pt) => {
         const tag = pt.tag as typeof pt.tag & {
           translations?: { name: string }[];
         };

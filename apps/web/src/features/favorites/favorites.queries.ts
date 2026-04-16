@@ -5,11 +5,11 @@ import {
   type QueryClient,
 } from "@tanstack/react-query";
 
-import type { ProductCardDto } from "@/features/storefront/storefront.queries";
+import type { ListingCardDto } from "@/features/storefront/storefront.queries";
 import { apiFetchJson } from "@/lib/api";
 
 export type FavoritesResponse = {
-  products: ProductCardDto[];
+  listings: ListingCardDto[];
   slugs: string[];
 };
 

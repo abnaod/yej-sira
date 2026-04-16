@@ -29,6 +29,9 @@
     "db:migrate:deploy": {
       "cache": false
     },
+    "db:reset": {
+      "cache": false
+    },
     "db:seed": {
       "cache": false
     }

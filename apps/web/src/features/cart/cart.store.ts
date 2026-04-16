@@ -2,7 +2,7 @@ import { atom } from 'jotai';
 
 export type CartLineItem = {
   id: string;
-  productId: string;
+  listingId: string;
   quantity: number;
 };
 

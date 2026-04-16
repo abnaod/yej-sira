@@ -30,7 +30,7 @@ export function SellerDashboardPage() {
   if (!session?.user) {
     return (
       <div className="mx-auto max-w-3xl px-4">
-        <p className="text-muted-foreground">Sign in to manage your products.</p>
+        <p className="text-muted-foreground">Sign in to manage your listings.</p>
       </div>
     );
   }
@@ -61,7 +61,7 @@ export function SellerDashboardPage() {
     return (
       <div className="mx-auto max-w-3xl px-4">
         <p className="text-muted-foreground">
-          Your shop is {shop.status}. You can list products once it&apos;s active.
+          Your shop is {shop.status}. You can list listings once it&apos;s active.
         </p>
       </div>
     );
@@ -78,7 +78,7 @@ export function SellerDashboardPage() {
             ? {
                 revenue30d: stats.revenue30d,
                 orders30d: stats.orders30d,
-                productCount: stats.productCount,
+                listingCount: stats.listingCount,
                 publishedCount: stats.publishedCount,
               }
             : undefined

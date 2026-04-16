@@ -24,13 +24,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { type SellerProductListItem } from "./products.queries";
+import { assetUrl } from "@/lib/api";
+import { type SellerListingListItem } from "./listings.queries";
 
-export type SellerProductTableActions = {
-  onDeleteProduct: (productId: string) => void;
-  deletingProductId: string | null;
-  onPublishProduct: (productId: string) => void;
-  publishingProductId: string | null;
+export type SellerListingTableActions = {
+  onDeleteListing: (listingId: string) => void;
+  deletingListingId: string | null;
+  onPublishListing: (listingId: string) => void;
+  publishingListingId: string | null;
 };
 
 function formatMoney(n: number) {
@@ -41,10 +42,10 @@ function formatMoney(n: number) {
   }).format(n);
 }
 
-export function getSellerProductColumns(
+export function getSellerListingColumns(
   locale: Locale,
-  actions: SellerProductTableActions,
-): ColumnDef<SellerProductListItem>[] {
+  actions: SellerListingTableActions,
+): ColumnDef<SellerListingListItem>[] {
   return [
     {
       id: "image",
@@ -56,7 +57,7 @@ export function getSellerProductColumns(
             <div className="size-12 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
               {url ? (
                 <img
-                  src={url}
+                  src={assetUrl(url)}
                   alt=""
                   className="size-full object-cover"
                 />
@@ -81,7 +82,7 @@ export function getSellerProductColumns(
           className="h-8 px-0 has-[>svg]:px-0"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Product
+          Listing
           <ArrowUpDown />
         </Button>
       ),
@@ -123,8 +124,8 @@ export function getSellerProductColumns(
         const id = row.original.id;
         const slug = row.original.slug;
         const isPublished = row.original.isPublished;
-        const isDeleting = actions.deletingProductId === id;
-        const isPublishing = actions.publishingProductId === id;
+        const isDeleting = actions.deletingListingId === id;
+        const isPublishing = actions.publishingListingId === id;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -138,8 +139,8 @@ export function getSellerProductColumns(
               <DropdownMenuItem asChild>
                 {isPublished ? (
                   <Link
-                    to="/$locale/products/$productId"
-                    params={{ locale, productId: slug }}
+                    to="/$locale/listings/$listingId"
+                    params={{ locale, listingId: slug }}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -148,8 +149,8 @@ export function getSellerProductColumns(
                   </Link>
                 ) : (
                   <Link
-                    to="/$locale/preview/products/$productId"
-                    params={{ locale, productId: id }}
+                    to="/$locale/preview/listings/$listingId"
+                    params={{ locale, listingId: id }}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -161,14 +162,14 @@ export function getSellerProductColumns(
               {!isPublished && (
                 <DropdownMenuItem
                   disabled={isPublishing}
-                  onClick={() => actions.onPublishProduct(id)}
+                  onClick={() => actions.onPublishListing(id)}
                 >
                   {isPublishing ? <Loader2 className="animate-spin" /> : <Rocket />}
                   {isPublishing ? "Publishing…" : "Publish"}
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem asChild>
-                <Link to="/$locale/sell/products" params={{ locale }} search={{ new: false, edit: id }}>
+                <Link to="/$locale/sell/listings" params={{ locale }} search={{ new: false, edit: id }}>
                   <Pencil />
                   Edit
                 </Link>
@@ -177,7 +178,7 @@ export function getSellerProductColumns(
               <DropdownMenuItem
                 variant="destructive"
                 disabled={isDeleting}
-                onClick={() => actions.onDeleteProduct(id)}
+                onClick={() => actions.onDeleteListing(id)}
               >
                 {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
                 {isDeleting ? "Deleting…" : "Delete"}

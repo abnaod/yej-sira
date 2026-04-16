@@ -3,26 +3,26 @@ import type { Locale } from "@ys/intl";
 
 import { toNumber } from "../../lib/money";
 import {
-  pickProductDescription,
-  pickProductName,
+  pickListingDescription,
+  pickListingName,
   pickTagName,
 } from "../../lib/localized-catalog";
 import {
   activePromotionWhere,
-  pickPromotionForProduct,
+  pickPromotionForListing,
 } from "../promotions/promotion.utils";
 
-export const productCardInclude = {
+export const listingCardInclude = {
   images: { orderBy: { sortOrder: "asc" as const } },
   variants: true,
-  productTags: {
+  listingTags: {
     orderBy: { tag: { name: "asc" as const } },
     include: { tag: true },
   },
 } as const;
 
 /** Card list queries: tags + active promotion enrollment for ribbons. */
-export function getProductCardInclude(now: Date, locale: Locale = "en") {
+export function getListingCardInclude(now: Date, locale: Locale = "en") {
   const tr =
     locale === "en"
       ? null
@@ -35,13 +35,13 @@ export function getProductCardInclude(now: Date, locale: Locale = "en") {
     images: { orderBy: { sortOrder: "asc" as const } },
     variants: tr ? { include: { translations: tr } } : true,
     ...(tr ? { translations: tr } : {}),
-    productTags: {
+    listingTags: {
       orderBy: { tag: { name: "asc" as const } },
       include: {
         tag: tr ? { include: { translations: tr } } : true,
       },
     },
-    promotionProducts: {
+    promotionListings: {
       where: {
         promotion: activePromotionWhere(now),
       },
@@ -67,7 +67,7 @@ export function getProductCardInclude(now: Date, locale: Locale = "en") {
   } as const;
 }
 
-export function getProductDetailInclude(now: Date, locale: Locale) {
+export function getListingDetailInclude(now: Date, locale: Locale) {
   const tr =
     locale === "en"
       ? null
@@ -83,13 +83,13 @@ export function getProductDetailInclude(now: Date, locale: Locale) {
       ? { orderBy: { label: "asc" as const }, include: { translations: tr } }
       : { orderBy: { label: "asc" as const } },
     ...(tr ? { translations: tr } : {}),
-    productTags: {
+    listingTags: {
       orderBy: { tag: { name: "asc" as const } },
       include: {
         tag: tr ? { include: { translations: tr } } : true,
       },
     },
-    promotionProducts: {
+    promotionListings: {
       where: { promotion: activePromotionWhere(now) },
       include: {
         promotion: {
@@ -141,7 +141,7 @@ export type PromotionCardSlice = {
   translations?: { badgeLabel: string }[];
 };
 
-export function mapProductCard(
+export function mapListingCard(
   p: {
     id: string;
     slug: string;
@@ -152,7 +152,7 @@ export function mapProductCard(
     shop: { slug: string; name: string; imageUrl: string | null };
     images: { url: string }[];
     variants: { id: string; price: unknown; compareAtPrice: unknown | null }[];
-    productTags: {
+    listingTags: {
       tag: {
         slug: string;
         name: string;
@@ -160,7 +160,7 @@ export function mapProductCard(
       };
     }[];
     translations?: { name: string; description: string }[];
-    promotionProducts?: { promotion: PromotionCardSlice }[];
+    promotionListings?: { promotion: PromotionCardSlice }[];
   },
   locale: Locale,
 ) {
@@ -172,11 +172,11 @@ export function mapProductCard(
   const originalPrice =
     compareValues.length > 0 ? Math.max(...compareValues, price) : undefined;
   const defaultVariantId = p.variants[0]?.id;
-  const promos = p.promotionProducts?.map((pp) => pp.promotion) ?? [];
-  const promotion = pickPromotionForProduct(promos);
+  const promos = p.promotionListings?.map((pp) => pp.promotion) ?? [];
+  const promotion = pickPromotionForListing(promos);
   const tr = p.translations ?? [];
-  const name = pickProductName({ name: p.name, translations: tr }, locale);
-  const description = pickProductDescription(
+  const name = pickListingName({ name: p.name, translations: tr }, locale);
+  const description = pickListingDescription(
     { description: p.description, translations: tr },
     locale,
   );
@@ -196,7 +196,7 @@ export function mapProductCard(
       name: p.shop.name,
       imageUrl: p.shop.imageUrl,
     },
-    tags: p.productTags.map((pt) => ({
+    tags: p.listingTags.map((pt) => ({
       slug: pt.tag.slug,
       name: pickTagName(
         {

@@ -11,23 +11,23 @@ import {
 } from "../../lib/authz";
 import { prisma } from "../../lib/db";
 import {
-  getProductDetailInclude,
+  getListingDetailInclude,
   minVariantPrice,
-} from "../catalog/product-card.mapper";
+} from "../catalog/listing-card.mapper";
 import {
   pickCategoryName,
-  pickProductDescription,
-  pickProductName,
+  pickListingDescription,
+  pickListingName,
   pickVariantLabel,
 } from "../../lib/localized-catalog";
-import { pickPromotionForProduct } from "../promotions/promotion.utils";
+import { pickPromotionForListing } from "../promotions/promotion.utils";
 import { toNumber } from "../../lib/money";
 import {
-  mapProductAttributeValuesForDetail,
-  serializeProductAttributeValuesForSeller,
-  validateProductAttributeInputs,
+  mapListingAttributeValuesForDetail,
+  serializeListingAttributeValuesForSeller,
+  validateListingAttributeInputs,
 } from "../../lib/category-attributes";
-import { sellerProductCreateSchema, sellerProductPatchSchema } from "./seller.schema";
+import { sellerListingCreateSchema, sellerListingPatchSchema } from "./seller.schema";
 
 export const sellerRouter = new Hono();
 
@@ -66,15 +66,15 @@ sellerRouter.get("/seller/dashboard", async (c) => {
   }
   assertSellerCanManageShop(shop, userId);
 
-  const shopProductIds = await prisma.product.findMany({
+  const shopListingIds = await prisma.listing.findMany({
     where: { shopId: shop.id },
     select: { id: true },
   });
-  const ids = shopProductIds.map((p) => p.id);
+  const ids = shopListingIds.map((p) => p.id);
 
-  const [productCount, publishedCount] = await Promise.all([
-    prisma.product.count({ where: { shopId: shop.id } }),
-    prisma.product.count({ where: { shopId: shop.id, isPublished: true } }),
+  const [listingCount, publishedCount] = await Promise.all([
+    prisma.listing.count({ where: { shopId: shop.id } }),
+    prisma.listing.count({ where: { shopId: shop.id, isPublished: true } }),
   ]);
 
   if (ids.length === 0) {
@@ -86,7 +86,7 @@ sellerRouter.get("/seller/dashboard", async (c) => {
       ordersByDay.push({ date: d.toISOString().slice(0, 10), orders: 0 });
     }
     return c.json({
-      productCount,
+      listingCount,
       publishedCount,
       revenue30d: 0,
       orders30d: 0,
@@ -100,7 +100,7 @@ sellerRouter.get("/seller/dashboard", async (c) => {
 
   const items = await prisma.orderItem.findMany({
     where: {
-      productId: { in: ids },
+      listingId: { in: ids },
       order: { createdAt: { gte: since } },
     },
     select: {
@@ -135,7 +135,7 @@ sellerRouter.get("/seller/dashboard", async (c) => {
   }
 
   return c.json({
-    productCount,
+    listingCount,
     publishedCount,
     revenue30d,
     orders30d,
@@ -143,12 +143,12 @@ sellerRouter.get("/seller/dashboard", async (c) => {
   });
 });
 
-function sellerOrderLineProductLabel(productName: string, variantLabel: string | null): string {
+function sellerOrderLineListingLabel(listingName: string, variantLabel: string | null): string {
   const v = variantLabel?.trim();
-  return v ? `${productName} (${v})` : productName;
+  return v ? `${listingName} (${v})` : listingName;
 }
 
-/** Orders that include at least one line item for this shop's products (aggregated per order). */
+/** Orders that include at least one line item for this shop's listings (aggregated per order). */
 sellerRouter.get("/seller/orders", async (c) => {
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);
@@ -157,17 +157,17 @@ sellerRouter.get("/seller/orders", async (c) => {
   }
   assertSellerCanManageShop(shop, userId);
 
-  const shopProductIds = await prisma.product.findMany({
+  const shopListingIds = await prisma.listing.findMany({
     where: { shopId: shop.id },
     select: { id: true },
   });
-  const ids = shopProductIds.map((p) => p.id);
+  const ids = shopListingIds.map((p) => p.id);
   if (ids.length === 0) {
     return c.json({ orders: [] });
   }
 
   const lines = await prisma.orderItem.findMany({
-    where: { productId: { in: ids } },
+    where: { listingId: { in: ids } },
     include: {
       order: {
         select: {
@@ -189,7 +189,7 @@ sellerRouter.get("/seller/orders", async (c) => {
       lineCount: number;
       shopTotal: number;
       imageUrl: string;
-      productName: string;
+      listingName: string;
     }
   >();
 
@@ -205,7 +205,7 @@ sellerRouter.get("/seller/orders", async (c) => {
         lineCount: 1,
         shopTotal: lineTotal,
         imageUrl: li.imageUrl?.trim() ?? "",
-        productName: sellerOrderLineProductLabel(li.productName, li.variantLabel),
+        listingName: sellerOrderLineListingLabel(li.listingName, li.variantLabel),
       });
     } else {
       existing.lineCount += 1;
@@ -225,7 +225,7 @@ sellerRouter.get("/seller/orders", async (c) => {
       lineCount: o.lineCount,
       shopTotal: o.shopTotal,
       imageUrl: o.imageUrl,
-      productName: o.productName,
+      listingName: o.listingName,
     })),
   });
 });
@@ -241,11 +241,11 @@ sellerRouter.get("/seller/orders/:orderId", async (c) => {
 
   const orderId = c.req.param("orderId");
 
-  const shopProductIds = await prisma.product.findMany({
+  const shopListingIds = await prisma.listing.findMany({
     where: { shopId: shop.id },
     select: { id: true },
   });
-  const ids = shopProductIds.map((p) => p.id);
+  const ids = shopListingIds.map((p) => p.id);
   if (ids.length === 0) {
     throw new HTTPException(404, { message: "Order not found" });
   }
@@ -253,11 +253,11 @@ sellerRouter.get("/seller/orders/:orderId", async (c) => {
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
-      items: { some: { productId: { in: ids } } },
+      items: { some: { listingId: { in: ids } } },
     },
     include: {
       items: {
-        where: { productId: { in: ids } },
+        where: { listingId: { in: ids } },
         orderBy: { id: "asc" },
       },
       payment: { select: { paymentMethod: true, status: true } },
@@ -285,7 +285,7 @@ sellerRouter.get("/seller/orders/:orderId", async (c) => {
     shopSubtotal += line;
     return {
       id: i.id,
-      productName: i.productName,
+      listingName: i.listingName,
       variantLabel: i.variantLabel,
       unitPrice: toNumber(i.unitPrice),
       quantity: i.quantity,
@@ -319,7 +319,7 @@ sellerRouter.get("/seller/orders/:orderId", async (c) => {
   });
 });
 
-sellerRouter.get("/seller/products", async (c) => {
+sellerRouter.get("/seller/listings", async (c) => {
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);
   if (!shop) {
@@ -335,7 +335,7 @@ sellerRouter.get("/seller/products", async (c) => {
           where: { locale: locale as ContentLocale },
         } as const);
 
-  const products = await prisma.product.findMany({
+  const listings = await prisma.listing.findMany({
     where: { shopId: shop.id },
     orderBy: { updatedAt: "desc" },
     include: {
@@ -347,14 +347,14 @@ sellerRouter.get("/seller/products", async (c) => {
   });
 
   return c.json({
-    products: products.map((p) => {
+    listings: listings.map((p) => {
       const minPrice = minVariantPrice(p.variants);
       const trList = p.translations ?? [];
       return {
         id: p.id,
         slug: p.slug,
-        name: pickProductName({ name: p.name, translations: trList }, locale),
-        description: pickProductDescription(
+        name: pickListingName({ name: p.name, translations: trList }, locale),
+        description: pickListingDescription(
           { description: p.description, translations: trList },
           locale,
         ),
@@ -380,7 +380,7 @@ sellerRouter.get("/seller/products", async (c) => {
   });
 });
 
-sellerRouter.post("/seller/products", async (c) => {
+sellerRouter.post("/seller/listings", async (c) => {
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);
   if (!shop) {
@@ -389,7 +389,7 @@ sellerRouter.post("/seller/products", async (c) => {
   assertSellerCanManageShop(shop, userId);
 
   const body = await c.req.json().catch(() => null);
-  const parsed = sellerProductCreateSchema.safeParse(body);
+  const parsed = sellerListingCreateSchema.safeParse(body);
   if (!parsed.success) {
     throw new HTTPException(400, { message: "Invalid body" });
   }
@@ -405,18 +405,18 @@ sellerRouter.post("/seller/products", async (c) => {
     assertShopActiveForPublish(shop);
   }
 
-  const slugTaken = await prisma.product.findUnique({ where: { slug: data.slug } });
+  const slugTaken = await prisma.listing.findUnique({ where: { slug: data.slug } });
   if (slugTaken) {
     throw new HTTPException(400, { message: "Slug already in use" });
   }
 
-  const validatedAttributes = await validateProductAttributeInputs(
+  const validatedAttributes = await validateListingAttributeInputs(
     categoryId,
     data.attributes ?? [],
   );
 
-  const product = await prisma.$transaction(async (tx) => {
-    const created = await tx.product.create({
+  const listing = await prisma.$transaction(async (tx) => {
+    const created = await tx.listing.create({
       data: {
         slug: data.slug,
         shopId: shop.id,
@@ -446,7 +446,7 @@ sellerRouter.post("/seller/products", async (c) => {
         },
         ...(data.tagSlugs?.length
           ? {
-              productTags: {
+              listingTags: {
                 create: data.tagSlugs.map((slug) => ({
                   tag: { connect: { slug } },
                 })),
@@ -458,9 +458,9 @@ sellerRouter.post("/seller/products", async (c) => {
     });
 
     if (validatedAttributes && validatedAttributes.length > 0) {
-      await tx.productAttributeValue.createMany({
+      await tx.listingAttributeValue.createMany({
         data: validatedAttributes.map((v) => ({
-          productId: created.id,
+          listingId: created.id,
           definitionId: v.definitionId,
           allowedValueId: v.allowedValueId,
           textValue: v.textValue,
@@ -471,9 +471,9 @@ sellerRouter.post("/seller/products", async (c) => {
     }
 
     if (data.translationAm) {
-      await tx.productTranslation.create({
+      await tx.listingTranslation.create({
         data: {
-          productId: created.id,
+          listingId: created.id,
           locale: ContentLocale.am,
           name: data.translationAm.name,
           description: data.translationAm.description,
@@ -483,7 +483,7 @@ sellerRouter.post("/seller/products", async (c) => {
         const v = data.variants[i]!;
         const variantRow = created.variants[i];
         if (!variantRow || !v.labelAm) continue;
-        await tx.productVariantTranslation.create({
+        await tx.listingVariantTranslation.create({
           data: {
             variantId: variantRow.id,
             locale: ContentLocale.am,
@@ -496,10 +496,10 @@ sellerRouter.post("/seller/products", async (c) => {
     return created;
   });
 
-  return c.json({ product: { id: product.id, slug: product.slug } });
+  return c.json({ listing: { id: listing.id, slug: listing.slug } });
 });
 
-sellerRouter.get("/seller/products/:id", async (c) => {
+sellerRouter.get("/seller/listings/:id", async (c) => {
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);
   if (!shop) {
@@ -511,21 +511,21 @@ sellerRouter.get("/seller/products/:id", async (c) => {
   const locale = c.get("locale") as Locale;
   const now = new Date();
 
-  const product = await prisma.product.findFirst({
+  const listing = await prisma.listing.findFirst({
     where: { id, shopId: shop.id },
-    include: getProductDetailInclude(now, locale),
+    include: getListingDetailInclude(now, locale),
   });
-  if (!product) {
-    throw new HTTPException(404, { message: "Product not found" });
+  if (!listing) {
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
-  const minPrice = minVariantPrice(product.variants);
-  const promotionPick = pickPromotionForProduct(
-    product.promotionProducts.map((pp) => pp.promotion),
+  const minPrice = minVariantPrice(listing.variants);
+  const promotionPick = pickPromotionForListing(
+    listing.promotionListings.map((pp) => pp.promotion),
   );
-  const storefrontAttributes = mapProductAttributeValuesForDetail(
+  const storefrontAttributes = mapListingAttributeValuesForDetail(
     locale,
-    product.attributeValues.map((av) => ({
+    listing.attributeValues.map((av) => ({
       definition: av.definition,
       allowedValue: av.allowedValue,
       textValue: av.textValue,
@@ -533,26 +533,26 @@ sellerRouter.get("/seller/products/:id", async (c) => {
       booleanValue: av.booleanValue,
     })),
   );
-  const tr = product.translations ?? [];
-  const category = product.category as typeof product.category & {
+  const tr = listing.translations ?? [];
+  const category = listing.category as typeof listing.category & {
     translations?: { name: string }[];
   };
   const categoryTr = category.translations ?? [];
 
   return c.json({
-    product: {
-      id: product.id,
-      slug: product.slug,
-      name: pickProductName({ name: product.name, translations: tr }, locale),
-      description: pickProductDescription(
-        { description: product.description, translations: tr },
+    listing: {
+      id: listing.id,
+      slug: listing.slug,
+      name: pickListingName({ name: listing.name, translations: tr }, locale),
+      description: pickListingDescription(
+        { description: listing.description, translations: tr },
         locale,
       ),
-      isPublished: product.isPublished,
-      featured: product.featured,
-      rating: toNumber(product.rating),
-      reviewCount: product.reviewCount,
-      categoryId: product.categoryId,
+      isPublished: listing.isPublished,
+      featured: listing.featured,
+      rating: toNumber(listing.rating),
+      reviewCount: listing.reviewCount,
+      categoryId: listing.categoryId,
       categorySlug: category.slug,
       category: {
         id: category.id,
@@ -563,9 +563,9 @@ sellerRouter.get("/seller/products/:id", async (c) => {
         ),
       },
       shop: {
-        slug: product.shop.slug,
-        name: product.shop.name,
-        imageUrl: product.shop.imageUrl,
+        slug: listing.shop.slug,
+        name: listing.shop.name,
+        imageUrl: listing.shop.imageUrl,
       },
       storefrontAttributes,
       promotion: promotionPick
@@ -578,8 +578,8 @@ sellerRouter.get("/seller/products/:id", async (c) => {
             endsAt: promotionPick.endsAt.toISOString(),
           }
         : undefined,
-      images: product.images.map((i) => i.url),
-      variants: product.variants.map((v) => {
+      images: listing.images.map((i) => i.url),
+      variants: listing.variants.map((v) => {
         const vt = v as typeof v & { translations?: { label: string }[] };
         return {
           id: v.id,
@@ -595,9 +595,9 @@ sellerRouter.get("/seller/products/:id", async (c) => {
         };
       }),
       priceFrom: minPrice,
-      tags: product.productTags.map((pt) => pt.tag.slug),
-      attributes: serializeProductAttributeValuesForSeller(
-        product.attributeValues.map((av) => ({
+      tags: listing.listingTags.map((pt) => pt.tag.slug),
+      attributes: serializeListingAttributeValuesForSeller(
+        listing.attributeValues.map((av) => ({
           definition: av.definition,
           allowedValue: av.allowedValue,
           textValue: av.textValue,
@@ -609,7 +609,7 @@ sellerRouter.get("/seller/products/:id", async (c) => {
   });
 });
 
-sellerRouter.patch("/seller/products/:id", async (c) => {
+sellerRouter.patch("/seller/listings/:id", async (c) => {
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);
   if (!shop) {
@@ -619,22 +619,22 @@ sellerRouter.patch("/seller/products/:id", async (c) => {
 
   const id = c.req.param("id");
   const body = await c.req.json().catch(() => null);
-  const parsed = sellerProductPatchSchema.safeParse(body);
+  const parsed = sellerListingPatchSchema.safeParse(body);
   if (!parsed.success) {
     throw new HTTPException(400, { message: "Invalid body" });
   }
 
-  const existing = await prisma.product.findFirst({
+  const existing = await prisma.listing.findFirst({
     where: { id, shopId: shop.id },
     include: { variants: true },
   });
   if (!existing) {
-    throw new HTTPException(404, { message: "Product not found" });
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
   const data = parsed.data;
   if (data.slug != null && data.slug !== existing.slug) {
-    const taken = await prisma.product.findUnique({ where: { slug: data.slug } });
+    const taken = await prisma.listing.findUnique({ where: { slug: data.slug } });
     if (taken) {
       throw new HTTPException(400, { message: "Slug already in use" });
     }
@@ -658,7 +658,7 @@ sellerRouter.patch("/seller/products/:id", async (c) => {
   const slugForSkus = data.slug ?? existing.slug;
 
   await prisma.$transaction(async (tx) => {
-    await tx.product.update({
+    await tx.listing.update({
       where: { id },
       data: {
         ...(data.name != null ? { name: data.name } : {}),
@@ -671,12 +671,12 @@ sellerRouter.patch("/seller/products/:id", async (c) => {
     });
 
     if (data.attributes !== undefined) {
-      await tx.productAttributeValue.deleteMany({ where: { productId: id } });
-      const validated = await validateProductAttributeInputs(nextCategoryId, data.attributes);
+      await tx.listingAttributeValue.deleteMany({ where: { listingId: id } });
+      const validated = await validateListingAttributeInputs(nextCategoryId, data.attributes);
       if (validated && validated.length > 0) {
-        await tx.productAttributeValue.createMany({
+        await tx.listingAttributeValue.createMany({
           data: validated.map((v) => ({
-            productId: id,
+            listingId: id,
             definitionId: v.definitionId,
             allowedValueId: v.allowedValueId,
             textValue: v.textValue,
@@ -686,14 +686,14 @@ sellerRouter.patch("/seller/products/:id", async (c) => {
         });
       }
     } else if (categoryId != null && categoryId !== existing.categoryId) {
-      await tx.productAttributeValue.deleteMany({ where: { productId: id } });
+      await tx.listingAttributeValue.deleteMany({ where: { listingId: id } });
     }
 
     if (data.images) {
-      await tx.productImage.deleteMany({ where: { productId: id } });
-      await tx.productImage.createMany({
+      await tx.listingImage.deleteMany({ where: { listingId: id } });
+      await tx.listingImage.createMany({
         data: data.images.map((url, i) => ({
-          productId: id,
+          listingId: id,
           url,
           sortOrder: i,
         })),
@@ -701,28 +701,28 @@ sellerRouter.patch("/seller/products/:id", async (c) => {
     }
 
     if (data.tagSlugs) {
-      await tx.productTag.deleteMany({ where: { productId: id } });
+      await tx.listingTag.deleteMany({ where: { listingId: id } });
       const tags = await tx.tag.findMany({
         where: { slug: { in: data.tagSlugs } },
       });
       if (tags.length !== data.tagSlugs.length) {
         throw new HTTPException(400, { message: "One or more tags not found" });
       }
-      await tx.productTag.createMany({
+      await tx.listingTag.createMany({
         data: tags.map((t) => ({
-          productId: id,
+          listingId: id,
           tagId: t.id,
         })),
       });
     }
 
     if (data.variants) {
-      await tx.productVariant.deleteMany({ where: { productId: id } });
+      await tx.listingVariant.deleteMany({ where: { listingId: id } });
       for (let i = 0; i < data.variants.length; i++) {
         const v = data.variants[i]!;
-        const created = await tx.productVariant.create({
+        const created = await tx.listingVariant.create({
           data: {
-            productId: id,
+            listingId: id,
             sku: v.sku ?? `${slugForSkus}-v${i}`,
             label: v.label,
             colorHex: v.colorHex,
@@ -733,7 +733,7 @@ sellerRouter.patch("/seller/products/:id", async (c) => {
           },
         });
         if (v.labelAm) {
-          await tx.productVariantTranslation.create({
+          await tx.listingVariantTranslation.create({
             data: {
               variantId: created.id,
               locale: ContentLocale.am,
@@ -745,15 +745,15 @@ sellerRouter.patch("/seller/products/:id", async (c) => {
     }
 
     if (data.translationAm) {
-      await tx.productTranslation.upsert({
+      await tx.listingTranslation.upsert({
         where: {
-          productId_locale: {
-            productId: id,
+          listingId_locale: {
+            listingId: id,
             locale: ContentLocale.am,
           },
         },
         create: {
-          productId: id,
+          listingId: id,
           locale: ContentLocale.am,
           name: data.translationAm.name,
           description: data.translationAm.description,
@@ -764,8 +764,8 @@ sellerRouter.patch("/seller/products/:id", async (c) => {
         },
       });
     } else if (data.translationAm === null) {
-      await tx.productTranslation.deleteMany({
-        where: { productId: id, locale: ContentLocale.am },
+      await tx.listingTranslation.deleteMany({
+        where: { listingId: id, locale: ContentLocale.am },
       });
     }
   });
@@ -773,7 +773,7 @@ sellerRouter.patch("/seller/products/:id", async (c) => {
   return c.json({ ok: true });
 });
 
-sellerRouter.delete("/seller/products/:id", async (c) => {
+sellerRouter.delete("/seller/listings/:id", async (c) => {
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);
   if (!shop) {
@@ -782,13 +782,13 @@ sellerRouter.delete("/seller/products/:id", async (c) => {
   assertSellerCanManageShop(shop, userId);
 
   const id = c.req.param("id");
-  const existing = await prisma.product.findFirst({
+  const existing = await prisma.listing.findFirst({
     where: { id, shopId: shop.id },
   });
   if (!existing) {
-    throw new HTTPException(404, { message: "Product not found" });
+    throw new HTTPException(404, { message: "Listing not found" });
   }
 
-  await prisma.product.delete({ where: { id } });
+  await prisma.listing.delete({ where: { id } });
   return c.json({ ok: true });
 });

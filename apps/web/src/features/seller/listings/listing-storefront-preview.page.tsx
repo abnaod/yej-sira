@@ -4,21 +4,21 @@ import { getRouteApi } from "@tanstack/react-router";
 
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { addToCartMutationOptions } from "@/features/cart/cart.queries";
-import { BuyBox } from "@/features/product/components/buy-box";
-import { ProductGallery } from "@/features/product/components/product-gallery";
+import { BuyBox } from "@/features/listings/components/buy-box";
+import { ListingGallery } from "@/features/listings/components/listings-gallery";
 
-import { sellerProductDetailQuery } from "./products.queries";
+import { sellerListingDetailQuery } from "./listings.queries";
 
-const routeApi = getRouteApi("/$locale/(store)/preview/products/$productId");
+const routeApi = getRouteApi("/$locale/(store)/preview/listings/$listingId");
 
-export function SellerProductStorefrontPreviewPage() {
-  const { productId, locale: localeParam } = routeApi.useParams();
+export function SellerListingStorefrontPreviewPage() {
+  const { listingId, locale: localeParam } = routeApi.useParams();
   const locale = localeParam as Locale;
   const navigate = routeApi.useNavigate();
   const queryClient = useQueryClient();
 
   const detailQuery = useQuery({
-    ...sellerProductDetailQuery(locale, productId),
+    ...sellerListingDetailQuery(locale, listingId),
     enabled: !import.meta.env.SSR,
   });
 
@@ -39,7 +39,7 @@ export function SellerProductStorefrontPreviewPage() {
       <main className="p-8">
         <p className="text-destructive">{message}</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          Sign in as the shop owner to preview this product, or check that the product exists.
+          Sign in as the shop owner to preview this listing, or check that the listing exists.
         </p>
       </main>
     );
@@ -51,13 +51,13 @@ export function SellerProductStorefrontPreviewPage() {
     );
   }
 
-  const product = detailQuery.data.product;
+  const listing = detailQuery.data.listing;
 
   const breadcrumbItems = [
     {
-      label: product.category.name,
+      label: listing.category.name,
       to: "/$locale/categories/$categoryId",
-      params: { locale, categoryId: product.category.slug },
+      params: { locale, categoryId: listing.category.slug },
       search: {
         sort: "relevancy",
         tagSlugs: "",
@@ -66,39 +66,39 @@ export function SellerProductStorefrontPreviewPage() {
         allowedValueKey: undefined,
       },
     },
-    { label: product.name },
+    { label: listing.name },
   ];
 
-  const purchaseDisabled = !product.isPublished;
+  const purchaseDisabled = !listing.isPublished;
   const purchaseDisabledReason = purchaseDisabled
-    ? "Publish this product to enable checkout. This is a draft preview only."
+    ? "Publish this listing to enable checkout. This is a draft preview only."
     : undefined;
 
   return (
     <main>
-      {!product.isPublished ? (
+      {!listing.isPublished ? (
         <div
           className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100"
           role="status"
         >
-          Draft preview — shoppers cannot see this page until you publish the product.
+          Draft preview — shoppers cannot see this page until you publish the listing.
         </div>
       ) : null}
 
       <Breadcrumb items={breadcrumbItems} className="mb-6" />
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <ProductGallery images={product.images} productName={product.name} />
+        <ListingGallery images={listing.images} listingName={listing.name} />
 
         <BuyBox
-          name={product.name}
-          shop={product.shop}
+          name={listing.name}
+          shop={listing.shop}
           monthlyPrice={99.99}
           financingNote="Suggested payments with 6 months special financing"
-          rating={product.rating}
-          reviewCount={product.reviewCount}
-          promotion={product.promotion}
-          variants={product.variants.map((v) => ({
+          rating={listing.rating}
+          reviewCount={listing.reviewCount}
+          promotion={listing.promotion}
+          variants={listing.variants.map((v) => ({
             id: v.id,
             label: v.label,
             colorHex: v.colorHex ?? undefined,
@@ -106,12 +106,12 @@ export function SellerProductStorefrontPreviewPage() {
             stock: v.stock,
           }))}
           onAddToCart={
-            product.isPublished
+            listing.isPublished
               ? (payload) => addToCart.mutate(payload)
               : undefined
           }
           onBuyNow={
-            product.isPublished
+            listing.isPublished
               ? async (payload) => {
                   await addToCart.mutateAsync(payload);
                   void navigate({ to: "/$locale/checkout", params: { locale } });
@@ -127,9 +127,9 @@ export function SellerProductStorefrontPreviewPage() {
         <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground md:text-xl">
           Description
         </h2>
-        {product.storefrontAttributes.filter((a) => a.displayValue.trim()).length > 0 && (
+        {listing.storefrontAttributes.filter((a) => a.displayValue.trim()).length > 0 && (
           <dl className="mb-8 grid max-w-3xl gap-x-8 gap-y-3 sm:grid-cols-2">
-            {product.storefrontAttributes
+            {listing.storefrontAttributes
               .filter((a) => a.displayValue.trim())
               .map((a) => (
                 <div key={a.key} className="border-b border-border/70 pb-3">
@@ -141,13 +141,13 @@ export function SellerProductStorefrontPreviewPage() {
               ))}
           </dl>
         )}
-        {product.description.trim() ? (
+        {listing.description.trim() ? (
           <p className="max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-foreground md:text-base">
-            {product.description}
+            {listing.description}
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
-            No description has been added for this product yet.
+            No description has been added for this listing yet.
           </p>
         )}
       </section>

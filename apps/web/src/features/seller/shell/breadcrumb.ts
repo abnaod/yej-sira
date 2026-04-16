@@ -26,10 +26,10 @@ export function sellerPortalHeaderTitle(
     return "Orders";
   }
 
-  if (segments[0] === "products") {
-    if (segments[1] === "new") return "New product";
-    if (segments[1]) return "Edit product";
-    return "Products";
+  if (segments[0] === "listings") {
+    if (segments[1] === "new") return "New listing";
+    if (segments[1]) return "Edit listing";
+    return "Listings";
   }
 
   return segments.at(-1) ?? "Page";
@@ -53,7 +53,7 @@ export function sellerPortalHeaderSubtitle(
     return "View and manage customer orders.";
   }
 
-  if (segments[0] === "products") {
+  if (segments[0] === "listings") {
     if (segments[1] === "new") {
       return "Create a listing with variants, images, and details.";
     }

@@ -21,13 +21,13 @@ export const categoriesQuery = (locale: Locale) =>
     queryFn: () => apiFetchJson<CategoriesResponse>("/api/categories", { locale }),
   });
 
-export type ProductTagDto = {
+export type ListingTagDto = {
   slug: string;
   name: string;
 };
 
 export type TagsResponse = {
-  tags: ProductTagDto[];
+  tags: ListingTagDto[];
 };
 
 export const tagsQuery = (locale: Locale) =>
@@ -36,13 +36,13 @@ export const tagsQuery = (locale: Locale) =>
     queryFn: () => apiFetchJson<TagsResponse>("/api/tags", { locale }),
   });
 
-export type ProductPromotionDto = {
+export type ListingPromotionDto = {
   slug: string;
   badgeLabel: string;
   endsAt: string;
 };
 
-export type ProductCardDto = {
+export type ListingCardDto = {
   id: string;
   slug: string;
   defaultVariantId?: string;
@@ -54,29 +54,29 @@ export type ProductCardDto = {
   rating: number;
   reviewCount: number;
   shop: { slug: string; name: string; imageUrl: string | null };
-  tags: ProductTagDto[];
-  promotion?: ProductPromotionDto;
+  tags: ListingTagDto[];
+  promotion?: ListingPromotionDto;
 };
 
-export type FeaturedProductsResponse = { products: ProductCardDto[] };
+export type FeaturedListingsResponse = { listings: ListingCardDto[] };
 
-export const featuredProductsQuery = (locale: Locale, limit = 12) =>
+export const featuredListingsQuery = (locale: Locale, limit = 12) =>
   queryOptions({
-    queryKey: ["products", "featured", locale, limit] as const,
+    queryKey: ["listings", "featured", locale, limit] as const,
     queryFn: () =>
-      apiFetchJson<FeaturedProductsResponse>(`/api/products/featured?limit=${limit}`, {
+      apiFetchJson<FeaturedListingsResponse>(`/api/listings/featured?limit=${limit}`, {
         locale,
       }),
   });
 
-export type ProductSearchResponse = { products: ProductCardDto[] };
+export type ListingSearchResponse = { listings: ListingCardDto[] };
 
-export const productSearchQuery = (locale: Locale, q: string, limit = 8) =>
+export const listingSearchQuery = (locale: Locale, q: string, limit = 8) =>
   queryOptions({
-    queryKey: ["products", "search", locale, q, limit] as const,
+    queryKey: ["listings", "search", locale, q, limit] as const,
     queryFn: () =>
-      apiFetchJson<ProductSearchResponse>(
-        `/api/products/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+      apiFetchJson<ListingSearchResponse>(
+        `/api/listings/search?q=${encodeURIComponent(q)}&limit=${limit}`,
         { locale },
       ),
   });

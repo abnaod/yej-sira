@@ -9,3 +9,10 @@ dist
 
 # Prisma
 libs/db/node_modules/.prisma
+
+# API static assets under repo root — ignore binaries/uploads; keep README + .gitkeep
+/public/**
+!/public/
+!/public/**/
+!/public/README.md
+!/public/**/.gitkeep

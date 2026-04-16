@@ -229,7 +229,7 @@ export function AuthDialog({
                   {error}
                 </p>
               )}
-              <Button type="submit" disabled={pending}>
+              <Button type="submit" disabled={pending} className="text-sm">
                 {pending ? "Signing in…" : "Sign in"}
               </Button>
             </form>
@@ -276,17 +276,17 @@ export function AuthDialog({
                   {error}
                 </p>
               )}
-              <Button type="submit" disabled={pending}>
+              <Button type="submit" disabled={pending} className="text-sm">
                 {pending ? "Creating account…" : "Create account"}
               </Button>
             </form>
           </TabsContent>
         </Tabs>
 
-        <div className="flex flex-col gap-4">
+        <div className="mt-4 mb-4 flex flex-col gap-4">
           <div className="flex items-center gap-3">
             <Separator className="flex-1" />
-            <span className="whitespace-nowrap text-xs text-muted-foreground">
+            <span className="whitespace-nowrap text-sm text-muted-foreground">
               Or continue with
             </span>
             <Separator className="flex-1" />
@@ -294,7 +294,7 @@ export function AuthDialog({
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full text-sm"
             disabled={pending}
             onClick={() => void handleGoogle()}
           >

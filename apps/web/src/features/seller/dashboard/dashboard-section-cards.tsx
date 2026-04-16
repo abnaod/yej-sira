@@ -15,7 +15,7 @@ const ICON_ACCENTS = [
 export type SellerDashboardStats = {
   revenue30d: number;
   orders30d: number;
-  productCount: number;
+  listingCount: number;
   publishedCount: number;
 };
 
@@ -54,7 +54,7 @@ export function SellerDashboardSectionCards({
 
   const revenue = stats?.revenue30d ?? 0;
   const orders = stats?.orders30d ?? 0;
-  const products = stats?.productCount ?? 0;
+  const listings = stats?.listingCount ?? 0;
   const published = stats?.publishedCount ?? 0;
 
   const items = [
@@ -71,8 +71,8 @@ export function SellerDashboardSectionCards({
       icon: ShoppingBag,
     },
     {
-      title: "Products",
-      value: String(products),
+      title: "Listings",
+      value: String(listings),
       description: "In your catalog",
       icon: Package,
     },

@@ -4,7 +4,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { apiFetchJson } from "@/lib/api";
 
 export type SellerDashboardResponse = {
-  productCount: number;
+  listingCount: number;
   publishedCount: number;
   revenue30d: number;
   orders30d: number;

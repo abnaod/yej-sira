@@ -98,10 +98,10 @@ export function getSellerOrderColumns(
       },
     },
     {
-      accessorKey: "productName",
-      header: "Product",
+      accessorKey: "listingName",
+      header: "Listing",
       cell: ({ row }) => {
-        const name = row.original.productName?.trim() || "—";
+        const name = row.original.listingName?.trim() || "—";
         const extra = row.original.lineCount > 1 ? row.original.lineCount - 1 : 0;
         return (
           <div className="max-w-[min(260px,45vw)]">

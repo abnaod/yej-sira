@@ -7,12 +7,12 @@ import { useLocale } from "@/lib/locale-path";
 
 /** Slugs align with catalog seed */
 const departmentSlugs = [
-  { labelKey: "footerDeptJewelry" as const, slug: "jewelry-accessories" },
-  { labelKey: "footerDeptHome" as const, slug: "home-living" },
-  { labelKey: "footerDeptArt" as const, slug: "art-collectibles" },
-  { labelKey: "footerDeptPaper" as const, slug: "paper-party" },
-  { labelKey: "footerDeptVintage" as const, slug: "vintage" },
+  { labelKey: "footerDeptCrochet" as const, slug: "crochet" },
+  { labelKey: "footerDeptJewelry" as const, slug: "jewelry" },
+  { labelKey: "footerDeptBasketry" as const, slug: "basketry" },
+  { labelKey: "footerDeptPottery" as const, slug: "pottery" },
   { labelKey: "footerDeptClothing" as const, slug: "clothing" },
+  { labelKey: "footerDeptArt" as const, slug: "art-collectibles" },
 ] as const;
 
 const aboutKeys = [

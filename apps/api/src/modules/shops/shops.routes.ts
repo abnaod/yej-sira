@@ -1,12 +1,13 @@
 import type { Shop } from "@prisma/client";
 import type { Locale } from "@ys/intl";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { prisma, publicProductVisibilityWhere } from "../../lib/db";
+import { prisma, publicListingVisibilityWhere } from "../../lib/db";
 import { getOwnedShop, requireUserId } from "../../lib/authz";
-import { getProductCardInclude, mapProductCard } from "../catalog/product-card.mapper";
-import { createShopBodySchema, publicShopProductsQuerySchema } from "./shops.schema";
+import { getListingCardInclude, mapListingCard } from "../catalog/listing-card.mapper";
+import { createShopBodySchema, publicShopListingsQuerySchema } from "./shops.schema";
 
 export const shopsRouter = new Hono();
 
@@ -23,32 +24,38 @@ function jsonShopForOwner(shop: Shop) {
     socialLinks: shop.socialLinks,
     shippingPolicy: shop.shippingPolicy,
     returnsPolicy: shop.returnsPolicy,
+    businessType: shop.businessType,
     businessLegalName: shop.businessLegalName,
     businessTaxId: shop.businessTaxId,
-    businessAddressLine1: shop.businessAddressLine1,
-    businessAddressLine2: shop.businessAddressLine2,
     businessCity: shop.businessCity,
-    businessPostalCode: shop.businessPostalCode,
-    businessCountry: shop.businessCountry,
+    businessSubcity: shop.businessSubcity,
+    businessWoreda: shop.businessWoreda,
+    businessKebele: shop.businessKebele,
+    businessHouseNumber: shop.businessHouseNumber,
+    businessSpecificLocation: shop.businessSpecificLocation,
     createdAt: shop.createdAt.toISOString(),
     updatedAt: shop.updatedAt.toISOString(),
   };
 }
 
 /** Must be registered before `/shops/:slug` or `me` is captured as a slug. */
-shopsRouter.get("/shops/me", async (c) => {
+async function shopsMeHandler(c: Context) {
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);
   if (!shop) {
-    throw new HTTPException(404, { message: "No shop" });
+    return c.json({ shop: null });
   }
   return c.json({ shop: jsonShopForOwner(shop) });
-});
+}
+
+shopsRouter.get("/shops/me", shopsMeHandler);
+/** Some clients/proxies normalize with a trailing slash; without this, `/shops/me/` 404s. */
+shopsRouter.get("/shops/me/", shopsMeHandler);
 
 shopsRouter.get("/shops/:slug", async (c) => {
   const locale = c.get("locale") as Locale;
   const slug = c.req.param("slug");
-  const q = publicShopProductsQuerySchema.safeParse({
+  const q = publicShopListingsQuerySchema.safeParse({
     page: c.req.query("page"),
     pageSize: c.req.query("pageSize"),
   });
@@ -67,14 +74,14 @@ shopsRouter.get("/shops/:slug", async (c) => {
   const now = new Date();
   const where = {
     shopId: shop.id,
-    ...publicProductVisibilityWhere,
+    ...publicListingVisibilityWhere,
   };
 
-  const [total, products] = await prisma.$transaction([
-    prisma.product.count({ where }),
-    prisma.product.findMany({
+  const [total, listings] = await prisma.$transaction([
+    prisma.listing.count({ where }),
+    prisma.listing.findMany({
       where,
-      include: getProductCardInclude(now, locale),
+      include: getListingCardInclude(now, locale),
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -89,7 +96,7 @@ shopsRouter.get("/shops/:slug", async (c) => {
       description: shop.description,
       imageUrl: shop.imageUrl,
     },
-    products: products.map((p) => mapProductCard(p, locale)),
+    listings: listings.map((p) => mapListingCard(p, locale)),
     page,
     pageSize,
     total,
@@ -123,13 +130,15 @@ shopsRouter.post("/shops", async (c) => {
       socialLinks: d.socialLinks,
       shippingPolicy: d.shippingPolicy,
       returnsPolicy: d.returnsPolicy,
+      businessType: d.businessType,
       businessLegalName: d.businessLegalName,
       businessTaxId: d.businessTaxId,
-      businessAddressLine1: d.businessAddressLine1,
-      businessAddressLine2: d.businessAddressLine2,
       businessCity: d.businessCity,
-      businessPostalCode: d.businessPostalCode,
-      businessCountry: d.businessCountry,
+      businessSubcity: d.businessSubcity,
+      businessWoreda: d.businessWoreda,
+      businessKebele: d.businessKebele,
+      businessHouseNumber: d.businessHouseNumber,
+      businessSpecificLocation: d.businessSpecificLocation,
       ownerUserId: userId,
       // No admin moderation UI yet — new shops go live immediately.
       status: "active",

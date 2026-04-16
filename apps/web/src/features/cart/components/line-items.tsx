@@ -1,5 +1,6 @@
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 
+import { assetUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 export interface LineItemData {
@@ -28,7 +29,7 @@ export function LineItems({ items, onUpdateQuantity, onRemove }: LineItemsProps)
           <ShoppingCart className="size-7" strokeWidth={1.5} />
         </div>
         <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
-          Your cart is empty. Browse the shop and add products to see them here.
+          Your cart is empty. Browse the shop and add listings to see them here.
         </p>
       </div>
     );
@@ -43,7 +44,7 @@ export function LineItems({ items, onUpdateQuantity, onRemove }: LineItemsProps)
         >
           <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-neutral-50">
             <img
-              src={item.imageUrl}
+              src={assetUrl(item.imageUrl)}
               alt={item.name}
               className="h-full w-full object-cover object-center"
             />

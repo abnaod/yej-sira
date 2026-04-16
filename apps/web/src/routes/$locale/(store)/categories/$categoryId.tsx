@@ -4,7 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   CategoryPage,
   parseTagSlugsParam,
-  productsForCategoryQuery,
+  listingsForCategoryQuery,
   type CategorySort,
 } from "@/features/category";
 import { promotionsListQuery } from "@/features/promotions/promotions.queries";
@@ -59,7 +59,7 @@ export const Route = createFileRoute("/$locale/(store)/categories/$categoryId")(
     const locale = params.locale as Locale;
     await Promise.all([
       context.queryClient.ensureQueryData(
-        productsForCategoryQuery(
+        listingsForCategoryQuery(
           locale,
           params.categoryId,
           deps.sort,

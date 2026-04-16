@@ -32,13 +32,13 @@ const optionalSearchQ = z.preprocess(
   z.string().min(2).max(80).optional(),
 );
 
-export const productListQuerySchema = z
+export const listingListQuerySchema = z
   .object({
     categorySlug: z.string().optional(),
     q: optionalSearchQ,
-    /** Comma-separated or repeated query keys; AND semantics (product must have every tag). */
+    /** Comma-separated or repeated query keys; AND semantics (listing must have every tag). */
     tagSlugs: optionalTagSlugs,
-    /** Filter to products enrolled in this promotion while it is active. */
+    /** Filter to listings enrolled in this promotion while it is active. */
     promotionSlug: z.string().trim().min(1).max(80).optional(),
     /** Facet: definition key within category (requires categorySlug + allowedValueKey). */
     attributeDefinitionKey: z.string().trim().min(1).max(80).optional(),
@@ -63,7 +63,7 @@ export const featuredQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(48).default(12),
 });
 
-export const productSearchQuerySchema = z.object({
+export const listingSearchQuerySchema = z.object({
   q: z.string().trim().min(2).max(80),
   limit: z.coerce.number().int().min(1).max(20).default(8),
 });

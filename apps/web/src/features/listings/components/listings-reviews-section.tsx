@@ -10,35 +10,35 @@ import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
-import type { ProductReviewDto } from "../product.queries";
+import type { ListingReviewDto } from "../listings.queries";
 import {
-  deleteProductReviewMutationOptions,
-  productReviewsQuery,
-  submitProductReviewMutationOptions,
-} from "../product.queries";
+  deleteListingReviewMutationOptions,
+  listingReviewsQuery,
+  submitListingReviewMutationOptions,
+} from "../listings.queries";
 
-interface ProductReviewsSectionProps {
+interface ListingReviewsSectionProps {
   locale: Locale;
-  productSlug: string;
+  listingSlug: string;
   /** When true, omit outer heading and top border (e.g. inside a tab panel). */
   embedded?: boolean;
 }
 
-export function ProductReviewsSection({
+export function ListingReviewsSection({
   locale,
-  productSlug,
+  listingSlug,
   embedded = false,
-}: ProductReviewsSectionProps) {
+}: ListingReviewsSectionProps) {
   const queryClient = useQueryClient();
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const { openAuth } = useAuthDialog();
 
-  const { data, isPending, isError, error } = useQuery(productReviewsQuery(locale, productSlug));
+  const { data, isPending, isError, error } = useQuery(listingReviewsQuery(locale, listingSlug));
   const submitReview = useMutation(
-    submitProductReviewMutationOptions(queryClient, locale, productSlug),
+    submitListingReviewMutationOptions(queryClient, locale, listingSlug),
   );
   const deleteReview = useMutation(
-    deleteProductReviewMutationOptions(queryClient, locale, productSlug),
+    deleteListingReviewMutationOptions(queryClient, locale, listingSlug),
   );
 
   const [stars, setStars] = useState<number | null>(null);
@@ -51,11 +51,11 @@ export function ProductReviewsSection({
     setStars(null);
     setHoverStars(null);
     setComment("");
-  }, [productSlug]);
+  }, [listingSlug]);
 
   const viewerReview = data?.viewerReview;
 
-  const displayReviews = useMemo((): ProductReviewDto[] => {
+  const displayReviews = useMemo((): ListingReviewDto[] => {
     if (!data) return [];
     const vid = data.viewerReview?.id;
     const others = data.reviews.filter((r) => r.id !== vid);
@@ -68,7 +68,7 @@ export function ProductReviewsSection({
       return others;
     }
 
-    const mine: ProductReviewDto = {
+    const mine: ListingReviewDto = {
       id: data.viewerReview.id,
       stars: data.viewerReview.stars,
       comment: data.viewerReview.comment,
@@ -209,7 +209,7 @@ export function ProductReviewsSection({
               id="review-comment"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Share your experience with this product…"
+              placeholder="Share your experience with this listing…"
               maxLength={2000}
               rows={4}
               required

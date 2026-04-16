@@ -6,13 +6,13 @@ import {
 } from "@tanstack/react-query";
 
 import type {
-  ProductCardDto,
-  ProductPromotionDto,
+  ListingCardDto,
+  ListingPromotionDto,
 } from "@/features/storefront/storefront.queries";
 import { apiFetchJson } from "@/lib/api";
 
-export type ProductDetailResponse = {
-  product: {
+export type ListingDetailResponse = {
+  listing: {
     id: string;
     slug: string;
     name: string;
@@ -32,46 +32,46 @@ export type ProductDetailResponse = {
       stock: number;
     }[];
     priceFrom: number;
-    promotion?: ProductPromotionDto;
+    promotion?: ListingPromotionDto;
     attributes: { key: string; label: string; displayValue: string }[];
   };
 };
 
-export const productDetailQuery = (locale: Locale, productSlug: string) =>
+export const listingDetailQuery = (locale: Locale, listingSlug: string) =>
   queryOptions({
-    queryKey: ["product", locale, productSlug] as const,
+    queryKey: ["listing", locale, listingSlug] as const,
     queryFn: () =>
-      apiFetchJson<ProductDetailResponse>(
-        `/api/products/${encodeURIComponent(productSlug)}`,
+      apiFetchJson<ListingDetailResponse>(
+        `/api/listings/${encodeURIComponent(listingSlug)}`,
         { locale },
       ),
   });
 
-export type RelatedProductsResponse = {
-  products: ProductCardDto[];
+export type RelatedListingsResponse = {
+  listings: ListingCardDto[];
 };
 
-export const relatedProductsQuery = (locale: Locale, productSlug: string) =>
+export const relatedListingsQuery = (locale: Locale, listingSlug: string) =>
   queryOptions({
-    queryKey: ["product", locale, productSlug, "related"] as const,
+    queryKey: ["listing", locale, listingSlug, "related"] as const,
     queryFn: () =>
-      apiFetchJson<RelatedProductsResponse>(
-        `/api/products/${encodeURIComponent(productSlug)}/related`,
+      apiFetchJson<RelatedListingsResponse>(
+        `/api/listings/${encodeURIComponent(listingSlug)}/related`,
         { locale },
       ),
   });
 
-export const moreFromShopProductsQuery = (locale: Locale, productSlug: string) =>
+export const moreFromShopListingsQuery = (locale: Locale, listingSlug: string) =>
   queryOptions({
-    queryKey: ["product", locale, productSlug, "more-from-shop"] as const,
+    queryKey: ["listing", locale, listingSlug, "more-from-shop"] as const,
     queryFn: () =>
-      apiFetchJson<RelatedProductsResponse>(
-        `/api/products/${encodeURIComponent(productSlug)}/more-from-shop`,
+      apiFetchJson<RelatedListingsResponse>(
+        `/api/listings/${encodeURIComponent(listingSlug)}/more-from-shop`,
         { locale },
       ),
   });
 
-export type ProductReviewDto = {
+export type ListingReviewDto = {
   id: string;
   stars: number;
   comment: string | null;
@@ -79,7 +79,7 @@ export type ProductReviewDto = {
   authorName: string;
 };
 
-export type ViewerProductReviewDto = {
+export type ViewerListingReviewDto = {
   id: string;
   stars: number;
   comment: string | null;
@@ -87,7 +87,7 @@ export type ViewerProductReviewDto = {
 };
 
 /** Index `i` = `i + 1` stars (e.g. `[0]` = 1-star count). */
-export type ProductRatingSummaryCounts = [
+export type ListingRatingSummaryCounts = [
   number,
   number,
   number,
@@ -95,45 +95,45 @@ export type ProductRatingSummaryCounts = [
   number,
 ];
 
-export type ProductRatingSummary = {
+export type ListingRatingSummary = {
   average: number;
   total: number;
-  counts: ProductRatingSummaryCounts;
+  counts: ListingRatingSummaryCounts;
 };
 
-export type ProductReviewsResponse = {
-  reviews: ProductReviewDto[];
+export type ListingReviewsResponse = {
+  reviews: ListingReviewDto[];
   nextCursor: string | null;
-  /** Present when the request includes a signed-in user who has reviewed this product. */
-  viewerReview: ViewerProductReviewDto | null;
-  summary: ProductRatingSummary;
+  /** Present when the request includes a signed-in user who has reviewed this listing. */
+  viewerReview: ViewerListingReviewDto | null;
+  summary: ListingRatingSummary;
 };
 
-export const productReviewsQuery = (locale: Locale, productSlug: string) =>
+export const listingReviewsQuery = (locale: Locale, listingSlug: string) =>
   queryOptions({
-    queryKey: ["product", locale, productSlug, "reviews"] as const,
+    queryKey: ["listing", locale, listingSlug, "reviews"] as const,
     queryFn: () =>
-      apiFetchJson<ProductReviewsResponse>(
-        `/api/products/${encodeURIComponent(productSlug)}/reviews`,
+      apiFetchJson<ListingReviewsResponse>(
+        `/api/listings/${encodeURIComponent(listingSlug)}/reviews`,
         { locale },
       ),
   });
 
-export type SubmitProductReviewResponse = {
-  review: ProductReviewDto;
-  product: { rating: number; reviewCount: number };
+export type SubmitListingReviewResponse = {
+  review: ListingReviewDto;
+  listing: { rating: number; reviewCount: number };
 };
 
-export function submitProductReviewMutationOptions(
+export function submitListingReviewMutationOptions(
   queryClient: QueryClient,
   locale: Locale,
-  productSlug: string,
+  listingSlug: string,
 ) {
   return mutationOptions({
-    mutationKey: ["product", "review", locale, productSlug] as const,
+    mutationKey: ["listing", "review", locale, listingSlug] as const,
     mutationFn: (input: { stars: number; comment: string }) =>
-      apiFetchJson<SubmitProductReviewResponse>(
-        `/api/products/${encodeURIComponent(productSlug)}/reviews`,
+      apiFetchJson<SubmitListingReviewResponse>(
+        `/api/listings/${encodeURIComponent(listingSlug)}/reviews`,
         {
           method: "POST",
           body: JSON.stringify(input),
@@ -142,27 +142,27 @@ export function submitProductReviewMutationOptions(
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["product", locale, productSlug],
+        queryKey: ["listing", locale, listingSlug],
       });
     },
   });
 }
 
-export function deleteProductReviewMutationOptions(
+export function deleteListingReviewMutationOptions(
   queryClient: QueryClient,
   locale: Locale,
-  productSlug: string,
+  listingSlug: string,
 ) {
   return mutationOptions({
-    mutationKey: ["product", "review", "delete", locale, productSlug] as const,
+    mutationKey: ["listing", "review", "delete", locale, listingSlug] as const,
     mutationFn: () =>
       apiFetchJson<{ ok: boolean }>(
-        `/api/products/${encodeURIComponent(productSlug)}/reviews`,
+        `/api/listings/${encodeURIComponent(listingSlug)}/reviews`,
         { method: "DELETE", locale },
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: ["product", locale, productSlug],
+        queryKey: ["listing", locale, listingSlug],
       });
     },
   });

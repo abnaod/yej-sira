@@ -1,6 +1,6 @@
 import type { Locale } from "@ys/intl";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+import { getApiOrigin } from "./api-origin";
 
 const CART_TOKEN_KEY = "ys_cart_token";
 
@@ -22,7 +22,20 @@ export function setStoredCartToken(token: string | null) {
 
 export function apiUrl(path: string) {
   if (path.startsWith("http")) return path;
-  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+  const base = getApiOrigin();
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/**
+ * Resolve an image/asset URL for an `<img>` src. Absolute URLs (external CDNs)
+ * pass through; relative paths (e.g. `/static/listings/foo.jpg`) get prefixed
+ * with the API origin so the Hono static handler serves them.
+ */
+export function assetUrl(path: string | null | undefined): string {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (path.startsWith("data:") || path.startsWith("blob:")) return path;
+  return `${getApiOrigin()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export async function apiFetch(path: string, init?: ApiFetchInit) {
@@ -38,15 +51,51 @@ export async function apiFetch(path: string, init?: ApiFetchInit) {
     const cookie = await getServerRequestCookie();
     if (cookie) headers.set("cookie", cookie);
   }
+  /**
+   * Only default `Content-Type` to JSON for string bodies — FormData needs the
+   * browser-generated `multipart/form-data; boundary=…` header intact.
+   */
+  const isStringBody = typeof rest.body === "string";
   return fetch(url, {
     ...rest,
     credentials: "include",
     headers: {
-      ...(rest.body ? { "Content-Type": "application/json" } : {}),
+      ...(isStringBody ? { "Content-Type": "application/json" } : {}),
       ...(cartToken ? { "X-Cart-Token": cartToken } : {}),
       ...headers,
     },
   });
+}
+
+/**
+ * Upload a single image file to the API. Returns a `/static/uploads/...` path
+ * that can be stored directly in `imageUrl` columns.
+ */
+export async function uploadImage(
+  file: File,
+  folder: "shops" | "listings" | "misc" = "misc",
+  locale?: Locale,
+): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("folder", folder);
+  const res = await apiFetch("/api/uploads", {
+    method: "POST",
+    body: form,
+    locale,
+  });
+  const text = await res.text();
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error("Invalid upload response");
+  }
+  if (!res.ok) {
+    const err = data as { error?: string; message?: string };
+    throw new Error(err?.error ?? err?.message ?? res.statusText);
+  }
+  return (data as { url: string }).url;
 }
 
 export async function apiFetchJson<T>(path: string, init?: ApiFetchInit): Promise<T> {

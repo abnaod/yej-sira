@@ -3,30 +3,30 @@ export const categoryDescriptionHints: Record<
   string,
   { placeholder: string; tip: string }
 > = {
-  "jewelry-accessories": {
+  crochet: {
+    placeholder: "Describe fiber, hook size or gauge, dimensions, and whether it is made to order…",
+    tip: "Note yarn brand or weight and washing instructions.",
+  },
+  jewelry: {
     placeholder:
       "Describe materials, dimensions, closure type, and how the piece was made…",
     tip: "Buyers look for metal type, gemstone details, and care instructions.",
   },
-  "home-living": {
-    placeholder: "Describe materials, size, care, and what room it suits best…",
-    tip: "Include dimensions and whether the item is handmade or assembled.",
+  basketry: {
+    placeholder: "Describe fibers or materials, weave style, dimensions, and intended use…",
+    tip: "Mention whether the piece is stiffened, dyed, or natural.",
   },
-  "art-collectibles": {
-    placeholder: "Describe the medium, size, framing, and authenticity or edition…",
-    tip: "Mention year, signature, and how it will be shipped.",
-  },
-  "paper-party": {
-    placeholder: "Describe paper weight, finish, customization options, and quantity…",
-    tip: "Note production time and whether proofs are included.",
-  },
-  vintage: {
-    placeholder: "Describe era, condition, flaws, and any provenance you can share…",
-    tip: "Honest wear notes build trust with collectors.",
+  pottery: {
+    placeholder: "Describe clay body, glaze, firing, food safety, and dimensions…",
+    tip: "Call out microwave/dishwasher safety if you have tested it.",
   },
   clothing: {
     placeholder: "Describe fit, fabric, care, and sizing notes…",
     tip: "Include measurements if sizes vary from standard retail.",
+  },
+  "art-collectibles": {
+    placeholder: "Describe the medium, size, framing, and authenticity or edition…",
+    tip: "Mention year, signature, and how it will be shipped.",
   },
 };
 

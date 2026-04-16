@@ -4,14 +4,13 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { promotionsListQuery } from "@/features/promotions/promotions.queries";
+import { assetUrl } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 
-/** Small business / retail — seller-focused hero */
-const sellerHeroImage =
-  "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80";
-/** Fallback when no active promotion from API */
-const fallbackDealImage =
-  "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=900&q=80";
+/** Small business / retail — seller-focused hero (served from /public/storefront). */
+const sellerHeroImage = "/static/storefront/hero-seller.jpg";
+/** Fallback when no active promotion from API. */
+const fallbackDealImage = "/static/storefront/hero-fallback.jpg";
 
 export function HeroSection() {
   const { t } = useTranslation("common");
@@ -43,8 +42,8 @@ export function HeroSection() {
         </div>
         <div className="relative min-h-32 w-full min-w-0 sm:min-h-0 sm:w-2/5">
           <img
-            src={sellerHeroImage}
-            alt="Shop owner at a counter with a tablet, ready to sell"
+            src={assetUrl(sellerHeroImage)}
+            alt="Artisan hands carving a traditional clay jebena outdoors — handmade pottery"
             className="absolute inset-0 h-full w-full object-cover"
           />
         </div>
@@ -53,7 +52,7 @@ export function HeroSection() {
       {/* Secondary: active promotion from API, or search fallback */}
       <div className="relative min-h-32 overflow-hidden rounded-2xl shadow-sm sm:min-h-0">
         <img
-          src={promo?.heroImageUrl ?? fallbackDealImage}
+          src={assetUrl(promo?.heroImageUrl ?? fallbackDealImage)}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />

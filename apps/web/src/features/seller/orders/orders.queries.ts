@@ -10,8 +10,8 @@ export type SellerOrderListItem = {
   lineCount: number;
   shopTotal: number;
   imageUrl: string;
-  /** First line item’s product label (name + optional variant) for this shop. */
-  productName: string;
+  /** First line item’s listing label (name + optional variant) for this shop. */
+  listingName: string;
 };
 
 export type SellerOrdersResponse = { orders: SellerOrderListItem[] };
@@ -51,7 +51,7 @@ export type SellerOrderDetailResponse = {
     } | null;
     items: {
       id: string;
-      productName: string;
+      listingName: string;
       variantLabel: string | null;
       unitPrice: number;
       quantity: number;

@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { StarRating } from "@/components/ui/star-rating";
-import { productSearchQuery } from "@/features/storefront/storefront.queries";
+import { listingSearchQuery } from "@/features/storefront/storefront.queries";
+import { assetUrl } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 
 const DEBOUNCE_MS = 280;
@@ -45,12 +46,12 @@ export function HeaderSearch() {
   }, [canSearch, debouncedQ]);
 
   const { data, isPending, isError, error } = useQuery({
-    ...productSearchQuery(locale, debouncedQ),
+    ...listingSearchQuery(locale, debouncedQ),
     enabled: canSearch,
     staleTime: 30_000,
   });
 
-  const products = data?.products ?? [];
+  const listings = data?.listings ?? [];
   const showPanel = popoverOpen && canSearch;
 
   /** Clears cmdk highlight so the footer link hover does not keep the last item selected. */
@@ -127,30 +128,30 @@ export function HeaderSearch() {
                   {error instanceof Error ? error.message : "Something went wrong"}
                 </div>
               )}
-              {!isPending && !isError && products.length === 0 && (
-                <CommandEmpty>No products found.</CommandEmpty>
+              {!isPending && !isError && listings.length === 0 && (
+                <CommandEmpty>No listings found.</CommandEmpty>
               )}
-              {!isPending && !isError && products.length > 0 && (
-                <CommandGroup heading="Products">
-                  {products.map((product) => (
+              {!isPending && !isError && listings.length > 0 && (
+                <CommandGroup heading="Listings">
+                  {listings.map((listing) => (
                     <CommandItem
-                      key={product.slug}
-                      value={`${product.slug} ${product.name}`}
+                      key={listing.slug}
+                      value={`${listing.slug} ${listing.name}`}
                       className="cursor-pointer gap-3 px-2 py-2"
                       onSelect={() => {
                         setPopoverOpen(false);
                         setQ("");
                         setDebouncedQ("");
                         void navigate({
-                          to: "/$locale/products/$productId",
-                          params: { locale, productId: product.slug },
+                          to: "/$locale/listings/$listingId",
+                          params: { locale, listingId: listing.slug },
                         });
                       }}
                     >
                       <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-neutral-100">
-                        {product.imageUrl ? (
+                        {listing.imageUrl ? (
                           <img
-                            src={product.imageUrl}
+                            src={assetUrl(listing.imageUrl)}
                             alt=""
                             className="h-full w-full object-cover"
                           />
@@ -158,21 +159,21 @@ export function HeaderSearch() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-foreground">
-                          {product.name}
+                          {listing.name}
                         </p>
                         <StarRating
-                          rating={product.rating}
-                          reviewCount={product.reviewCount}
+                          rating={listing.rating}
+                          reviewCount={listing.reviewCount}
                         />
                       </div>
                       <div className="flex shrink-0 items-baseline gap-1.5 whitespace-nowrap">
                         <span className="text-sm font-semibold">
-                          ${product.price.toFixed(2)}
+                          ${listing.price.toFixed(2)}
                         </span>
-                        {product.originalPrice != null &&
-                          product.originalPrice > product.price && (
+                        {listing.originalPrice != null &&
+                          listing.originalPrice > listing.price && (
                             <span className="text-xs text-muted-foreground line-through">
-                              ${product.originalPrice.toFixed(2)}
+                              ${listing.originalPrice.toFixed(2)}
                             </span>
                           )}
                       </div>

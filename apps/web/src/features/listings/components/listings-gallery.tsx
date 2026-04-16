@@ -1,27 +1,24 @@
 import { useState } from "react";
 
+import { assetUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-interface ProductGalleryProps {
+interface ListingGalleryProps {
   images: string[];
-  productName: string;
+  listingName: string;
 }
 
-export function ProductGallery({ images, productName }: ProductGalleryProps) {
+export function ListingGallery({ images, listingName }: ListingGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const displayImages =
-    images.length > 0
-      ? images
-      : [
-          "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?w=600&q=80",
-        ];
+    images.length > 0 ? images : ["/static/listings/placeholder.jpg"];
 
   return (
     <div className="flex flex-col gap-4">
       <div className="relative h-80 w-full overflow-hidden rounded-xl bg-linear-to-br from-stone-100 via-amber-50/50 to-neutral-50 md:h-[420px]">
         <img
-          src={displayImages[selectedIndex]}
-          alt={productName}
+          src={assetUrl(displayImages[selectedIndex])}
+          alt={listingName}
           className="h-full w-full object-cover"
         />
       </div>
@@ -41,8 +38,8 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
               )}
             >
               <img
-                src={img}
-                alt={`${productName} view ${i + 1}`}
+                src={assetUrl(img)}
+                alt={`${listingName} view ${i + 1}`}
                 className="h-full w-full object-cover"
               />
             </button>

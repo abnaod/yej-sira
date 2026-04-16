@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { SellerProductsPage } from "@/features/seller";
+import { SellerListingsPage } from "@/features/seller";
 
-export const Route = createFileRoute("/$locale/(seller)/sell/products/")({
+export const Route = createFileRoute("/$locale/(seller)/sell/listings/")({
   validateSearch: (search: Record<string, unknown>) => ({
     new:
       search.new === true ||
@@ -12,5 +12,5 @@ export const Route = createFileRoute("/$locale/(seller)/sell/products/")({
     edit:
       typeof search.edit === "string" && search.edit.length > 0 ? search.edit : undefined,
   }),
-  component: SellerProductsPage,
+  component: SellerListingsPage,
 });

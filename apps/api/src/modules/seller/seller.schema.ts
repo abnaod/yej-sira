@@ -1,6 +1,19 @@
 import { z } from "zod";
 
-const productSlugSchema = z
+/**
+ * Listing image references. Accepts either an absolute URL (external CDN) or a
+ * local static path served by this API at `/static/*` (e.g. `/static/listings/foo.jpg`).
+ */
+const imageRefSchema = z.union([
+  z.string().url(),
+  z
+    .string()
+    .regex(/^\/static\/[A-Za-z0-9._\-/]+$/, {
+      message: "Must be an absolute URL or a /static/... path",
+    }),
+]);
+
+const listingSlugSchema = z
   .string()
   .min(2)
   .max(120)
@@ -24,16 +37,16 @@ const sellerAttributeInputSchema = z.object({
   booleanValue: z.boolean().optional(),
 });
 
-export const sellerProductCreateSchema = z
+export const sellerListingCreateSchema = z
   .object({
     categorySlug: z.string().optional(),
     categoryId: z.string().optional(),
     name: z.string().min(1).max(200),
     description: z.string().min(1).max(20000),
-    slug: productSlugSchema,
+    slug: listingSlugSchema,
     featured: z.boolean().optional(),
     isPublished: z.boolean().optional(),
-    images: z.array(z.string().url()).min(1).max(20),
+    images: z.array(imageRefSchema).min(1).max(20),
     tagSlugs: z.array(z.string()).max(20).optional(),
     variants: z.array(variantInputSchema).min(1).max(50),
     translationAm: z
@@ -48,15 +61,15 @@ export const sellerProductCreateSchema = z
     message: "Provide categorySlug or categoryId",
   });
 
-export const sellerProductPatchSchema = z.object({
+export const sellerListingPatchSchema = z.object({
   categorySlug: z.string().optional(),
   categoryId: z.string().optional(),
   name: z.string().min(1).max(200).optional(),
   description: z.string().min(1).max(20000).optional(),
-  slug: productSlugSchema.optional(),
+  slug: listingSlugSchema.optional(),
   featured: z.boolean().optional(),
   isPublished: z.boolean().optional(),
-  images: z.array(z.string().url()).min(1).max(20).optional(),
+  images: z.array(imageRefSchema).min(1).max(20).optional(),
   tagSlugs: z.array(z.string()).max(20).optional(),
   variants: z.array(variantInputSchema.extend({ id: z.string().optional() })).min(1).max(50).optional(),
   translationAm: z

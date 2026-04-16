@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { cashOnFulfillmentLabel } from "@/features/checkout/components/payment-method-step";
 import { orderDetailQuery } from "../orders.queries";
-import { apiFetchJson } from "@/lib/api";
+import { apiFetchJson, assetUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -147,13 +147,13 @@ export function OrderDetailPage() {
           >
             {item.imageUrl && (
               <img
-                src={item.imageUrl}
+                src={assetUrl(item.imageUrl)}
                 alt=""
                 className="h-16 w-16 rounded-md object-contain"
               />
             )}
             <div>
-              <p className="font-medium">{item.productName}</p>
+              <p className="font-medium">{item.listingName}</p>
               {item.variantLabel && (
                 <p className="text-xs text-muted-foreground">{item.variantLabel}</p>
               )}

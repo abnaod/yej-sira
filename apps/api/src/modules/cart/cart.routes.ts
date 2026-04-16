@@ -3,7 +3,7 @@ import type { Locale } from "@ys/intl";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { pickProductName, pickVariantLabel } from "../../lib/localized-catalog";
+import { pickListingName, pickVariantLabel } from "../../lib/localized-catalog";
 import { prisma } from "../../lib/db";
 import { standardDeliveryFeeEtb } from "../../lib/delivery";
 import { toNumber } from "../../lib/money";
@@ -24,7 +24,7 @@ function cartItemInclude(locale: Locale) {
     variant: {
       include: {
         ...(tr ? { translations: tr } : {}),
-        product: {
+        listing: {
           include: {
             ...(tr ? { translations: tr } : {}),
             images: true,
@@ -45,7 +45,7 @@ function mapCartResponse(
       price: unknown;
       stock: number;
       translations?: { label: string }[];
-      product: {
+      listing: {
         name: string;
         translations?: { name: string; description: string }[];
         images: { url: string; sortOrder: number }[];
@@ -56,14 +56,14 @@ function mapCartResponse(
 ) {
   return items.map((line) => {
     const imageUrl =
-      [...line.variant.product.images].sort((a, b) => a.sortOrder - b.sortOrder)[0]?.url ?? "";
+      [...line.variant.listing.images].sort((a, b) => a.sortOrder - b.sortOrder)[0]?.url ?? "";
     return {
       id: line.id,
       variantId: line.variant.id,
-      name: pickProductName(
+      name: pickListingName(
         {
-          name: line.variant.product.name,
-          translations: line.variant.product.translations ?? [],
+          name: line.variant.listing.name,
+          translations: line.variant.listing.translations ?? [],
         },
         locale,
       ),
@@ -123,7 +123,7 @@ cartRouter.post("/cart/items", async (c) => {
 
   const { cart } = await getOrCreateCart(c);
 
-  const variant = await prisma.productVariant.findUnique({
+  const variant = await prisma.listingVariant.findUnique({
     where: { id: variantId },
   });
   if (!variant) {

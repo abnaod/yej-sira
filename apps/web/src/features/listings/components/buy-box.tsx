@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/components/ui/star-rating";
 
-export interface ProductVariantOption {
+export interface ListingVariantOption {
   id: string;
   label: string;
   colorHex?: string;
@@ -25,7 +25,7 @@ interface BuyBoxProps {
   financingNote?: string;
   rating: number;
   reviewCount: number;
-  variants: ProductVariantOption[];
+  variants: ListingVariantOption[];
   /** Active merchandising promotion (Phase A — display only; checkout uses list price). */
   promotion?: { badgeLabel: string; endsAt: string };
   onBuyNow?: (payload: AddToCartInput) => void;
@@ -223,7 +223,7 @@ export function BuyBox({
           size="lg"
           className="flex-1"
           disabled={stock < 1 || purchaseDisabled}
-          onClick={() => onBuyNow?.({ variantId: v.id, quantity, productName: name })}
+          onClick={() => onBuyNow?.({ variantId: v.id, quantity, listingName: name })}
         >
           Buy Now
         </Button>
@@ -233,7 +233,7 @@ export function BuyBox({
           className="flex-1"
           disabled={stock < 1 || purchaseDisabled}
           onClick={() =>
-            onAddToCart?.({ variantId: v.id, quantity, productName: name })
+            onAddToCart?.({ variantId: v.id, quantity, listingName: name })
           }
         >
           Add to Cart

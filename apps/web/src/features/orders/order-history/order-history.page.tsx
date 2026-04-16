@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Calendar, ChevronRight, Package, Store, Truck } from "lucide-react";
@@ -173,10 +173,6 @@ function filterOrders(orders: OrderRow[], tab: TabValue): OrderRow[] {
   return orders.filter((o) => o.status === tab);
 }
 
-function countForTab(orders: OrderRow[], tab: TabValue): number {
-  return filterOrders(orders, tab).length;
-}
-
 export function OrderHistoryPage() {
   const locale = useLocale();
   const { data } = useSuspenseQuery(ordersListQuery(locale));
@@ -184,14 +180,6 @@ export function OrderHistoryPage() {
   const { orders } = data;
 
   const [tab, setTab] = useState<TabValue>("all");
-
-  const tabCounts = useMemo(() => {
-    const m = new Map<TabValue, number>();
-    for (const t of TAB_ORDER) {
-      m.set(t, countForTab(orders, t));
-    }
-    return m;
-  }, [orders]);
 
   return (
     <main className="flex flex-col gap-6">
@@ -216,22 +204,15 @@ export function OrderHistoryPage() {
             variant="line"
             className="h-auto min-h-0 w-full min-w-0 flex-wrap items-end justify-start gap-x-1 gap-y-0 rounded-none border-b border-border bg-transparent p-0"
           >
-            {TAB_ORDER.map((value) => {
-              const count = tabCounts.get(value) ?? 0;
-              const label = TAB_LABELS[value];
-              return (
-                <TabsTrigger
-                  key={value}
-                  value={value}
-                  className="flex-none justify-start rounded-none px-3 py-3 text-sm data-[state=active]:shadow-none sm:text-base"
-                >
-                  {label}
-                  <span className="ml-1 tabular-nums text-muted-foreground">
-                    ({count})
-                  </span>
-                </TabsTrigger>
-              );
-            })}
+            {TAB_ORDER.map((value) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="flex-none justify-start rounded-none px-3 py-3 text-sm data-[state=active]:shadow-none sm:text-base"
+              >
+                {TAB_LABELS[value]}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           {TAB_ORDER.map((value) => {

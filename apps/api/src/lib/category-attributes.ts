@@ -72,7 +72,7 @@ export type ValidatedValueRow = {
   booleanValue: boolean | null;
 };
 
-export async function validateProductAttributeInputs(
+export async function validateListingAttributeInputs(
   categoryId: string,
   inputs: AttributeInput[] | undefined,
 ): Promise<ValidatedValueRow[] | null> {
@@ -183,7 +183,7 @@ export async function validateProductAttributeInputs(
   return out;
 }
 
-export function serializeProductAttributeValuesForSeller(
+export function serializeListingAttributeValuesForSeller(
   rows: Array<{
     definition: { key: string; inputType: CategoryAttributeInputType };
     allowedValue: { key: string } | null;
@@ -210,7 +210,7 @@ export function serializeProductAttributeValuesForSeller(
   });
 }
 
-export function mapProductAttributeValuesForDetail(
+export function mapListingAttributeValuesForDetail(
   locale: Locale,
   rows: Array<{
     definition: {

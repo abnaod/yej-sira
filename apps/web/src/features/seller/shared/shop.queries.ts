@@ -1,7 +1,7 @@
 import type { Locale } from "@ys/intl";
 import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react-query";
 
-import { apiFetch, apiFetchJson } from "@/lib/api";
+import { apiFetchJson } from "@/lib/api";
 
 export type ShopSocialLinks = {
   website?: string;
@@ -9,6 +9,8 @@ export type ShopSocialLinks = {
   facebook?: string;
   tiktok?: string;
 };
+
+export type BusinessType = "individual" | "business";
 
 export type MyShop = {
   id: string;
@@ -22,13 +24,15 @@ export type MyShop = {
   socialLinks: ShopSocialLinks | null;
   shippingPolicy: string | null;
   returnsPolicy: string | null;
+  businessType: BusinessType | null;
   businessLegalName: string | null;
   businessTaxId: string | null;
-  businessAddressLine1: string | null;
-  businessAddressLine2: string | null;
   businessCity: string | null;
-  businessPostalCode: string | null;
-  businessCountry: string | null;
+  businessSubcity: string | null;
+  businessWoreda: string | null;
+  businessKebele: string | null;
+  businessHouseNumber: string | null;
+  businessSpecificLocation: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -38,15 +42,8 @@ export type MyShopResponse = { shop: MyShop };
 export const myShopQuery = (locale: Locale) =>
   queryOptions({
     queryKey: ["shops", "me", locale] as const,
-    queryFn: async (): Promise<MyShopResponse | { shop: null }> => {
-      const res = await apiFetch("/api/shops/me", { locale });
-      if (res.status === 404) return { shop: null };
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || res.statusText);
-      }
-      return (await res.json()) as MyShopResponse;
-    },
+    queryFn: (): Promise<MyShopResponse | { shop: null }> =>
+      apiFetchJson<MyShopResponse | { shop: null }>("/api/shops/me", { locale }),
   });
 
 export type CreateShopBody = {
@@ -59,13 +56,15 @@ export type CreateShopBody = {
   socialLinks?: ShopSocialLinks;
   shippingPolicy?: string;
   returnsPolicy?: string;
+  businessType?: BusinessType;
   businessLegalName?: string;
   businessTaxId?: string;
-  businessAddressLine1?: string;
-  businessAddressLine2?: string;
   businessCity?: string;
-  businessPostalCode?: string;
-  businessCountry?: string;
+  businessSubcity?: string;
+  businessWoreda?: string;
+  businessKebele?: string;
+  businessHouseNumber?: string;
+  businessSpecificLocation?: string;
 };
 
 export function createShopMutationOptions(queryClient: QueryClient, locale: Locale) {

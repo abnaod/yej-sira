@@ -21,9 +21,16 @@ function isSellMarketingPath(pathname: string, locale: Locale) {
 export const Route = createFileRoute("/$locale/(seller)/sell")({
   beforeLoad: async ({ context, params, location }) => {
     const locale = params.locale as Locale;
+
+    // Only gate marketing pages (landing / register) in beforeLoad.
+    // App pages (dashboard, listings, orders) are guarded at the component
+    // level inside SellerAppShell, because beforeLoad runs during SSR where
+    // session cookies are not available and the /api/shops/me call would
+    // always fail, causing a false redirect.
     if (!isSellMarketingPath(location.pathname, locale)) {
       return;
     }
+
     let data: MyShopResponse | { shop: null };
     try {
       data = await context.queryClient.fetchQuery({

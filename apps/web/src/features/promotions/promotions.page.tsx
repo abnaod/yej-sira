@@ -2,7 +2,7 @@ import type { Locale } from "@ys/intl";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi, Link } from "@tanstack/react-router";
 
-import { ProductCard } from "@/components/ui/product-card";
+import { ListingCard } from "@/components/ui/listing-card";
 import { addToCartMutationOptions } from "@/features/cart/cart.queries";
 
 import { promotionDetailQuery } from "./promotions.queries";
@@ -16,7 +16,7 @@ export function PromotionPage() {
   const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
 
   const { data } = useSuspenseQuery(promotionDetailQuery(locale, slug));
-  const { promotion, products, total } = data;
+  const { promotion, listings, total } = data;
 
   return (
     <main>
@@ -45,27 +45,27 @@ export function PromotionPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            slug={product.slug}
-            defaultVariantId={product.defaultVariantId}
-            name={product.name}
-            price={product.price}
-            originalPrice={product.originalPrice}
-            description={product.description}
-            imageUrl={product.imageUrl}
-            rating={product.rating}
-            reviewCount={product.reviewCount}
-            shop={product.shop}
-            promotion={product.promotion}
+        {listings.map((listing) => (
+          <ListingCard
+            key={listing.id}
+            slug={listing.slug}
+            defaultVariantId={listing.defaultVariantId}
+            name={listing.name}
+            price={listing.price}
+            originalPrice={listing.originalPrice}
+            description={listing.description}
+            imageUrl={listing.imageUrl}
+            rating={listing.rating}
+            reviewCount={listing.reviewCount}
+            shop={listing.shop}
+            promotion={listing.promotion}
             onAddToCart={
-              product.defaultVariantId
+              listing.defaultVariantId
                 ? () =>
                     addToCart.mutate({
-                      variantId: product.defaultVariantId!,
+                      variantId: listing.defaultVariantId!,
                       quantity: 1,
-                      productName: product.name,
+                      listingName: listing.name,
                     })
                 : undefined
             }

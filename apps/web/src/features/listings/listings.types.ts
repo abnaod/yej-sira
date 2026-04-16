@@ -1,2 +1,2 @@
-/** Co-located product types; extract to domains/ when shared across features. */
-export type ProductId = string;
+/** Co-located listings feature types; extract to domains/ when shared across features. */
+export type ListingId = string;

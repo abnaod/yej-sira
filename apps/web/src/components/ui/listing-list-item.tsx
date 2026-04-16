@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
 
+import { assetUrl } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { StarRating } from "@/components/ui/star-rating";
 
-interface ProductListItemProps {
+interface ListingListItemProps {
   id?: string;
   name: string;
   price: number;
@@ -15,7 +16,7 @@ interface ProductListItemProps {
   className?: string;
 }
 
-export function ProductListItem({
+export function ListingListItem({
   id,
   name,
   price,
@@ -24,13 +25,13 @@ export function ProductListItem({
   rating,
   reviewCount,
   className,
-}: ProductListItemProps) {
+}: ListingListItemProps) {
   const locale = useLocale();
   const content = (
     <>
       <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-neutral-100">
         <img
-          src={imageUrl}
+          src={assetUrl(imageUrl)}
           alt={name}
           className="h-full w-full object-cover"
         />
@@ -63,8 +64,8 @@ export function ProductListItem({
   if (id) {
     return (
       <Link
-        to="/$locale/products/$productId"
-        params={{ locale, productId: id }}
+        to="/$locale/listings/$listingId"
+        params={{ locale, listingId: id }}
         className={sharedClassName}
       >
         {content}
