@@ -3,8 +3,8 @@ import type { Locale } from "@ys/intl";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { pickListingName, pickVariantLabel } from "../../lib/localized-catalog";
-import { getOwnedShop } from "../../lib/authz";
+import { pickListingName, pickVariantLabel } from "../catalog/catalog.localize";
+import { getOwnedShop } from "../shops/shops.authz";
 import { auth } from "../auth/auth";
 import { prisma } from "../../lib/db";
 import { standardDeliveryFeeEtb } from "../../lib/delivery";

@@ -1,12 +1,12 @@
 import type { Locale } from "@ys/intl";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { ListingPage } from "@/features/listings";
+import { ListingPage } from "@/features/store/listings";
 import {
   moreFromShopListingsQuery,
   listingDetailQuery,
   relatedListingsQuery,
-} from "@/features/listings/listings.queries";
+} from "@/features/store/listings/listings.queries";
 
 export const Route = createFileRoute("/$locale/(store)/listings/$listingId")({
   loader: async ({ context, params }) => {

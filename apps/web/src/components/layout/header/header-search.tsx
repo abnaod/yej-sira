@@ -18,8 +18,8 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { StarRating } from "@/components/ui/star-rating";
-import { listingSearchQuery } from "@/features/storefront/storefront.queries";
+import { StarRating } from "@/features/shared/star-rating";
+import { listingSearchQuery } from "@/features/store/home/home.queries";
 import { assetUrl } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 

@@ -1,8 +1,8 @@
 import type { Locale } from "@ys/intl";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { CartPage } from "@/features/cart";
-import { cartQuery } from "@/features/cart/cart.queries";
+import { CartPage } from "@/features/store/cart";
+import { cartQuery } from "@/features/store/cart/cart.queries";
 
 export const Route = createFileRoute("/$locale/(store)/cart/")({
   loader: ({ context, params }) =>

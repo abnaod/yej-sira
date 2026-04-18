@@ -1,7 +1,7 @@
 import type { Locale } from "@ys/intl";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { OrderHistoryPage, ordersListQuery } from "@/features/orders";
+import { OrderHistoryPage, ordersListQuery } from "@/features/store/orders";
 
 export const Route = createFileRoute("/$locale/(store)/orders/")({
   loader: ({ context, params }) =>

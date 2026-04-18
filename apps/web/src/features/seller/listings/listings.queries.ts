@@ -3,6 +3,12 @@ import { mutationOptions, queryOptions, type QueryClient } from "@tanstack/react
 
 import { apiFetchJson } from "@/lib/api";
 
+export type SellerListingVariantSummary = {
+  id: string;
+  label: string;
+  stock: number;
+};
+
 export type SellerListingListItem = {
   id: string;
   slug: string;
@@ -14,17 +20,50 @@ export type SellerListingListItem = {
   reviewCount: number;
   priceFrom: number;
   imageUrl: string;
+  stock: number;
+  variantCount: number;
+  outOfStockVariants: number;
+  variants: SellerListingVariantSummary[];
   category: { slug: string; name: string };
   updatedAt: string;
 };
 
-export type SellerListingsResponse = { listings: SellerListingListItem[] };
+export type SellerListingStockStatus = "all" | "in_stock" | "low_stock" | "out_of_stock";
 
-export const sellerListingsQuery = (locale: Locale) =>
-  queryOptions({
-    queryKey: ["seller", "listings", locale] as const,
-    queryFn: () => apiFetchJson<SellerListingsResponse>("/api/seller/listings", { locale }),
+export type SellerListingsResponse = {
+  listings: SellerListingListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  stockCounts: Record<Exclude<SellerListingStockStatus, never>, number>;
+  lowStockThreshold: number;
+};
+
+export type SellerListingsQueryParams = {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  stockStatus?: SellerListingStockStatus;
+};
+
+export const sellerListingsQuery = (locale: Locale, params: SellerListingsQueryParams = {}) => {
+  const search = new URLSearchParams();
+  if (params.page) search.set("page", String(params.page));
+  if (params.pageSize) search.set("pageSize", String(params.pageSize));
+  if (params.q) search.set("q", params.q);
+  if (params.stockStatus && params.stockStatus !== "all") {
+    search.set("stockStatus", params.stockStatus);
+  }
+  const qs = search.toString();
+  return queryOptions({
+    queryKey: ["seller", "listings", locale, params] as const,
+    queryFn: () =>
+      apiFetchJson<SellerListingsResponse>(`/api/seller/listings${qs ? `?${qs}` : ""}`, {
+        locale,
+      }),
   });
+};
 
 export type SellerAttributeInput = {
   key: string;
@@ -195,6 +234,36 @@ export function deleteSellerListingMutationOptions(queryClient: QueryClient, loc
       void queryClient.invalidateQueries({
         queryKey: ["seller", "listing", locale, listingId],
       });
+    },
+  });
+}
+
+export type SellerListingStockUpdateBody = {
+  variants: { id: string; stock: number }[];
+};
+
+export function updateSellerListingStockMutationOptions(
+  queryClient: QueryClient,
+  locale: Locale,
+  listingId: string,
+) {
+  return mutationOptions({
+    mutationKey: ["seller", "stock", locale, listingId] as const,
+    mutationFn: (body: SellerListingStockUpdateBody) =>
+      apiFetchJson<{ ok: boolean; updated: number }>(
+        `/api/seller/listings/${encodeURIComponent(listingId)}/stock`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(body),
+          locale,
+        },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["seller", "listings", locale] });
+      void queryClient.invalidateQueries({
+        queryKey: ["seller", "listing", locale, listingId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
     },
   });
 }

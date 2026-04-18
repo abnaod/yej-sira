@@ -61,6 +61,18 @@ export const sellerListingCreateSchema = z
     message: "Provide categorySlug or categoryId",
   });
 
+export const sellerListingStockUpdateSchema = z.object({
+  variants: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        stock: z.number().int().min(0).max(999999),
+      }),
+    )
+    .min(1)
+    .max(50),
+});
+
 export const sellerListingPatchSchema = z.object({
   categorySlug: z.string().optional(),
   categoryId: z.string().optional(),

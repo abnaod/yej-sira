@@ -1,8 +1,8 @@
 import type { Locale } from "@ys/intl";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { PromotionPage } from "@/features/promotions";
-import { promotionDetailQuery } from "@/features/promotions/promotions.queries";
+import { PromotionPage } from "@/features/store/promotions";
+import { promotionDetailQuery } from "@/features/store/promotions/promotions.queries";
 
 export const Route = createFileRoute("/$locale/(store)/promotions/$slug")({
   loader: async ({ context, params }) => {

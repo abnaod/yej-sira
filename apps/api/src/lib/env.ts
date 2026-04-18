@@ -46,3 +46,25 @@ export function getEnv(): Env {
   cached = parsed.data;
   return cached;
 }
+
+/**
+ * Browser origins allowed for CORS and Better Auth `trustedOrigins`.
+ * In development, allow both `localhost` and `127.0.0.1` when the primary
+ * `CORS_ORIGIN` uses either host, so OAuth from the “wrong” dev URL still works.
+ */
+export function getBrowserOrigins(): string[] {
+  const e = getEnv();
+  if (e.NODE_ENV === "production") return [e.CORS_ORIGIN];
+  const out = new Set<string>([e.CORS_ORIGIN]);
+  try {
+    const u = new URL(e.CORS_ORIGIN);
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") {
+      const otherHost = u.hostname === "localhost" ? "127.0.0.1" : "localhost";
+      const portPart = u.port ? `:${u.port}` : "";
+      out.add(`${u.protocol}//${otherHost}${portPart}`);
+    }
+  } catch {
+    /* keep CORS_ORIGIN only */
+  }
+  return [...out];
+}

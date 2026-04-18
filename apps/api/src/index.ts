@@ -7,8 +7,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { onError } from "./lib/error";
-import { getEnv } from "./lib/env";
-import { localeMiddleware } from "./middleware/locale";
+import { getBrowserOrigins, getEnv } from "./lib/env";
+import { localeMiddleware } from "./lib/middleware/locale";
+import { adminRouter } from "./modules/admin/admin.routes";
 import { authRouter } from "./modules/auth/auth.routes";
 import { cartRouter } from "./modules/cart/cart.routes";
 import { catalogRouter } from "./modules/catalog/catalog.routes";
@@ -31,7 +32,7 @@ app.onError(onError);
 app.use(
   "*",
   cors({
-    origin: getEnv().CORS_ORIGIN,
+    origin: getBrowserOrigins(),
     allowHeaders: ["Content-Type", "Authorization", "Cookie", "X-Cart-Token", "X-Locale", "x-chapa-signature", "chapa-signature"],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
@@ -71,6 +72,7 @@ api.route("/", shopsRouter);
 api.route("/", sellerRouter);
 api.route("/", paymentsRouter);
 api.route("/", uploadsRouter);
+api.route("/", adminRouter);
 
 app.route("/api", api);
 

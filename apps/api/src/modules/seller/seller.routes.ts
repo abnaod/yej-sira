@@ -3,33 +3,97 @@ import type { Locale } from "@ys/intl";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
+import { requireUserId } from "../../lib/auth";
+import { prisma } from "../../lib/db";
 import {
   assertSellerCanManageShop,
   assertShopActiveForPublish,
   getOwnedShop,
-  requireUserId,
-} from "../../lib/authz";
-import { prisma } from "../../lib/db";
+} from "../shops/shops.authz";
 import {
   getListingDetailInclude,
   minVariantPrice,
-} from "../catalog/listing-card.mapper";
+} from "../catalog/catalog.mappers";
 import {
   pickCategoryName,
   pickListingDescription,
   pickListingName,
   pickVariantLabel,
-} from "../../lib/localized-catalog";
-import { pickPromotionForListing } from "../promotions/promotion.utils";
+} from "../catalog/catalog.localize";
+import { pickPromotionForListing } from "../promotions/promotions.utils";
 import { toNumber } from "../../lib/money";
 import {
   mapListingAttributeValuesForDetail,
   serializeListingAttributeValuesForSeller,
   validateListingAttributeInputs,
-} from "../../lib/category-attributes";
-import { sellerListingCreateSchema, sellerListingPatchSchema } from "./seller.schema";
+} from "../catalog/category-attributes";
+import { z } from "zod";
+
+import { listQuerySchema } from "../admin/admin.schema";
+import {
+  sellerListingCreateSchema,
+  sellerListingPatchSchema,
+  sellerListingStockUpdateSchema,
+} from "./seller.schema";
+
+/** Threshold (inclusive) used to flag a variant as "low stock" for the seller UI. */
+const LOW_STOCK_THRESHOLD = 5;
+
+const stockStatusSchema = z.enum(["all", "in_stock", "low_stock", "out_of_stock"]);
+type StockStatus = z.infer<typeof stockStatusSchema>;
+
+const sellerListingsListQuerySchema = listQuerySchema.extend({
+  stockStatus: stockStatusSchema.optional(),
+});
 
 export const sellerRouter = new Hono();
+
+function parseSellerListQuery(c: { req: { query: (k: string) => string | undefined } }) {
+  const parsed = listQuerySchema.safeParse({
+    page: c.req.query("page"),
+    pageSize: c.req.query("pageSize"),
+    q: c.req.query("q"),
+  });
+  if (!parsed.success) {
+    throw new HTTPException(400, { message: "Invalid query" });
+  }
+  return parsed.data;
+}
+
+function parseSellerListingsQuery(c: {
+  req: { query: (k: string) => string | undefined };
+}) {
+  const parsed = sellerListingsListQuerySchema.safeParse({
+    page: c.req.query("page"),
+    pageSize: c.req.query("pageSize"),
+    q: c.req.query("q"),
+    stockStatus: c.req.query("stockStatus"),
+  });
+  if (!parsed.success) {
+    throw new HTTPException(400, { message: "Invalid query" });
+  }
+  return parsed.data;
+}
+
+function stockStatusWhere(status: StockStatus | undefined): Prisma.ListingWhereInput {
+  switch (status) {
+    case "out_of_stock":
+      return {
+        variants: { some: {} },
+        NOT: { variants: { some: { stock: { gt: 0 } } } },
+      };
+    case "in_stock":
+      return { variants: { some: { stock: { gt: 0 } } } };
+    case "low_stock":
+      return {
+        variants: { some: { stock: { gt: 0, lte: LOW_STOCK_THRESHOLD } } },
+      };
+    case "all":
+    case undefined:
+    default:
+      return {};
+  }
+}
 
 async function resolveCategoryId(
   categorySlug: string | undefined,
@@ -150,6 +214,7 @@ function sellerOrderLineListingLabel(listingName: string, variantLabel: string |
 
 /** Orders that include at least one line item for this shop's listings (aggregated per order). */
 sellerRouter.get("/seller/orders", async (c) => {
+  const { page, pageSize, q } = parseSellerListQuery(c);
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);
   if (!shop) {
@@ -163,70 +228,98 @@ sellerRouter.get("/seller/orders", async (c) => {
   });
   const ids = shopListingIds.map((p) => p.id);
   if (ids.length === 0) {
-    return c.json({ orders: [] });
+    return c.json({
+      orders: [],
+      page,
+      pageSize,
+      total: 0,
+      totalPages: 1,
+    });
   }
 
-  const lines = await prisma.orderItem.findMany({
-    where: { listingId: { in: ids } },
-    include: {
-      order: {
-        select: {
-          id: true,
-          status: true,
-          createdAt: true,
-        },
+  const qTrim = q?.trim();
+  const orderWhere: Prisma.OrderWhereInput = {
+    items: { some: { listingId: { in: ids } } },
+    ...(qTrim ? { id: { contains: qTrim, mode: "insensitive" } } : {}),
+  };
+
+  const [total, orderRows] = await prisma.$transaction([
+    prisma.order.count({ where: orderWhere }),
+    prisma.order.findMany({
+      where: orderWhere,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
       },
+    }),
+  ]);
+
+  const orderIds = orderRows.map((o) => o.id);
+  if (orderIds.length === 0) {
+    return c.json({
+      orders: [],
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    });
+  }
+
+  const itemRows = await prisma.orderItem.findMany({
+    where: {
+      orderId: { in: orderIds },
+      listingId: { in: ids },
     },
-    orderBy: { order: { createdAt: "desc" } },
+    orderBy: { id: "asc" },
+    select: {
+      orderId: true,
+      listingName: true,
+      variantLabel: true,
+      imageUrl: true,
+      unitPrice: true,
+      quantity: true,
+      id: true,
+    },
   });
 
-  const byOrder = new Map<
-    string,
-    {
-      id: string;
-      status: (typeof lines)[number]["order"]["status"];
-      createdAt: string;
-      lineCount: number;
-      shopTotal: number;
-      imageUrl: string;
-      listingName: string;
-    }
-  >();
-
-  for (const li of lines) {
-    const o = li.order;
-    const lineTotal = toNumber(li.unitPrice) * li.quantity;
-    const existing = byOrder.get(o.id);
-    if (!existing) {
-      byOrder.set(o.id, {
-        id: o.id,
-        status: o.status,
-        createdAt: o.createdAt.toISOString(),
-        lineCount: 1,
-        shopTotal: lineTotal,
-        imageUrl: li.imageUrl?.trim() ?? "",
-        listingName: sellerOrderLineListingLabel(li.listingName, li.variantLabel),
-      });
-    } else {
-      existing.lineCount += 1;
-      existing.shopTotal += lineTotal;
-    }
+  const itemsByOrder = new Map<string, typeof itemRows>();
+  for (const row of itemRows) {
+    const list = itemsByOrder.get(row.orderId) ?? [];
+    list.push(row);
+    itemsByOrder.set(row.orderId, list);
   }
 
-  const orders = [...byOrder.values()].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-
-  return c.json({
-    orders: orders.map((o) => ({
+  const orders = orderRows.map((o) => {
+    const lines = itemsByOrder.get(o.id) ?? [];
+    const sorted = [...lines].sort((a, b) => a.id.localeCompare(b.id));
+    const first = sorted[0];
+    let shopTotal = 0;
+    for (const li of sorted) {
+      shopTotal += toNumber(li.unitPrice) * li.quantity;
+    }
+    return {
       id: o.id,
       status: o.status,
-      createdAt: o.createdAt,
-      lineCount: o.lineCount,
-      shopTotal: o.shopTotal,
-      imageUrl: o.imageUrl,
-      listingName: o.listingName,
-    })),
+      createdAt: o.createdAt.toISOString(),
+      lineCount: sorted.length,
+      shopTotal,
+      imageUrl: first?.imageUrl?.trim() ?? "",
+      listingName: first
+        ? sellerOrderLineListingLabel(first.listingName, first.variantLabel)
+        : "",
+    };
+  });
+
+  return c.json({
+    orders,
+    page,
+    pageSize,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
   });
 });
 
@@ -320,6 +413,7 @@ sellerRouter.get("/seller/orders/:orderId", async (c) => {
 });
 
 sellerRouter.get("/seller/listings", async (c) => {
+  const { page, pageSize, q, stockStatus } = parseSellerListingsQuery(c);
   const userId = await requireUserId(c);
   const shop = await getOwnedShop(userId);
   if (!shop) {
@@ -335,21 +429,65 @@ sellerRouter.get("/seller/listings", async (c) => {
           where: { locale: locale as ContentLocale },
         } as const);
 
-  const listings = await prisma.listing.findMany({
-    where: { shopId: shop.id },
-    orderBy: { updatedAt: "desc" },
-    include: {
-      images: { orderBy: { sortOrder: "asc" } },
-      variants: tr ? { include: { translations: tr } } : true,
-      ...(tr ? { translations: tr } : {}),
-      category: tr ? { include: { translations: tr } } : true,
-    },
-  });
+  const qTrim = q?.trim();
+  const where: Prisma.ListingWhereInput = {
+    shopId: shop.id,
+    ...(qTrim
+      ? {
+          OR: [
+            { name: { contains: qTrim, mode: "insensitive" } },
+            { slug: { contains: qTrim, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+    ...stockStatusWhere(stockStatus),
+  };
+
+  const baseWhere: Prisma.ListingWhereInput = { shopId: shop.id };
+
+  const [total, listings, statusCountRows] = await prisma.$transaction([
+    prisma.listing.count({ where }),
+    prisma.listing.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      include: {
+        images: { orderBy: { sortOrder: "asc" } },
+        variants: tr ? { include: { translations: tr } } : true,
+        ...(tr ? { translations: tr } : {}),
+        category: tr ? { include: { translations: tr } } : true,
+      },
+    }),
+    prisma.listing.findMany({
+      where: baseWhere,
+      select: {
+        id: true,
+        variants: { select: { stock: true } },
+      },
+    }),
+  ]);
+
+  const stockCounts = { all: 0, in_stock: 0, low_stock: 0, out_of_stock: 0 };
+  for (const row of statusCountRows) {
+    stockCounts.all += 1;
+    if (row.variants.length === 0) continue;
+    const totalStock = row.variants.reduce((s, v) => s + v.stock, 0);
+    const hasLow = row.variants.some(
+      (v) => v.stock > 0 && v.stock <= LOW_STOCK_THRESHOLD,
+    );
+    if (totalStock === 0) stockCounts.out_of_stock += 1;
+    else stockCounts.in_stock += 1;
+    if (hasLow) stockCounts.low_stock += 1;
+  }
 
   return c.json({
     listings: listings.map((p) => {
       const minPrice = minVariantPrice(p.variants);
       const trList = p.translations ?? [];
+      const variantCount = p.variants.length;
+      const stock = p.variants.reduce((s, v) => s + v.stock, 0);
+      const outOfStockVariants = p.variants.filter((v) => v.stock === 0).length;
       return {
         id: p.id,
         slug: p.slug,
@@ -364,6 +502,20 @@ sellerRouter.get("/seller/listings", async (c) => {
         reviewCount: p.reviewCount,
         priceFrom: minPrice,
         imageUrl: p.images[0]?.url ?? "",
+        stock,
+        variantCount,
+        outOfStockVariants,
+        variants: p.variants.map((v) => {
+          const vt = v as typeof v & { translations?: { label: string }[] };
+          return {
+            id: v.id,
+            label: pickVariantLabel(
+              { label: v.label, translations: vt.translations ?? [] },
+              locale,
+            ),
+            stock: v.stock,
+          };
+        }),
         category: {
           slug: p.category.slug,
           name: pickCategoryName(
@@ -377,6 +529,12 @@ sellerRouter.get("/seller/listings", async (c) => {
         updatedAt: p.updatedAt.toISOString(),
       };
     }),
+    page,
+    pageSize,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    stockCounts,
+    lowStockThreshold: LOW_STOCK_THRESHOLD,
   });
 });
 
@@ -771,6 +929,57 @@ sellerRouter.patch("/seller/listings/:id", async (c) => {
   });
 
   return c.json({ ok: true });
+});
+
+/**
+ * Lightweight stock-only update. Lets sellers restock variants (e.g. clear
+ * "out of stock" state) without touching the rest of the listing. Only variant
+ * IDs that belong to the target listing are applied; others are ignored.
+ */
+sellerRouter.patch("/seller/listings/:id/stock", async (c) => {
+  const userId = await requireUserId(c);
+  const shop = await getOwnedShop(userId);
+  if (!shop) {
+    throw new HTTPException(404, { message: "No shop" });
+  }
+  assertSellerCanManageShop(shop, userId);
+
+  const id = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const parsed = sellerListingStockUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new HTTPException(400, { message: "Invalid body" });
+  }
+
+  const existing = await prisma.listing.findFirst({
+    where: { id, shopId: shop.id },
+    include: { variants: { select: { id: true } } },
+  });
+  if (!existing) {
+    throw new HTTPException(404, { message: "Listing not found" });
+  }
+  const ownedIds = new Set(existing.variants.map((v) => v.id));
+
+  const updates = parsed.data.variants.filter((v) => ownedIds.has(v.id));
+  if (updates.length === 0) {
+    throw new HTTPException(400, { message: "No matching variants" });
+  }
+
+  await prisma.$transaction(
+    updates.map((v) =>
+      prisma.listingVariant.update({
+        where: { id: v.id },
+        data: { stock: v.stock },
+      }),
+    ),
+  );
+
+  await prisma.listing.update({
+    where: { id },
+    data: { updatedAt: new Date() },
+  });
+
+  return c.json({ ok: true, updated: updates.length });
 });
 
 sellerRouter.delete("/seller/listings/:id", async (c) => {

@@ -1,11 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  Bell,
-  CreditCard,
-  LogOut,
-  MoreVertical,
-  UserCircle,
-} from "lucide-react";
+import { LogOut, MoreVertical, Shield, Store } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import {
   Avatar,
@@ -28,6 +24,7 @@ import {
   SidebarMenuSkeleton,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { currentUserQuery } from "@/features/shared/current-user.queries";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import type { Locale } from "@ys/intl";
@@ -46,10 +43,16 @@ function userInitials(name: string | null | undefined, email: string | null | un
 
 /** Bottom sidebar user block — matches [dashboard-01 `nav-user`](https://ui.shadcn.com/blocks#dashboard-01). */
 export function SellerNavUser() {
+  const { t } = useTranslation("common");
   const locale = useLocale() as Locale;
   const navigate = useNavigate();
   const { isMobile } = useSidebar();
   const { data: session, isPending } = authClient.useSession();
+  const meQuery = useQuery({
+    ...currentUserQuery(),
+    enabled: !!session?.user,
+  });
+  const isAdmin = meQuery.data?.user.role === "admin";
 
   if (isPending) {
     return (
@@ -118,18 +121,18 @@ export function SellerNavUser() {
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
                 <Link to="/$locale" params={{ locale }}>
-                  <UserCircle />
-                  Account
+                  <Store />
+                  Storefront
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
+              {isAdmin && (
+                <DropdownMenuItem asChild>
+                  <Link to="/$locale/admin/dashboard" params={{ locale }}>
+                    <Shield />
+                    {t("adminPortal", { defaultValue: "Admin portal" })}
+                  </Link>
+                </DropdownMenuItem>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -139,7 +142,7 @@ export function SellerNavUser() {
                   {},
                   {
                     onSuccess: () => {
-                      void navigate({ to: "/$locale/sell", params: { locale } });
+                      void navigate({ to: "/$locale", params: { locale } });
                     },
                   },
                 );

@@ -14,13 +14,32 @@ export type SellerOrderListItem = {
   listingName: string;
 };
 
-export type SellerOrdersResponse = { orders: SellerOrderListItem[] };
+export type SellerOrdersResponse = {
+  orders: SellerOrderListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
 
-export const sellerOrdersQuery = (locale: Locale) =>
-  queryOptions({
-    queryKey: ["seller", "orders", locale] as const,
-    queryFn: () => apiFetchJson<SellerOrdersResponse>("/api/seller/orders", { locale }),
+export type SellerOrdersQueryParams = {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+};
+
+export const sellerOrdersQuery = (locale: Locale, params: SellerOrdersQueryParams = {}) => {
+  const search = new URLSearchParams();
+  if (params.page) search.set("page", String(params.page));
+  if (params.pageSize) search.set("pageSize", String(params.pageSize));
+  if (params.q) search.set("q", params.q);
+  const qs = search.toString();
+  return queryOptions({
+    queryKey: ["seller", "orders", locale, params] as const,
+    queryFn: () =>
+      apiFetchJson<SellerOrdersResponse>(`/api/seller/orders${qs ? `?${qs}` : ""}`, { locale }),
   });
+};
 
 export type SellerOrderDetailResponse = {
   order: {

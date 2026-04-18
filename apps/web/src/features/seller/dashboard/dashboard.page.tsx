@@ -24,7 +24,7 @@ export function SellerDashboardPage() {
     enabled: !!session?.user && shopState.data?.shop?.status === "active",
   });
   const recentOrdersState = useQuery({
-    ...sellerOrdersQuery(locale),
+    ...sellerOrdersQuery(locale, { page: 1, pageSize: 8 }),
     enabled: !!session?.user && shopState.data?.shop?.status === "active",
   });
   if (!session?.user) {

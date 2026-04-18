@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { DataPagination } from "@/features/shared/data-pagination";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { myShopQuery } from "../shared/shop.queries";
@@ -22,8 +24,12 @@ import {
   deleteSellerListingMutationOptions,
   publishSellerListingMutationOptions,
   sellerListingsQuery,
+  type SellerListingStockStatus,
 } from "./listings.queries";
+import { SellerListingStockEditorDialog } from "./stock-editor.dialog";
 import { SellerShellDataTable } from "../shared/shell-data-table";
+
+const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
 const routeApi = getRouteApi("/$locale/(seller)/sell/listings/");
 
@@ -36,13 +42,24 @@ export function SellerListingsPage() {
   const [editListingOpen, setEditListingOpen] = useState(false);
   const [editListingId, setEditListingId] = useState<string | null>(null);
   const [editListingFormKey, setEditListingFormKey] = useState(0);
+  const [listSearch, setListSearch] = useState("");
+  const [listPage, setListPage] = useState(1);
+  const [stockStatus, setStockStatus] = useState<SellerListingStockStatus>("all");
+  const [stockDialogOpen, setStockDialogOpen] = useState(false);
+  const [stockListingId, setStockListingId] = useState<string | null>(null);
+  const listPageSize = 25;
   const { data: session } = authClient.useSession();
   const shopState = useQuery({
     ...myShopQuery(locale),
     enabled: !!session?.user,
   });
   const listingsState = useQuery({
-    ...sellerListingsQuery(locale),
+    ...sellerListingsQuery(locale, {
+      page: listPage,
+      pageSize: listPageSize,
+      q: listSearch.trim() || undefined,
+      stockStatus,
+    }),
     enabled: !!session?.user && shopState.data?.shop?.status === "active",
   });
 
@@ -104,6 +121,14 @@ export function SellerListingsPage() {
       ? publishListingMut.variables
       : null;
 
+  const lowStockThreshold =
+    listingsState.data?.lowStockThreshold ?? DEFAULT_LOW_STOCK_THRESHOLD;
+
+  const onManageStock = useCallback((listingId: string) => {
+    setStockListingId(listingId);
+    setStockDialogOpen(true);
+  }, []);
+
   const columns = useMemo(
     () =>
       getSellerListingColumns(locale, {
@@ -111,8 +136,18 @@ export function SellerListingsPage() {
         deletingListingId,
         onPublishListing,
         publishingListingId,
+        onManageStock,
+        lowStockThreshold,
       }),
-    [locale, onDeleteListing, deletingListingId, onPublishListing, publishingListingId],
+    [
+      locale,
+      onDeleteListing,
+      deletingListingId,
+      onPublishListing,
+      publishingListingId,
+      onManageStock,
+      lowStockThreshold,
+    ],
   );
 
   useEffect(() => {
@@ -188,6 +223,10 @@ export function SellerListingsPage() {
 
   const listings = listingsState.data?.listings ?? [];
   const listingsLoading = listingsState.isLoading;
+  const listingsMeta = listingsState.data;
+  const stockCounts = listingsMeta?.stockCounts;
+  const stockListingName =
+    listings.find((l) => l.id === stockListingId)?.name ?? undefined;
 
   return (
     <div className="@container/main flex min-h-0 flex-1 flex-col">
@@ -235,15 +274,65 @@ export function SellerListingsPage() {
           ) : null}
         </DialogContent>
       </Dialog>
-      {listingsLoading ? (
-        <p className="text-sm text-muted-foreground">Loading listings…</p>
-      ) : (
+      <SellerListingStockEditorDialog
+        open={stockDialogOpen}
+        onOpenChange={(open) => {
+          setStockDialogOpen(open);
+          if (!open) setStockListingId(null);
+        }}
+        listingId={stockListingId}
+        listingName={stockListingName}
+        locale={locale}
+        lowStockThreshold={lowStockThreshold}
+      />
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <input
+            className="h-8 w-full max-w-sm rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            placeholder="Search name or slug…"
+            value={listSearch}
+            onChange={(e) => {
+              setListSearch(e.target.value);
+              setListPage(1);
+            }}
+          />
+          <span className="text-xs text-muted-foreground">
+            {listingsMeta
+              ? `${listingsMeta.total} listing${listingsMeta.total === 1 ? "" : "s"}`
+              : "…"}
+          </span>
+        </div>
+        <Tabs
+          value={stockStatus}
+          onValueChange={(v) => {
+            setStockStatus(v as SellerListingStockStatus);
+            setListPage(1);
+          }}
+        >
+          <TabsList>
+            <TabsTrigger value="all">
+              All{stockCounts ? ` (${stockCounts.all})` : ""}
+            </TabsTrigger>
+            <TabsTrigger value="in_stock">
+              In stock{stockCounts ? ` (${stockCounts.in_stock})` : ""}
+            </TabsTrigger>
+            <TabsTrigger value="low_stock">
+              Low stock{stockCounts ? ` (${stockCounts.low_stock})` : ""}
+            </TabsTrigger>
+            <TabsTrigger value="out_of_stock">
+              Out of stock{stockCounts ? ` (${stockCounts.out_of_stock})` : ""}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         <SellerShellDataTable
           columns={columns}
           data={listings}
           filterColumnId="name"
           filterPlaceholder="Filter by name…"
           countNoun="listing"
+          isLoading={listingsLoading}
+          showFilter={false}
+          showPagination={false}
           toolbarEnd={
             <Button type="button" onClick={openNewListingDialog}>
               <Plus className="size-3.5 shrink-0" aria-hidden />
@@ -251,7 +340,14 @@ export function SellerListingsPage() {
             </Button>
           }
         />
-      )}
+        {listingsMeta ? (
+          <DataPagination
+            page={listingsMeta.page}
+            totalPages={listingsMeta.totalPages}
+            onPageChange={setListPage}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate } from "@tanstack/react-router";
 import type { Locale } from "@ys/intl";
-import { Home, Store } from "lucide-react";
+import { Store } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { useAuthDialog } from "@/components/auth";
+import { useAuthDialog } from "@/features/shared/auth";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { Button } from "@/components/ui/button";
 import { assetUrl } from "@/lib/api";
@@ -73,11 +73,7 @@ export function SellerLandingPage() {
     <div className="bg-background">
       <header className="border-b border-border/60">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 md:px-6">
-          <Link
-            to="/$locale"
-            params={{ locale }}
-            className="flex shrink-0 items-center"
-          >
+          <Link to="/$locale" params={{ locale }} className="flex shrink-0 items-center">
             <BrandLogo className="text-primary" />
           </Link>
           <nav className="flex items-center gap-2 text-sm">

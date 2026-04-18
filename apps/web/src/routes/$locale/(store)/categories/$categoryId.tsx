@@ -6,9 +6,9 @@ import {
   parseTagSlugsParam,
   listingsForCategoryQuery,
   type CategorySort,
-} from "@/features/category";
-import { promotionsListQuery } from "@/features/promotions/promotions.queries";
-import { categoriesQuery, tagsQuery } from "@/features/storefront";
+} from "@/features/store/category";
+import { promotionsListQuery } from "@/features/store/promotions/promotions.queries";
+import { categoriesQuery, tagsQuery } from "@/features/store/home";
 
 const sortValues = ["relevancy", "price-asc", "price-desc", "newest"] as const;
 

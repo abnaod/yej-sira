@@ -1,8 +1,18 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Heart, LogOut, Package, ShoppingCart, Store, User } from "lucide-react";
+import {
+  ChevronDown,
+  Heart,
+  LogOut,
+  Package,
+  Shield,
+  ShoppingCart,
+  Store,
+  User,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { useAuthDialog } from "@/components/auth";
+import { useAuthDialog } from "@/features/shared/auth";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { currentUserQuery } from "@/features/shared/current-user.queries";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { BrandLogo } from "../brand-logo";
@@ -25,6 +36,11 @@ export function Header() {
   const navigate = useNavigate();
   const { openAuth } = useAuthDialog();
   const { data: session, isPending } = authClient.useSession();
+  const meQuery = useQuery({
+    ...currentUserQuery(),
+    enabled: !!session?.user,
+  });
+  const isAdmin = meQuery.data?.user.role === "admin";
 
   const displayName =
     session?.user?.name?.trim() ||
@@ -84,6 +100,14 @@ export function Header() {
                     {t("myShop")}
                   </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/$locale/admin/dashboard" params={{ locale }}>
+                      <Shield />
+                      {t("adminPortal", { defaultValue: "Admin portal" })}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={(e) => {

@@ -13,14 +13,17 @@ import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocalestoreRouteRouteImport } from './routes/$locale/(store)/route'
 import { Route as LocalesellerRouteRouteImport } from './routes/$locale/(seller)/route'
+import { Route as LocaleadminRouteRouteImport } from './routes/$locale/(admin)/route'
 import { Route as LocalestoreIndexRouteImport } from './routes/$locale/(store)/index'
 import { Route as LocalesellerSellRouteRouteImport } from './routes/$locale/(seller)/sell/route'
+import { Route as LocaleadminAdminRouteRouteImport } from './routes/$locale/(admin)/admin/route'
 import { Route as LocalestoreSearchIndexRouteImport } from './routes/$locale/(store)/search/index'
 import { Route as LocalestoreOrdersIndexRouteImport } from './routes/$locale/(store)/orders/index'
 import { Route as LocalestoreFavoritesIndexRouteImport } from './routes/$locale/(store)/favorites/index'
 import { Route as LocalestoreCheckoutIndexRouteImport } from './routes/$locale/(store)/checkout/index'
 import { Route as LocalestoreCartIndexRouteImport } from './routes/$locale/(store)/cart/index'
 import { Route as LocalesellerSellIndexRouteImport } from './routes/$locale/(seller)/sell/index'
+import { Route as LocaleadminAdminIndexRouteImport } from './routes/$locale/(admin)/admin/index'
 import { Route as LocalestoreShopsShopSlugRouteImport } from './routes/$locale/(store)/shops/$shopSlug'
 import { Route as LocalestorePromotionsSlugRouteImport } from './routes/$locale/(store)/promotions/$slug'
 import { Route as LocalestoreOrdersOrderIdRouteImport } from './routes/$locale/(store)/orders/$orderId'
@@ -28,13 +31,21 @@ import { Route as LocalestoreListingsListingIdRouteImport } from './routes/$loca
 import { Route as LocalestoreCategoriesCategoryIdRouteImport } from './routes/$locale/(store)/categories/$categoryId'
 import { Route as LocalesellerSellRegisterRouteImport } from './routes/$locale/(seller)/sell/register'
 import { Route as LocalesellerSellDashboardRouteImport } from './routes/$locale/(seller)/sell/dashboard'
+import { Route as LocaleadminAdminUsersRouteImport } from './routes/$locale/(admin)/admin/users'
+import { Route as LocaleadminAdminShopsRouteImport } from './routes/$locale/(admin)/admin/shops'
+import { Route as LocaleadminAdminPromotionsRouteImport } from './routes/$locale/(admin)/admin/promotions'
+import { Route as LocaleadminAdminListingsRouteImport } from './routes/$locale/(admin)/admin/listings'
+import { Route as LocaleadminAdminDashboardRouteImport } from './routes/$locale/(admin)/admin/dashboard'
+import { Route as LocaleadminAdminCategoriesRouteImport } from './routes/$locale/(admin)/admin/categories'
 import { Route as LocalestorePaymentsSuccessIndexRouteImport } from './routes/$locale/(store)/payments/success/index'
 import { Route as LocalesellerSellOrdersIndexRouteImport } from './routes/$locale/(seller)/sell/orders/index'
 import { Route as LocalesellerSellListingsIndexRouteImport } from './routes/$locale/(seller)/sell/listings/index'
+import { Route as LocaleadminAdminOrdersIndexRouteImport } from './routes/$locale/(admin)/admin/orders/index'
 import { Route as LocalestorePreviewListingsListingIdRouteImport } from './routes/$locale/(store)/preview/listings.$listingId'
 import { Route as LocalesellerSellOrdersOrderIdRouteImport } from './routes/$locale/(seller)/sell/orders/$orderId'
 import { Route as LocalesellerSellListingsNewRouteImport } from './routes/$locale/(seller)/sell/listings/new'
 import { Route as LocalesellerSellListingsListingIdRouteImport } from './routes/$locale/(seller)/sell/listings/$listingId'
+import { Route as LocaleadminAdminOrdersOrderIdRouteImport } from './routes/$locale/(admin)/admin/orders/$orderId'
 
 const LocaleRoute = LocaleRouteImport.update({
   id: '/$locale',
@@ -54,6 +65,10 @@ const LocalesellerRouteRoute = LocalesellerRouteRouteImport.update({
   id: '/(seller)',
   getParentRoute: () => LocaleRoute,
 } as any)
+const LocaleadminRouteRoute = LocaleadminRouteRouteImport.update({
+  id: '/(admin)',
+  getParentRoute: () => LocaleRoute,
+} as any)
 const LocalestoreIndexRoute = LocalestoreIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -63,6 +78,11 @@ const LocalesellerSellRouteRoute = LocalesellerSellRouteRouteImport.update({
   id: '/sell',
   path: '/sell',
   getParentRoute: () => LocalesellerRouteRoute,
+} as any)
+const LocaleadminAdminRouteRoute = LocaleadminAdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => LocaleadminRouteRoute,
 } as any)
 const LocalestoreSearchIndexRoute = LocalestoreSearchIndexRouteImport.update({
   id: '/search/',
@@ -95,6 +115,11 @@ const LocalesellerSellIndexRoute = LocalesellerSellIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LocalesellerSellRouteRoute,
+} as any)
+const LocaleadminAdminIndexRoute = LocaleadminAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LocaleadminAdminRouteRoute,
 } as any)
 const LocalestoreShopsShopSlugRoute =
   LocalestoreShopsShopSlugRouteImport.update({
@@ -138,6 +163,40 @@ const LocalesellerSellDashboardRoute =
     path: '/dashboard',
     getParentRoute: () => LocalesellerSellRouteRoute,
   } as any)
+const LocaleadminAdminUsersRoute = LocaleadminAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => LocaleadminAdminRouteRoute,
+} as any)
+const LocaleadminAdminShopsRoute = LocaleadminAdminShopsRouteImport.update({
+  id: '/shops',
+  path: '/shops',
+  getParentRoute: () => LocaleadminAdminRouteRoute,
+} as any)
+const LocaleadminAdminPromotionsRoute =
+  LocaleadminAdminPromotionsRouteImport.update({
+    id: '/promotions',
+    path: '/promotions',
+    getParentRoute: () => LocaleadminAdminRouteRoute,
+  } as any)
+const LocaleadminAdminListingsRoute =
+  LocaleadminAdminListingsRouteImport.update({
+    id: '/listings',
+    path: '/listings',
+    getParentRoute: () => LocaleadminAdminRouteRoute,
+  } as any)
+const LocaleadminAdminDashboardRoute =
+  LocaleadminAdminDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => LocaleadminAdminRouteRoute,
+  } as any)
+const LocaleadminAdminCategoriesRoute =
+  LocaleadminAdminCategoriesRouteImport.update({
+    id: '/categories',
+    path: '/categories',
+    getParentRoute: () => LocaleadminAdminRouteRoute,
+  } as any)
 const LocalestorePaymentsSuccessIndexRoute =
   LocalestorePaymentsSuccessIndexRouteImport.update({
     id: '/payments/success/',
@@ -155,6 +214,12 @@ const LocalesellerSellListingsIndexRoute =
     id: '/listings/',
     path: '/listings/',
     getParentRoute: () => LocalesellerSellRouteRoute,
+  } as any)
+const LocaleadminAdminOrdersIndexRoute =
+  LocaleadminAdminOrdersIndexRouteImport.update({
+    id: '/orders/',
+    path: '/orders/',
+    getParentRoute: () => LocaleadminAdminRouteRoute,
   } as any)
 const LocalestorePreviewListingsListingIdRoute =
   LocalestorePreviewListingsListingIdRouteImport.update({
@@ -180,12 +245,25 @@ const LocalesellerSellListingsListingIdRoute =
     path: '/listings/$listingId',
     getParentRoute: () => LocalesellerSellRouteRoute,
   } as any)
+const LocaleadminAdminOrdersOrderIdRoute =
+  LocaleadminAdminOrdersOrderIdRouteImport.update({
+    id: '/orders/$orderId',
+    path: '/orders/$orderId',
+    getParentRoute: () => LocaleadminAdminRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$locale': typeof LocalestoreRouteRouteWithChildren
+  '/$locale/admin': typeof LocaleadminAdminRouteRouteWithChildren
   '/$locale/sell': typeof LocalesellerSellRouteRouteWithChildren
   '/$locale/': typeof LocalestoreIndexRoute
+  '/$locale/admin/categories': typeof LocaleadminAdminCategoriesRoute
+  '/$locale/admin/dashboard': typeof LocaleadminAdminDashboardRoute
+  '/$locale/admin/listings': typeof LocaleadminAdminListingsRoute
+  '/$locale/admin/promotions': typeof LocaleadminAdminPromotionsRoute
+  '/$locale/admin/shops': typeof LocaleadminAdminShopsRoute
+  '/$locale/admin/users': typeof LocaleadminAdminUsersRoute
   '/$locale/sell/dashboard': typeof LocalesellerSellDashboardRoute
   '/$locale/sell/register': typeof LocalesellerSellRegisterRoute
   '/$locale/categories/$categoryId': typeof LocalestoreCategoriesCategoryIdRoute
@@ -193,16 +271,19 @@ export interface FileRoutesByFullPath {
   '/$locale/orders/$orderId': typeof LocalestoreOrdersOrderIdRoute
   '/$locale/promotions/$slug': typeof LocalestorePromotionsSlugRoute
   '/$locale/shops/$shopSlug': typeof LocalestoreShopsShopSlugRoute
+  '/$locale/admin/': typeof LocaleadminAdminIndexRoute
   '/$locale/sell/': typeof LocalesellerSellIndexRoute
   '/$locale/cart/': typeof LocalestoreCartIndexRoute
   '/$locale/checkout/': typeof LocalestoreCheckoutIndexRoute
   '/$locale/favorites/': typeof LocalestoreFavoritesIndexRoute
   '/$locale/orders/': typeof LocalestoreOrdersIndexRoute
   '/$locale/search/': typeof LocalestoreSearchIndexRoute
+  '/$locale/admin/orders/$orderId': typeof LocaleadminAdminOrdersOrderIdRoute
   '/$locale/sell/listings/$listingId': typeof LocalesellerSellListingsListingIdRoute
   '/$locale/sell/listings/new': typeof LocalesellerSellListingsNewRoute
   '/$locale/sell/orders/$orderId': typeof LocalesellerSellOrdersOrderIdRoute
   '/$locale/preview/listings/$listingId': typeof LocalestorePreviewListingsListingIdRoute
+  '/$locale/admin/orders/': typeof LocaleadminAdminOrdersIndexRoute
   '/$locale/sell/listings/': typeof LocalesellerSellListingsIndexRoute
   '/$locale/sell/orders/': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/payments/success/': typeof LocalestorePaymentsSuccessIndexRoute
@@ -210,6 +291,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$locale': typeof LocalestoreIndexRoute
+  '/$locale/admin/categories': typeof LocaleadminAdminCategoriesRoute
+  '/$locale/admin/dashboard': typeof LocaleadminAdminDashboardRoute
+  '/$locale/admin/listings': typeof LocaleadminAdminListingsRoute
+  '/$locale/admin/promotions': typeof LocaleadminAdminPromotionsRoute
+  '/$locale/admin/shops': typeof LocaleadminAdminShopsRoute
+  '/$locale/admin/users': typeof LocaleadminAdminUsersRoute
   '/$locale/sell/dashboard': typeof LocalesellerSellDashboardRoute
   '/$locale/sell/register': typeof LocalesellerSellRegisterRoute
   '/$locale/categories/$categoryId': typeof LocalestoreCategoriesCategoryIdRoute
@@ -217,16 +304,19 @@ export interface FileRoutesByTo {
   '/$locale/orders/$orderId': typeof LocalestoreOrdersOrderIdRoute
   '/$locale/promotions/$slug': typeof LocalestorePromotionsSlugRoute
   '/$locale/shops/$shopSlug': typeof LocalestoreShopsShopSlugRoute
+  '/$locale/admin': typeof LocaleadminAdminIndexRoute
   '/$locale/sell': typeof LocalesellerSellIndexRoute
   '/$locale/cart': typeof LocalestoreCartIndexRoute
   '/$locale/checkout': typeof LocalestoreCheckoutIndexRoute
   '/$locale/favorites': typeof LocalestoreFavoritesIndexRoute
   '/$locale/orders': typeof LocalestoreOrdersIndexRoute
   '/$locale/search': typeof LocalestoreSearchIndexRoute
+  '/$locale/admin/orders/$orderId': typeof LocaleadminAdminOrdersOrderIdRoute
   '/$locale/sell/listings/$listingId': typeof LocalesellerSellListingsListingIdRoute
   '/$locale/sell/listings/new': typeof LocalesellerSellListingsNewRoute
   '/$locale/sell/orders/$orderId': typeof LocalesellerSellOrdersOrderIdRoute
   '/$locale/preview/listings/$listingId': typeof LocalestorePreviewListingsListingIdRoute
+  '/$locale/admin/orders': typeof LocaleadminAdminOrdersIndexRoute
   '/$locale/sell/listings': typeof LocalesellerSellListingsIndexRoute
   '/$locale/sell/orders': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/payments/success': typeof LocalestorePaymentsSuccessIndexRoute
@@ -235,10 +325,18 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
+  '/$locale/(admin)': typeof LocaleadminRouteRouteWithChildren
   '/$locale/(seller)': typeof LocalesellerRouteRouteWithChildren
   '/$locale/(store)': typeof LocalestoreRouteRouteWithChildren
+  '/$locale/(admin)/admin': typeof LocaleadminAdminRouteRouteWithChildren
   '/$locale/(seller)/sell': typeof LocalesellerSellRouteRouteWithChildren
   '/$locale/(store)/': typeof LocalestoreIndexRoute
+  '/$locale/(admin)/admin/categories': typeof LocaleadminAdminCategoriesRoute
+  '/$locale/(admin)/admin/dashboard': typeof LocaleadminAdminDashboardRoute
+  '/$locale/(admin)/admin/listings': typeof LocaleadminAdminListingsRoute
+  '/$locale/(admin)/admin/promotions': typeof LocaleadminAdminPromotionsRoute
+  '/$locale/(admin)/admin/shops': typeof LocaleadminAdminShopsRoute
+  '/$locale/(admin)/admin/users': typeof LocaleadminAdminUsersRoute
   '/$locale/(seller)/sell/dashboard': typeof LocalesellerSellDashboardRoute
   '/$locale/(seller)/sell/register': typeof LocalesellerSellRegisterRoute
   '/$locale/(store)/categories/$categoryId': typeof LocalestoreCategoriesCategoryIdRoute
@@ -246,16 +344,19 @@ export interface FileRoutesById {
   '/$locale/(store)/orders/$orderId': typeof LocalestoreOrdersOrderIdRoute
   '/$locale/(store)/promotions/$slug': typeof LocalestorePromotionsSlugRoute
   '/$locale/(store)/shops/$shopSlug': typeof LocalestoreShopsShopSlugRoute
+  '/$locale/(admin)/admin/': typeof LocaleadminAdminIndexRoute
   '/$locale/(seller)/sell/': typeof LocalesellerSellIndexRoute
   '/$locale/(store)/cart/': typeof LocalestoreCartIndexRoute
   '/$locale/(store)/checkout/': typeof LocalestoreCheckoutIndexRoute
   '/$locale/(store)/favorites/': typeof LocalestoreFavoritesIndexRoute
   '/$locale/(store)/orders/': typeof LocalestoreOrdersIndexRoute
   '/$locale/(store)/search/': typeof LocalestoreSearchIndexRoute
+  '/$locale/(admin)/admin/orders/$orderId': typeof LocaleadminAdminOrdersOrderIdRoute
   '/$locale/(seller)/sell/listings/$listingId': typeof LocalesellerSellListingsListingIdRoute
   '/$locale/(seller)/sell/listings/new': typeof LocalesellerSellListingsNewRoute
   '/$locale/(seller)/sell/orders/$orderId': typeof LocalesellerSellOrdersOrderIdRoute
   '/$locale/(store)/preview/listings/$listingId': typeof LocalestorePreviewListingsListingIdRoute
+  '/$locale/(admin)/admin/orders/': typeof LocaleadminAdminOrdersIndexRoute
   '/$locale/(seller)/sell/listings/': typeof LocalesellerSellListingsIndexRoute
   '/$locale/(seller)/sell/orders/': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/(store)/payments/success/': typeof LocalestorePaymentsSuccessIndexRoute
@@ -265,8 +366,15 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$locale'
+    | '/$locale/admin'
     | '/$locale/sell'
     | '/$locale/'
+    | '/$locale/admin/categories'
+    | '/$locale/admin/dashboard'
+    | '/$locale/admin/listings'
+    | '/$locale/admin/promotions'
+    | '/$locale/admin/shops'
+    | '/$locale/admin/users'
     | '/$locale/sell/dashboard'
     | '/$locale/sell/register'
     | '/$locale/categories/$categoryId'
@@ -274,16 +382,19 @@ export interface FileRouteTypes {
     | '/$locale/orders/$orderId'
     | '/$locale/promotions/$slug'
     | '/$locale/shops/$shopSlug'
+    | '/$locale/admin/'
     | '/$locale/sell/'
     | '/$locale/cart/'
     | '/$locale/checkout/'
     | '/$locale/favorites/'
     | '/$locale/orders/'
     | '/$locale/search/'
+    | '/$locale/admin/orders/$orderId'
     | '/$locale/sell/listings/$listingId'
     | '/$locale/sell/listings/new'
     | '/$locale/sell/orders/$orderId'
     | '/$locale/preview/listings/$listingId'
+    | '/$locale/admin/orders/'
     | '/$locale/sell/listings/'
     | '/$locale/sell/orders/'
     | '/$locale/payments/success/'
@@ -291,6 +402,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$locale'
+    | '/$locale/admin/categories'
+    | '/$locale/admin/dashboard'
+    | '/$locale/admin/listings'
+    | '/$locale/admin/promotions'
+    | '/$locale/admin/shops'
+    | '/$locale/admin/users'
     | '/$locale/sell/dashboard'
     | '/$locale/sell/register'
     | '/$locale/categories/$categoryId'
@@ -298,16 +415,19 @@ export interface FileRouteTypes {
     | '/$locale/orders/$orderId'
     | '/$locale/promotions/$slug'
     | '/$locale/shops/$shopSlug'
+    | '/$locale/admin'
     | '/$locale/sell'
     | '/$locale/cart'
     | '/$locale/checkout'
     | '/$locale/favorites'
     | '/$locale/orders'
     | '/$locale/search'
+    | '/$locale/admin/orders/$orderId'
     | '/$locale/sell/listings/$listingId'
     | '/$locale/sell/listings/new'
     | '/$locale/sell/orders/$orderId'
     | '/$locale/preview/listings/$listingId'
+    | '/$locale/admin/orders'
     | '/$locale/sell/listings'
     | '/$locale/sell/orders'
     | '/$locale/payments/success'
@@ -315,10 +435,18 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$locale'
+    | '/$locale/(admin)'
     | '/$locale/(seller)'
     | '/$locale/(store)'
+    | '/$locale/(admin)/admin'
     | '/$locale/(seller)/sell'
     | '/$locale/(store)/'
+    | '/$locale/(admin)/admin/categories'
+    | '/$locale/(admin)/admin/dashboard'
+    | '/$locale/(admin)/admin/listings'
+    | '/$locale/(admin)/admin/promotions'
+    | '/$locale/(admin)/admin/shops'
+    | '/$locale/(admin)/admin/users'
     | '/$locale/(seller)/sell/dashboard'
     | '/$locale/(seller)/sell/register'
     | '/$locale/(store)/categories/$categoryId'
@@ -326,16 +454,19 @@ export interface FileRouteTypes {
     | '/$locale/(store)/orders/$orderId'
     | '/$locale/(store)/promotions/$slug'
     | '/$locale/(store)/shops/$shopSlug'
+    | '/$locale/(admin)/admin/'
     | '/$locale/(seller)/sell/'
     | '/$locale/(store)/cart/'
     | '/$locale/(store)/checkout/'
     | '/$locale/(store)/favorites/'
     | '/$locale/(store)/orders/'
     | '/$locale/(store)/search/'
+    | '/$locale/(admin)/admin/orders/$orderId'
     | '/$locale/(seller)/sell/listings/$listingId'
     | '/$locale/(seller)/sell/listings/new'
     | '/$locale/(seller)/sell/orders/$orderId'
     | '/$locale/(store)/preview/listings/$listingId'
+    | '/$locale/(admin)/admin/orders/'
     | '/$locale/(seller)/sell/listings/'
     | '/$locale/(seller)/sell/orders/'
     | '/$locale/(store)/payments/success/'
@@ -376,6 +507,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalesellerRouteRouteImport
       parentRoute: typeof LocaleRoute
     }
+    '/$locale/(admin)': {
+      id: '/$locale/(admin)'
+      path: ''
+      fullPath: '/$locale'
+      preLoaderRoute: typeof LocaleadminRouteRouteImport
+      parentRoute: typeof LocaleRoute
+    }
     '/$locale/(store)/': {
       id: '/$locale/(store)/'
       path: '/'
@@ -389,6 +527,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/sell'
       preLoaderRoute: typeof LocalesellerSellRouteRouteImport
       parentRoute: typeof LocalesellerRouteRoute
+    }
+    '/$locale/(admin)/admin': {
+      id: '/$locale/(admin)/admin'
+      path: '/admin'
+      fullPath: '/$locale/admin'
+      preLoaderRoute: typeof LocaleadminAdminRouteRouteImport
+      parentRoute: typeof LocaleadminRouteRoute
     }
     '/$locale/(store)/search/': {
       id: '/$locale/(store)/search/'
@@ -431,6 +576,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/sell/'
       preLoaderRoute: typeof LocalesellerSellIndexRouteImport
       parentRoute: typeof LocalesellerSellRouteRoute
+    }
+    '/$locale/(admin)/admin/': {
+      id: '/$locale/(admin)/admin/'
+      path: '/'
+      fullPath: '/$locale/admin/'
+      preLoaderRoute: typeof LocaleadminAdminIndexRouteImport
+      parentRoute: typeof LocaleadminAdminRouteRoute
     }
     '/$locale/(store)/shops/$shopSlug': {
       id: '/$locale/(store)/shops/$shopSlug'
@@ -481,6 +633,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalesellerSellDashboardRouteImport
       parentRoute: typeof LocalesellerSellRouteRoute
     }
+    '/$locale/(admin)/admin/users': {
+      id: '/$locale/(admin)/admin/users'
+      path: '/users'
+      fullPath: '/$locale/admin/users'
+      preLoaderRoute: typeof LocaleadminAdminUsersRouteImport
+      parentRoute: typeof LocaleadminAdminRouteRoute
+    }
+    '/$locale/(admin)/admin/shops': {
+      id: '/$locale/(admin)/admin/shops'
+      path: '/shops'
+      fullPath: '/$locale/admin/shops'
+      preLoaderRoute: typeof LocaleadminAdminShopsRouteImport
+      parentRoute: typeof LocaleadminAdminRouteRoute
+    }
+    '/$locale/(admin)/admin/promotions': {
+      id: '/$locale/(admin)/admin/promotions'
+      path: '/promotions'
+      fullPath: '/$locale/admin/promotions'
+      preLoaderRoute: typeof LocaleadminAdminPromotionsRouteImport
+      parentRoute: typeof LocaleadminAdminRouteRoute
+    }
+    '/$locale/(admin)/admin/listings': {
+      id: '/$locale/(admin)/admin/listings'
+      path: '/listings'
+      fullPath: '/$locale/admin/listings'
+      preLoaderRoute: typeof LocaleadminAdminListingsRouteImport
+      parentRoute: typeof LocaleadminAdminRouteRoute
+    }
+    '/$locale/(admin)/admin/dashboard': {
+      id: '/$locale/(admin)/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/$locale/admin/dashboard'
+      preLoaderRoute: typeof LocaleadminAdminDashboardRouteImport
+      parentRoute: typeof LocaleadminAdminRouteRoute
+    }
+    '/$locale/(admin)/admin/categories': {
+      id: '/$locale/(admin)/admin/categories'
+      path: '/categories'
+      fullPath: '/$locale/admin/categories'
+      preLoaderRoute: typeof LocaleadminAdminCategoriesRouteImport
+      parentRoute: typeof LocaleadminAdminRouteRoute
+    }
     '/$locale/(store)/payments/success/': {
       id: '/$locale/(store)/payments/success/'
       path: '/payments/success'
@@ -501,6 +695,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/sell/listings/'
       preLoaderRoute: typeof LocalesellerSellListingsIndexRouteImport
       parentRoute: typeof LocalesellerSellRouteRoute
+    }
+    '/$locale/(admin)/admin/orders/': {
+      id: '/$locale/(admin)/admin/orders/'
+      path: '/orders'
+      fullPath: '/$locale/admin/orders/'
+      preLoaderRoute: typeof LocaleadminAdminOrdersIndexRouteImport
+      parentRoute: typeof LocaleadminAdminRouteRoute
     }
     '/$locale/(store)/preview/listings/$listingId': {
       id: '/$locale/(store)/preview/listings/$listingId'
@@ -530,8 +731,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalesellerSellListingsListingIdRouteImport
       parentRoute: typeof LocalesellerSellRouteRoute
     }
+    '/$locale/(admin)/admin/orders/$orderId': {
+      id: '/$locale/(admin)/admin/orders/$orderId'
+      path: '/orders/$orderId'
+      fullPath: '/$locale/admin/orders/$orderId'
+      preLoaderRoute: typeof LocaleadminAdminOrdersOrderIdRouteImport
+      parentRoute: typeof LocaleadminAdminRouteRoute
+    }
   }
 }
+
+interface LocaleadminAdminRouteRouteChildren {
+  LocaleadminAdminCategoriesRoute: typeof LocaleadminAdminCategoriesRoute
+  LocaleadminAdminDashboardRoute: typeof LocaleadminAdminDashboardRoute
+  LocaleadminAdminListingsRoute: typeof LocaleadminAdminListingsRoute
+  LocaleadminAdminPromotionsRoute: typeof LocaleadminAdminPromotionsRoute
+  LocaleadminAdminShopsRoute: typeof LocaleadminAdminShopsRoute
+  LocaleadminAdminUsersRoute: typeof LocaleadminAdminUsersRoute
+  LocaleadminAdminIndexRoute: typeof LocaleadminAdminIndexRoute
+  LocaleadminAdminOrdersOrderIdRoute: typeof LocaleadminAdminOrdersOrderIdRoute
+  LocaleadminAdminOrdersIndexRoute: typeof LocaleadminAdminOrdersIndexRoute
+}
+
+const LocaleadminAdminRouteRouteChildren: LocaleadminAdminRouteRouteChildren = {
+  LocaleadminAdminCategoriesRoute: LocaleadminAdminCategoriesRoute,
+  LocaleadminAdminDashboardRoute: LocaleadminAdminDashboardRoute,
+  LocaleadminAdminListingsRoute: LocaleadminAdminListingsRoute,
+  LocaleadminAdminPromotionsRoute: LocaleadminAdminPromotionsRoute,
+  LocaleadminAdminShopsRoute: LocaleadminAdminShopsRoute,
+  LocaleadminAdminUsersRoute: LocaleadminAdminUsersRoute,
+  LocaleadminAdminIndexRoute: LocaleadminAdminIndexRoute,
+  LocaleadminAdminOrdersOrderIdRoute: LocaleadminAdminOrdersOrderIdRoute,
+  LocaleadminAdminOrdersIndexRoute: LocaleadminAdminOrdersIndexRoute,
+}
+
+const LocaleadminAdminRouteRouteWithChildren =
+  LocaleadminAdminRouteRoute._addFileChildren(
+    LocaleadminAdminRouteRouteChildren,
+  )
+
+interface LocaleadminRouteRouteChildren {
+  LocaleadminAdminRouteRoute: typeof LocaleadminAdminRouteRouteWithChildren
+}
+
+const LocaleadminRouteRouteChildren: LocaleadminRouteRouteChildren = {
+  LocaleadminAdminRouteRoute: LocaleadminAdminRouteRouteWithChildren,
+}
+
+const LocaleadminRouteRouteWithChildren =
+  LocaleadminRouteRoute._addFileChildren(LocaleadminRouteRouteChildren)
 
 interface LocalesellerSellRouteRouteChildren {
   LocalesellerSellDashboardRoute: typeof LocalesellerSellDashboardRoute
@@ -609,11 +857,13 @@ const LocalestoreRouteRouteWithChildren =
   LocalestoreRouteRoute._addFileChildren(LocalestoreRouteRouteChildren)
 
 interface LocaleRouteChildren {
+  LocaleadminRouteRoute: typeof LocaleadminRouteRouteWithChildren
   LocalesellerRouteRoute: typeof LocalesellerRouteRouteWithChildren
   LocalestoreRouteRoute: typeof LocalestoreRouteRouteWithChildren
 }
 
 const LocaleRouteChildren: LocaleRouteChildren = {
+  LocaleadminRouteRoute: LocaleadminRouteRouteWithChildren,
   LocalesellerRouteRoute: LocalesellerRouteRouteWithChildren,
   LocalestoreRouteRoute: LocalestoreRouteRouteWithChildren,
 }

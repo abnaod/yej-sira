@@ -2,11 +2,11 @@ import type { Locale } from "@ys/intl";
 import { createFileRoute } from "@tanstack/react-router";
 
 import {
-  StorefrontPage,
+  HomePage,
   categoriesQuery,
   featuredListingsQuery,
-} from "@/features/storefront";
-import { promotionsListQuery } from "@/features/promotions/promotions.queries";
+} from "@/features/store/home";
+import { promotionsListQuery } from "@/features/store/promotions/promotions.queries";
 
 export const Route = createFileRoute("/$locale/(store)/")({
   loader: ({ context, params }) => {
@@ -25,5 +25,5 @@ export const Route = createFileRoute("/$locale/(store)/")({
       {error instanceof Error ? error.message : "Something went wrong"}
     </main>
   ),
-  component: StorefrontPage,
+  component: HomePage,
 });

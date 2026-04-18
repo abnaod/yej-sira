@@ -16,7 +16,7 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { categoriesQuery } from "@/features/storefront/storefront.queries";
+import { categoriesQuery } from "@/features/store/home/home.queries";
 import {
   categoryAttributeDefinitionsQuery,
   createSellerListingMutationOptions,
@@ -55,6 +55,25 @@ const makeImageSlot = (url: string | null = null): ImageSlot => {
 };
 
 const SELLER_LISTING_EMBEDDED_FORM_ID = "seller-listing-embedded-form";
+
+/** Kebab-case slug from listing name; matches API `listingSlugSchema` (min 2, max 120). */
+function slugifyListingName(name: string): string {
+  const raw = name
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-+/g, "-");
+  let out = raw.slice(0, 120);
+  if (out.length === 1) {
+    out = `${out}0`;
+  }
+  if (out.length === 0) {
+    out = "listing";
+  }
+  return out;
+}
 
 function buildAttributesPayload(
   defs: CategoryAttributeDefinitionDto[],
@@ -156,9 +175,21 @@ function SellerListingEditor({
   const [variants, setVariants] = useState<VariantForm[]>([emptyVariant()]);
   const [publish, setPublish] = useState(false);
 
+  /** Apply server listing into form state once per open listing — not on every detail refetch,
+   *  or React Query would reset images/fields and wipe extra image slots the user added. */
+  const hasHydratedFromDetailRef = useRef(false);
+
   useEffect(() => {
-    if (mode !== "edit" || !detailQuery.data) return;
+    hasHydratedFromDetailRef.current = false;
+  }, [listingId]);
+
+  useEffect(() => {
+    if (mode !== "edit" || !detailQuery.data || !listingId) return;
     const p = detailQuery.data.listing;
+    if (p.id !== listingId) return;
+    if (hasHydratedFromDetailRef.current) return;
+    hasHydratedFromDetailRef.current = true;
+
     setCategorySlug(p.categorySlug);
     setName(p.name);
     setSlug(p.slug);
@@ -186,7 +217,7 @@ function SellerListingEditor({
     } else {
       setAttrValues({});
     }
-  }, [mode, detailQuery.data]);
+  }, [mode, detailQuery.data, listingId]);
 
   const buildBody = (): CreateSellerListingBody => {
     if (imageSlots.some((s) => s.uploading)) {
@@ -211,7 +242,8 @@ function SellerListingEditor({
     return {
       categorySlug,
       name: name.trim(),
-      slug: slug.trim().toLowerCase(),
+      slug:
+        mode === "new" ? slugifyListingName(name.trim()) : slug.trim().toLowerCase(),
       description: description.trim(),
       images,
       variants: variantRows,
@@ -332,229 +364,211 @@ function SellerListingEditor({
       className={embedded ? "space-y-4" : "mt-8 space-y-4"}
       onSubmit={onSubmit}
     >
-        <div className="space-y-2">
-          <Label htmlFor="cat">Category</Label>
-          <NativeSelect
-            id="cat"
-            value={categorySlug}
-            onChange={(e) => {
-              setCategorySlug(e.target.value);
-              setAttrValues({});
-            }}
-            required
-          >
-            <NativeSelectOption value="">Select…</NativeSelectOption>
-            {categoriesData?.categories.map((c) => (
-              <NativeSelectOption key={c.slug} value={c.slug}>
-                {c.name}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+      <div className="space-y-2">
+        <Label htmlFor="cat">Category</Label>
+        <NativeSelect
+          id="cat"
+          value={categorySlug}
+          onChange={(e) => {
+            setCategorySlug(e.target.value);
+            setAttrValues({});
+          }}
+          required
+        >
+          <NativeSelectOption value="">Select…</NativeSelectOption>
+          {categoriesData?.categories.map((c) => (
+            <NativeSelectOption key={c.slug} value={c.slug}>
+              {c.name}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+      {categorySlug && attrsQuery.data && attrsQuery.data.definitions.length > 0 && (
+        <div className="space-y-4 rounded-lg border border-border p-4">
+          <p className="text-sm font-medium">Listing details</p>
+          {attrsQuery.data.definitions.map((d) => (
+            <div key={d.key} className="space-y-2">
+              <Label htmlFor={`attr-${d.key}`}>
+                {d.label}
+                {d.isRequired ? " *" : ""}
+              </Label>
+              {d.inputType === "select" && d.options && (
+                <NativeSelect
+                  id={`attr-${d.key}`}
+                  value={attrValues[d.key] ?? ""}
+                  required={d.isRequired}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setAttrValues((prev) => ({ ...prev, [d.key]: v }));
+                  }}
+                >
+                  <NativeSelectOption value="">
+                    {d.isRequired ? "Select…" : "Optional"}
+                  </NativeSelectOption>
+                  {d.options.map((o) => (
+                    <NativeSelectOption key={o.key} value={o.key}>
+                      {o.label}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              )}
+              {d.inputType === "text" && (
+                <Input
+                  id={`attr-${d.key}`}
+                  value={attrValues[d.key] ?? ""}
+                  required={d.isRequired}
+                  onChange={(e) =>
+                    setAttrValues((prev) => ({ ...prev, [d.key]: e.target.value }))
+                  }
+                />
+              )}
+              {d.inputType === "number" && (
+                <Input
+                  id={`attr-${d.key}`}
+                  type="number"
+                  step="any"
+                  value={attrValues[d.key] ?? ""}
+                  required={d.isRequired}
+                  onChange={(e) =>
+                    setAttrValues((prev) => ({ ...prev, [d.key]: e.target.value }))
+                  }
+                />
+              )}
+              {d.inputType === "boolean" && (
+                <NativeSelect
+                  id={`attr-${d.key}`}
+                  value={attrValues[d.key] ?? ""}
+                  required={d.isRequired}
+                  onChange={(e) =>
+                    setAttrValues((prev) => ({ ...prev, [d.key]: e.target.value }))
+                  }
+                >
+                  <NativeSelectOption value="">
+                    {d.isRequired ? "Select…" : "Optional"}
+                  </NativeSelectOption>
+                  <NativeSelectOption value="true">Yes</NativeSelectOption>
+                  <NativeSelectOption value="false">No</NativeSelectOption>
+                </NativeSelect>
+              )}
+            </div>
+          ))}
         </div>
-        {categorySlug && attrsQuery.data && attrsQuery.data.definitions.length > 0 && (
-          <div className="space-y-4 rounded-lg border border-border p-4">
-            <p className="text-sm font-medium">Listing details</p>
-            {attrsQuery.data.definitions.map((d) => (
-              <div key={d.key} className="space-y-2">
-                <Label htmlFor={`attr-${d.key}`}>
-                  {d.label}
-                  {d.isRequired ? " *" : ""}
-                </Label>
-                {d.inputType === "select" && d.options && (
-                  <NativeSelect
-                    id={`attr-${d.key}`}
-                    value={attrValues[d.key] ?? ""}
-                    required={d.isRequired}
+      )}
+      <div className="space-y-2">
+        <Label htmlFor="pname">Name</Label>
+        <Input id="pname" value={name} onChange={(e) => setName(e.target.value)} required />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="pdesc">Description</Label>
+        <Textarea
+          id="pdesc"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+          rows={5}
+          placeholder={descHints.placeholder}
+        />
+        <p className="text-xs text-muted-foreground">{descHints.tip}</p>
+      </div>
+      <div className="space-y-3">
+        <Label>Images</Label>
+        <p className="text-xs text-muted-foreground">
+          Attach images one at a time. PNG, JPG, WEBP, or GIF, max 5MB each.
+        </p>
+        <div className="space-y-3">
+          {imageSlots.map((slot, i) => (
+            <ImageSlotRow
+              key={slot.id}
+              slot={slot}
+              index={i}
+              onFileChosen={(file) => void handleImageFileChosen(slot.id, file)}
+              onRemove={() => removeImageSlot(slot.id)}
+            />
+          ))}
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={addImageSlot}>
+          <Plus className="mr-1.5 size-3.5" />
+          Add image
+        </Button>
+      </div>
+      <div className="space-y-3">
+        <Label>Variants</Label>
+        <div className="space-y-3">
+          {variants.map((v, i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-border bg-muted/20 p-4"
+            >
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2 sm:min-w-0">
+                  <Label htmlFor={`variant-${i}-label`}>Variant</Label>
+                  <Input
+                    id={`variant-${i}-label`}
+                    placeholder="e.g. Size M, Red"
+                    value={v.label}
                     onChange={(e) => {
-                      const v = e.target.value;
-                      setAttrValues((prev) => ({ ...prev, [d.key]: v }));
+                      const next = [...variants];
+                      next[i] = { ...v, label: e.target.value };
+                      setVariants(next);
                     }}
-                  >
-                    <NativeSelectOption value="">
-                      {d.isRequired ? "Select…" : "Optional"}
-                    </NativeSelectOption>
-                    {d.options.map((o) => (
-                      <NativeSelectOption key={o.key} value={o.key}>
-                        {o.label}
-                      </NativeSelectOption>
-                    ))}
-                  </NativeSelect>
-                )}
-                {d.inputType === "text" && (
-                  <Input
-                    id={`attr-${d.key}`}
-                    value={attrValues[d.key] ?? ""}
-                    required={d.isRequired}
-                    onChange={(e) =>
-                      setAttrValues((prev) => ({ ...prev, [d.key]: e.target.value }))
-                    }
                   />
-                )}
-                {d.inputType === "number" && (
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`variant-${i}-price`}>Price</Label>
                   <Input
-                    id={`attr-${d.key}`}
+                    id={`variant-${i}-price`}
                     type="number"
-                    step="any"
-                    value={attrValues[d.key] ?? ""}
-                    required={d.isRequired}
-                    onChange={(e) =>
-                      setAttrValues((prev) => ({ ...prev, [d.key]: e.target.value }))
-                    }
+                    step="0.01"
+                    inputMode="decimal"
+                    value={v.price}
+                    onChange={(e) => {
+                      const next = [...variants];
+                      next[i] = { ...v, price: e.target.value };
+                      setVariants(next);
+                    }}
                   />
-                )}
-                {d.inputType === "boolean" && (
-                  <NativeSelect
-                    id={`attr-${d.key}`}
-                    value={attrValues[d.key] ?? ""}
-                    required={d.isRequired}
-                    onChange={(e) =>
-                      setAttrValues((prev) => ({ ...prev, [d.key]: e.target.value }))
-                    }
-                  >
-                    <NativeSelectOption value="">
-                      {d.isRequired ? "Select…" : "Optional"}
-                    </NativeSelectOption>
-                    <NativeSelectOption value="true">Yes</NativeSelectOption>
-                    <NativeSelectOption value="false">No</NativeSelectOption>
-                  </NativeSelect>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-        <div className="space-y-2">
-          <Label htmlFor="pname">Name</Label>
-          <Input id="pname" value={name} onChange={(e) => setName(e.target.value)} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="pslug">Listing slug (URL)</Label>
-          <Input
-            id="pslug"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            required
-            disabled={mode === "edit"}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="pdesc">Description</Label>
-          <Textarea
-            id="pdesc"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            rows={5}
-            placeholder={descHints.placeholder}
-          />
-          <p className="text-xs text-muted-foreground">{descHints.tip}</p>
-        </div>
-        <div className="space-y-3">
-          <Label>Images</Label>
-          <p className="text-xs text-muted-foreground">
-            Attach images one at a time. PNG, JPG, WEBP, or GIF, max 5MB each.
-          </p>
-          <div className="space-y-3">
-            {imageSlots.map((slot, i) => (
-              <ImageSlotRow
-                key={slot.id}
-                slot={slot}
-                index={i}
-                onFileChosen={(file) => void handleImageFileChosen(slot.id, file)}
-                onRemove={() => removeImageSlot(slot.id)}
-              />
-            ))}
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={addImageSlot}>
-            <Plus className="mr-1.5 size-3.5" />
-            Add image
-          </Button>
-        </div>
-        <div className="space-y-3">
-          <Label>Variants</Label>
-          <div className="space-y-3">
-            {variants.map((v, i) => (
-              <div
-                key={i}
-                className="rounded-lg border border-border bg-muted/20 p-4"
-              >
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-2 sm:min-w-0">
-                    <Label htmlFor={`variant-${i}-label`}>Variant</Label>
-                    <Input
-                      id={`variant-${i}-label`}
-                      placeholder="e.g. Size M, Red"
-                      value={v.label}
-                      onChange={(e) => {
-                        const next = [...variants];
-                        next[i] = { ...v, label: e.target.value };
-                        setVariants(next);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`variant-${i}-price`}>Price</Label>
-                    <Input
-                      id={`variant-${i}-price`}
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={v.price}
-                      onChange={(e) => {
-                        const next = [...variants];
-                        next[i] = { ...v, price: e.target.value };
-                        setVariants(next);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`variant-${i}-stock`}>Stock</Label>
-                    <Input
-                      id={`variant-${i}-stock`}
-                      type="number"
-                      min={0}
-                      inputMode="numeric"
-                      value={v.stock}
-                      onChange={(e) => {
-                        const next = [...variants];
-                        next[i] = { ...v, stock: e.target.value };
-                        setVariants(next);
-                      }}
-                    />
-                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`variant-${i}-stock`}>Stock</Label>
+                  <Input
+                    id={`variant-${i}-stock`}
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    value={v.stock}
+                    onChange={(e) => {
+                      const next = [...variants];
+                      next[i] = { ...v, stock: e.target.value };
+                      setVariants(next);
+                    }}
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setVariants([...variants, emptyVariant()])}
-          >
-            Add variant
+            </div>
+          ))}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setVariants([...variants, emptyVariant()])}
+        >
+          Add variant
+        </Button>
+      </div>
+      {(createMut.isError || updateMut.isError) && (
+        <p className="text-sm text-destructive">
+          {((createMut.error ?? updateMut.error) as Error)?.message}
+        </p>
+      )}
+      {!embedded && (
+        <div className="flex flex-wrap gap-3">
+          <Button type="submit" disabled={createMut.isPending || updateMut.isPending}>
+            {mode === "new" ? "Create" : "Save"}
           </Button>
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={publish}
-            onChange={(e) => setPublish(e.target.checked)}
-          />
-          Publish on marketplace (shop must be active)
-        </label>
-        {(createMut.isError || updateMut.isError) && (
-          <p className="text-sm text-destructive">
-            {((createMut.error ?? updateMut.error) as Error)?.message}
-          </p>
-        )}
-        {!embedded && (
-          <div className="flex flex-wrap gap-3">
-            <Button type="submit" disabled={createMut.isPending || updateMut.isPending}>
-              {mode === "new" ? "Create" : "Save"}
-            </Button>
-          </div>
-        )}
-      </form>
+      )}
+    </form>
   );
 
   if (embedded) {
@@ -595,7 +609,7 @@ function SellerListingEditor({
       <p className="mt-2 text-xss text-muted-foreground">
         {mode === "new"
           ? "Add category, variants, images, and description for your listing."
-          : "Update this listing's details, stock, and publish state."}
+          : "Update this listing's details, stock, and images."}
       </p>
       {form}
     </main>

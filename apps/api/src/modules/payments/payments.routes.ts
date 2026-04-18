@@ -13,7 +13,7 @@ import {
   formatPhoneForChapa,
   initializeTransaction,
   verifyTransaction,
-} from "../../lib/chapa";
+} from "./chapa";
 import { toNumber } from "../../lib/money";
 
 export const paymentsRouter = new Hono();

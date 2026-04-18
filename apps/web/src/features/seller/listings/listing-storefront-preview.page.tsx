@@ -3,9 +3,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
 import { Breadcrumb } from "@/components/ui/breadcrumb";
-import { addToCartMutationOptions } from "@/features/cart/cart.queries";
-import { BuyBox } from "@/features/listings/components/buy-box";
-import { ListingGallery } from "@/features/listings/components/listings-gallery";
+import { addToCartMutationOptions } from "@/features/store/cart/cart.queries";
+import { BuyBox } from "@/features/store/listings/components/buy-box";
+import { ListingGallery } from "@/features/store/listings/components/listings-gallery";
 
 import { sellerListingDetailQuery } from "./listings.queries";
 

@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { categoriesQuery } from "@/features/storefront";
+import { categoriesQuery } from "@/features/store/home";
 import { useLocale } from "@/lib/locale-path";
 
 export function HeaderNav() {

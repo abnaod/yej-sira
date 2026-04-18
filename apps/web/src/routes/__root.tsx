@@ -4,8 +4,8 @@ import {
   createRootRouteWithContext,
 } from "@tanstack/react-router";
 
-import { RootLayout } from "@/components/layouts";
-import { NotFoundPage } from "@/components/shared";
+import { RootLayout } from "@/components/shells";
+import { NotFoundPage } from "@/features/shared";
 import type { RouterContext } from "@/lib/router-context";
 
 import appCss from "../styles/app.css?url";

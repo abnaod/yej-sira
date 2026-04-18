@@ -1,10 +1,10 @@
 import type { Locale } from "@ys/intl";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { parseTagSlugsParam } from "@/features/category";
-import type { CategorySort } from "@/features/category";
-import { SearchPage, listingsSearchQuery } from "@/features/search";
-import { tagsQuery } from "@/features/storefront";
+import { parseTagSlugsParam } from "@/features/store/category";
+import type { CategorySort } from "@/features/store/category";
+import { SearchPage, listingsSearchQuery } from "@/features/store/search";
+import { tagsQuery } from "@/features/store/home";
 
 const sortValues = ["relevancy", "price-asc", "price-desc", "newest"] as const;
 

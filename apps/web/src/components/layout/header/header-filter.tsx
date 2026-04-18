@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { SlidersHorizontal } from "lucide-react";
 
-import type { CategoryApplyFilters } from "@/features/category/components/category-filter-drawer";
-import { CategoryFilterDrawer } from "@/features/category/components/category-filter-drawer";
-import type { CategorySort } from "@/features/category/category.queries";
-import { parseTagSlugsParam } from "@/features/category/category.queries";
-import { categoriesQuery, tagsQuery } from "@/features/storefront";
+import type { CategoryApplyFilters } from "@/features/store/category/components/category-filter-drawer";
+import { CategoryFilterDrawer } from "@/features/store/category/components/category-filter-drawer";
+import type { CategorySort } from "@/features/store/category/category.queries";
+import { parseTagSlugsParam } from "@/features/store/category/category.queries";
+import { categoriesQuery, tagsQuery } from "@/features/store/home";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 

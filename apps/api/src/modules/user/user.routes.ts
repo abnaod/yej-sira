@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 import { auth } from "../auth/auth";
-import { getUserById } from "./service";
+import { getUserById } from "./user.service";
 
 export const userRouter = new Hono();
 

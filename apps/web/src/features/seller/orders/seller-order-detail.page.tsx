@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { cashOnFulfillmentLabel } from "@/features/checkout/components/payment-method-step";
+import { cashOnFulfillmentLabel } from "@/features/store/checkout/components/payment-method-step";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {

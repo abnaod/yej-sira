@@ -7,16 +7,16 @@ import {
   getCategoryDefinitionsForApi,
   mapDefinitionsToJson,
   mapListingAttributeValuesForDetail,
-} from "../../lib/category-attributes";
+} from "./category-attributes";
 import { prisma, publicListingVisibilityWhere } from "../../lib/db";
-import { recalculateListingRatingAggregate } from "../../lib/listing-rating-aggregate";
+import { recalculateListingRatingAggregate } from "./catalog.rating";
 import {
   pickCategoryName,
   pickListingDescription,
   pickListingName,
   pickTagName,
   pickVariantLabel,
-} from "../../lib/localized-catalog";
+} from "./catalog.localize";
 import { toNumber } from "../../lib/money";
 import {
   featuredQuerySchema,
@@ -28,13 +28,13 @@ import {
   getListingDetailInclude,
   mapListingCard,
   minVariantPrice,
-} from "./listing-card.mapper";
-import { listingReviewPostSchema, listingReviewsQuerySchema } from "./listing-reviews.schema";
+} from "./catalog.mappers";
+import { listingReviewPostSchema, listingReviewsQuerySchema } from "./reviews.schema";
 import { auth } from "../auth/auth";
 import {
   activePromotionWhere,
   pickPromotionForListing,
-} from "../promotions/promotion.utils";
+} from "../promotions/promotions.utils";
 
 function listingSearchWhere(q: string, locale: Locale): Prisma.ListingWhereInput {
   const or: Prisma.ListingWhereInput[] = [

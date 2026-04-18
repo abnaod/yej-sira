@@ -2,14 +2,14 @@ import type { ContentLocale } from "@prisma/client";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { pickPromotionCopy } from "../../lib/localized-catalog";
+import { pickPromotionCopy } from "../catalog/catalog.localize";
 import { prisma, publicListingVisibilityWhere } from "../../lib/db";
 import {
   getListingCardInclude,
   mapListingCard,
   minVariantPrice,
-} from "../catalog/listing-card.mapper";
-import { activePromotionWhere, isPromotionActive } from "./promotion.utils";
+} from "../catalog/catalog.mappers";
+import { activePromotionWhere, isPromotionActive } from "./promotions.utils";
 import { promotionDetailQuerySchema } from "./promotions.schema";
 
 export const promotionsRouter = new Hono();

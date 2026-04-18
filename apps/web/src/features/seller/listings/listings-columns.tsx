@@ -6,6 +6,7 @@ import {
   ImageIcon,
   Loader2,
   MoreHorizontal,
+  PackageCheck,
   Pencil,
   Rocket,
   Trash2,
@@ -32,6 +33,8 @@ export type SellerListingTableActions = {
   deletingListingId: string | null;
   onPublishListing: (listingId: string) => void;
   publishingListingId: string | null;
+  onManageStock: (listingId: string) => void;
+  lowStockThreshold: number;
 };
 
 function formatMoney(n: number) {
@@ -103,6 +106,54 @@ export function getSellerListingColumns(
         ),
     },
     {
+      accessorKey: "stock",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-0 has-[>svg]:px-0"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Stock
+          <ArrowUpDown />
+        </Button>
+      ),
+      cell: ({ row }) => {
+        const stock = row.original.stock;
+        const variantCount = row.original.variantCount;
+        const outOfStockVariants = row.original.outOfStockVariants;
+        const allOut = variantCount > 0 && stock === 0;
+        const anyOut = outOfStockVariants > 0;
+        const low = stock > 0 && stock <= actions.lowStockThreshold;
+        const variantDetail =
+          variantCount > 1
+            ? ` across ${variantCount} variants${anyOut && !allOut ? ` (${outOfStockVariants} out)` : ""}`
+            : "";
+        return (
+          <div className="flex items-center gap-2">
+            <span className="tabular-nums font-medium">{stock}</span>
+            {allOut ? (
+              <Badge variant="destructive">Out of stock</Badge>
+            ) : low ? (
+              <Badge
+                variant="outline"
+                className="border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+              >
+                Low
+              </Badge>
+            ) : anyOut ? (
+              <Badge variant="outline" className="text-muted-foreground">
+                {outOfStockVariants} out
+              </Badge>
+            ) : null}
+            {variantDetail ? (
+              <span className="sr-only">{variantDetail}</span>
+            ) : null}
+          </div>
+        );
+      },
+    },
+    {
       id: "categoryName",
       accessorFn: (row) => row.category.name,
       header: "Category",
@@ -168,6 +219,10 @@ export function getSellerListingColumns(
                   {isPublishing ? "Publishing…" : "Publish"}
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem onClick={() => actions.onManageStock(id)}>
+                <PackageCheck />
+                Update stock
+              </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/$locale/sell/listings" params={{ locale }} search={{ new: false, edit: id }}>
                   <Pencil />

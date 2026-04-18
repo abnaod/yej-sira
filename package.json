@@ -12,7 +12,8 @@
     "db:migrate:deploy": "turbo db:migrate:deploy",
     "db:reset": "turbo db:reset",
     "db:seed": "turbo db:seed",
-    "db:studio": "pnpm --filter @ys/db db:studio"
+    "db:studio": "pnpm --filter @ys/db db:studio",
+    "admin:promote": "pnpm --filter @ys/db admin:promote"
   },
   "devDependencies": {
     "turbo": "catalog:",

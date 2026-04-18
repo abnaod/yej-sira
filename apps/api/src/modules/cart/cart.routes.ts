@@ -3,7 +3,7 @@ import type { Locale } from "@ys/intl";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { pickListingName, pickVariantLabel } from "../../lib/localized-catalog";
+import { pickListingName, pickVariantLabel } from "../catalog/catalog.localize";
 import { prisma } from "../../lib/db";
 import { standardDeliveryFeeEtb } from "../../lib/delivery";
 import { toNumber } from "../../lib/money";

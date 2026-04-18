@@ -3,7 +3,7 @@ import { HTTPException } from "hono/http-exception";
 
 import { prisma, publicListingVisibilityWhere } from "../../lib/db";
 import { auth } from "../auth/auth";
-import { getListingCardInclude, mapListingCard } from "../catalog/listing-card.mapper";
+import { getListingCardInclude, mapListingCard } from "../catalog/catalog.mappers";
 import { favoriteBodySchema } from "./favorites.schema";
 
 export const favoritesRouter = new Hono();

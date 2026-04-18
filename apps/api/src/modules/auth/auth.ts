@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 
-import { getEnv } from "../../lib/env";
+import { getBrowserOrigins, getEnv } from "../../lib/env";
 import { prisma } from "../../lib/db";
 
 const env = getEnv();
@@ -18,6 +18,21 @@ const googleOAuth =
       }
     : undefined;
 
+/**
+ * In production, OAuth redirect URIs use `BETTER_AUTH_URL` as-is.
+ * In dev, derive the API origin from the request `Host` so it matches the hostname
+ * the browser used (`localhost` vs `127.0.0.1`). Mismatch breaks OAuth: the state
+ * cookie is set on one host while Google redirects to the other → `state_mismatch`.
+ */
+const baseURL =
+  env.NODE_ENV === "production"
+    ? env.BETTER_AUTH_URL
+    : {
+        allowedHosts: ["localhost", "localhost:*", "127.0.0.1", "127.0.0.1:*"],
+        protocol: "http" as const,
+        fallback: env.BETTER_AUTH_URL,
+      };
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -28,8 +43,8 @@ export const auth = betterAuth({
   },
   ...(googleOAuth ? { socialProviders: googleOAuth } : {}),
   secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
-  trustedOrigins: [env.CORS_ORIGIN],
+  baseURL,
+  trustedOrigins: getBrowserOrigins(),
   experimental: {
     joins: true,
   },

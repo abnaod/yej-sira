@@ -5,8 +5,9 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 import { prisma, publicListingVisibilityWhere } from "../../lib/db";
-import { getOwnedShop, requireUserId } from "../../lib/authz";
-import { getListingCardInclude, mapListingCard } from "../catalog/listing-card.mapper";
+import { requireUserId } from "../../lib/auth";
+import { getOwnedShop } from "./shops.authz";
+import { getListingCardInclude, mapListingCard } from "../catalog/catalog.mappers";
 import { createShopBodySchema, publicShopListingsQuerySchema } from "./shops.schema";
 
 export const shopsRouter = new Hono();

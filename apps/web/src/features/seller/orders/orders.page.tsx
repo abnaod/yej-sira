@@ -1,9 +1,10 @@
 import type { Locale } from "@ys/intl";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DataPagination } from "@/features/shared/data-pagination";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { getSellerOrderColumns } from "./orders-columns";
@@ -13,13 +14,20 @@ import { SellerShellDataTable } from "../shared/shell-data-table";
 
 export function SellerOrdersPage() {
   const locale = useLocale() as Locale;
+  const [orderSearch, setOrderSearch] = useState("");
+  const [orderPage, setOrderPage] = useState(1);
+  const orderPageSize = 25;
   const { data: session, isPending: sessionPending } = authClient.useSession();
   const shopState = useQuery({
     ...myShopQuery(locale),
     enabled: !!session?.user,
   });
   const ordersState = useQuery({
-    ...sellerOrdersQuery(locale),
+    ...sellerOrdersQuery(locale, {
+      page: orderPage,
+      pageSize: orderPageSize,
+      q: orderSearch.trim() || undefined,
+    }),
     enabled: !!session?.user && shopState.data?.shop?.status === "active",
   });
 
@@ -83,9 +91,26 @@ export function SellerOrdersPage() {
 
   const orders = ordersState.data?.orders ?? [];
   const ordersLoading = ordersState.isLoading;
+  const ordersMeta = ordersState.data;
 
   return (
-    <div className="@container/main flex min-h-0 flex-1 flex-col">
+    <div className="@container/main flex min-h-0 flex-1 flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <input
+          className="h-8 w-full max-w-sm rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          placeholder="Search order ID…"
+          value={orderSearch}
+          onChange={(e) => {
+            setOrderSearch(e.target.value);
+            setOrderPage(1);
+          }}
+        />
+        <span className="text-xs text-muted-foreground">
+          {ordersMeta
+            ? `${ordersMeta.total} order${ordersMeta.total === 1 ? "" : "s"}`
+            : "…"}
+        </span>
+      </div>
       <SellerShellDataTable
         columns={columns}
         data={orders}
@@ -93,7 +118,16 @@ export function SellerOrdersPage() {
         filterPlaceholder="Filter by order ID…"
         countNoun="order"
         isLoading={ordersLoading}
+        showFilter={false}
+        showPagination={false}
       />
+      {ordersMeta ? (
+        <DataPagination
+          page={ordersMeta.page}
+          totalPages={ordersMeta.totalPages}
+          onPageChange={setOrderPage}
+        />
+      ) : null}
     </div>
   );
 }

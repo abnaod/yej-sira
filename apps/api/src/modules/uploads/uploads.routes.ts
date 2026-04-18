@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
-import { requireUserId } from "../../lib/authz";
+import { requireUserId } from "../../lib/auth";
 
 export const uploadsRouter = new Hono();
 
@@ -27,7 +27,7 @@ const uploadsDir = path.resolve(moduleDir, "../../../../../public/uploads");
 /** Allowed folder namespaces under `public/uploads/` — requests specifying a
  *  `folder` form field are validated against this list so the server only ever
  *  writes into known, reviewable locations. */
-const ALLOWED_FOLDERS = new Set(["shops", "listings", "misc"]);
+const ALLOWED_FOLDERS = new Set(["shops", "listings", "categories", "misc"]);
 
 uploadsRouter.post("/uploads", async (c) => {
   await requireUserId(c);
