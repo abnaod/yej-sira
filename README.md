@@ -113,10 +113,6 @@ docker compose exec api pnpm --filter @ys/db db:seed   # optional: catalog fixtu
 
 Dockerfiles live at `apps/api/Dockerfile` and `apps/web/Dockerfile`; both expect the project root as build context.
 
-## CI
-
-GitHub Actions at `.github/workflows/ci.yml` runs lint, typecheck, build, Prisma migrations, and Playwright smoke tests against Postgres on every PR.
-
 ## End-to-end tests
 
 Playwright smoke tests live in `tests/e2e`:
