@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 
 import { getBrowserOrigins, getEnv } from "../../lib/env";
 import { prisma } from "../../lib/db";
+import { sendEmail } from "../../lib/email/send-email";
 
 const env = getEnv();
 
@@ -40,11 +41,36 @@ export const auth = betterAuth({
   basePath: "/api/auth",
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: env.REQUIRE_EMAIL_VERIFICATION,
+    sendResetPassword: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: "Reset your Yej-sira password",
+        text: `Reset your password using this link: ${url}`,
+      });
+    },
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: "Verify your Yej-sira email",
+        text: `Verify your email using this link: ${url}`,
+      });
+    },
+    sendOnSignUp: true,
   },
   ...(googleOAuth ? { socialProviders: googleOAuth } : {}),
   secret: env.BETTER_AUTH_SECRET,
   baseURL,
   trustedOrigins: getBrowserOrigins(),
+  advanced: {
+    useSecureCookies: env.NODE_ENV === "production",
+    cookieOptions: {
+      sameSite: "lax",
+      secure: env.NODE_ENV === "production",
+    },
+  },
   experimental: {
     joins: true,
   },

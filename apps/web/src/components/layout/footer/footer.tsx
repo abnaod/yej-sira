@@ -161,10 +161,40 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/20">
-        <div className="mx-auto max-w-6xl px-4 py-6 text-center">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-6 text-center md:flex-row md:justify-between md:text-left">
           <p className="text-xs text-white/70">
             {t("footerCopyright", { year })}
           </p>
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/70">
+            <Link
+              to="/$locale/legal/terms"
+              params={{ locale }}
+              className="hover:text-white"
+            >
+              Terms
+            </Link>
+            <Link
+              to="/$locale/legal/privacy"
+              params={{ locale }}
+              className="hover:text-white"
+            >
+              Privacy
+            </Link>
+            <Link
+              to="/$locale/legal/returns"
+              params={{ locale }}
+              className="hover:text-white"
+            >
+              Returns
+            </Link>
+            <Link
+              to="/$locale/legal/seller-policy"
+              params={{ locale }}
+              className="hover:text-white"
+            >
+              Seller Policy
+            </Link>
+          </nav>
         </div>
       </div>
     </footer>

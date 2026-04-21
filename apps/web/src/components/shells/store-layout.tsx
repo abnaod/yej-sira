@@ -1,6 +1,7 @@
 import { Outlet } from "@tanstack/react-router";
 
 import { ContentContainer } from "@/components/layout/content-container";
+import { CookieBanner } from "@/components/layout/cookie-banner";
 import { Footer } from "@/components/layout/footer/footer";
 import { Header } from "@/components/layout/header/header";
 
@@ -13,6 +14,7 @@ export function StoreLayout() {
         <Outlet />
       </ContentContainer>
       <Footer />
+      <CookieBanner />
     </div>
   );
 }

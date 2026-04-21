@@ -211,11 +211,6 @@ cartRouter.delete("/cart/items/:itemId", async (c) => {
   return c.json({ ok: true });
 });
 
-const VALID_PROMO_CODES: Record<string, { discountPercent: number; label: string }> = {
-  SAVE10: { discountPercent: 10, label: "SAVE10" },
-  SAVE20: { discountPercent: 20, label: "SAVE20" },
-};
-
 cartRouter.post("/cart/promo", async (c) => {
   const locale = c.get("locale");
   const body = await c.req.json().catch(() => null);
@@ -225,11 +220,6 @@ cartRouter.post("/cart/promo", async (c) => {
   }
   const { code } = parsed.data;
 
-  const promo = VALID_PROMO_CODES[code];
-  if (!promo) {
-    throw new HTTPException(400, { message: "Invalid promo code" });
-  }
-
   const { cart } = await getOrCreateCart(c);
   const items = await prisma.cartItem.findMany({
     where: { cartId: cart.id },
@@ -238,12 +228,51 @@ cartRouter.post("/cart/promo", async (c) => {
   });
   const lines = mapCartResponse(items, locale);
   const subtotal = lines.reduce((sum, l) => sum + l.price * l.quantity, 0);
-  const discount = Math.round(subtotal * (promo.discountPercent / 100) * 100) / 100;
+
+  const promo = await prisma.promoCode.findUnique({
+    where: { code: code.toUpperCase() },
+  });
+  if (!promo || !promo.active) {
+    throw new HTTPException(400, { message: "Invalid promo code" });
+  }
+  const now = new Date();
+  if (promo.validFrom && now < promo.validFrom) {
+    throw new HTTPException(400, { message: "Promo code is not yet active" });
+  }
+  if (promo.validUntil && now > promo.validUntil) {
+    throw new HTTPException(400, { message: "Promo code has expired" });
+  }
+  if (promo.maxRedemptions != null && promo.redemptions >= promo.maxRedemptions) {
+    throw new HTTPException(400, { message: "Promo code is no longer available" });
+  }
+  const minSubtotal = promo.minSubtotal ? Number(promo.minSubtotal) : 0;
+  if (minSubtotal > 0 && subtotal < minSubtotal) {
+    throw new HTTPException(400, {
+      message: `Minimum order of ${minSubtotal} ETB required`,
+    });
+  }
+
+  let discount = 0;
+  let discountLabel = "";
+  if (promo.discountPercent != null) {
+    discount = Math.round(subtotal * (promo.discountPercent / 100) * 100) / 100;
+    discountLabel = `-${promo.discountPercent}%`;
+  } else if (promo.discountAmount != null) {
+    discount = Math.min(subtotal, Number(promo.discountAmount));
+    discountLabel = `-${discount} ETB`;
+  } else {
+    throw new HTTPException(500, { message: "Promo code misconfigured" });
+  }
+
+  await prisma.cart.update({
+    where: { id: cart.id },
+    data: { appliedPromoCode: promo.code },
+  });
 
   return c.json({
     valid: true,
-    code: promo.label,
+    code: promo.code,
     discount,
-    discountLabel: `-${promo.discountPercent}%`,
+    discountLabel,
   });
 });

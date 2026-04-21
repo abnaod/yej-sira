@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-yejsira}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-yejsira}"
+      POSTGRES_DB: "${POSTGRES_DB:-yejsira}"
+    # Host 5432 is often taken by a local Postgres; map 5433 on the host instead.
+    # Inside the stack, services still use postgres:5432 — no change to DATABASE_URL.
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      # Prefer DOCKER_DATABASE_URL when set (e.g. URL-encoded password). Else build from POSTGRES_* (same as .env).
+      DATABASE_URL: "${DOCKER_DATABASE_URL:-postgresql://${POSTGRES_USER:-yejsira}:${POSTGRES_PASSWORD:-yejsira}@postgres:5432/${POSTGRES_DB:-yejsira}?schema=public}"
+      PORT: "3001"
+    ports:
+      - "3001:3001"
+    volumes:
+      # Seed/listing images under repo `public/` (often gitignored). Mount so the API can serve `/static/*` without rebuilding.
+      - ./public:/app/public:ro
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Browser must reach the published API port on the host (same as .env VITE_API_URL).
+        VITE_API_URL: http://localhost:3001
+    restart: unless-stopped
+    depends_on:
+      - api
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      # Root .env sets PORT=3001 for the API; web must listen on 3000 to match this mapping.
+      PORT: "3000"
+      # SSR must reach the API by Docker service name; localhost would point at this container.
+      SERVER_API_URL: "http://api:3001"
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

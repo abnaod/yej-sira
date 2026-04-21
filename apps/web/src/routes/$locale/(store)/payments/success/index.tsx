@@ -12,11 +12,20 @@ type VerifyResponse = {
   txRef: string;
 };
 
-async function verifyPaymentRequest(input: { txRef?: string; orderId?: string }): Promise<VerifyResponse> {
+async function verifyPaymentRequest(input: {
+  txRef?: string;
+  orderId?: string;
+  /** Guest checkout: HMAC token from return_url (query `token`). */
+  orderAccessToken?: string;
+}): Promise<VerifyResponse> {
+  const tokenBody =
+    input.orderAccessToken !== undefined
+      ? { orderAccessToken: input.orderAccessToken }
+      : {};
   const body =
     input.txRef !== undefined
-      ? { tx_ref: input.txRef }
-      : { orderId: input.orderId as string };
+      ? { tx_ref: input.txRef, ...tokenBody }
+      : { orderId: input.orderId as string, ...tokenBody };
   return apiFetchJson<VerifyResponse>("/api/payments/chapa/verify", {
     method: "POST",
     body: JSON.stringify(body),
@@ -24,7 +33,11 @@ async function verifyPaymentRequest(input: { txRef?: string; orderId?: string })
 }
 
 /** Chapa can briefly report `pending` right after redirect; poll until terminal or timeout. */
-async function verifyPaymentWithRetries(input: { txRef?: string; orderId?: string }): Promise<VerifyResponse> {
+async function verifyPaymentWithRetries(input: {
+  txRef?: string;
+  orderId?: string;
+  orderAccessToken?: string;
+}): Promise<VerifyResponse> {
   const maxAttempts = 15;
   const delayMs = 2000;
   let last: VerifyResponse | null = null;
@@ -50,6 +63,7 @@ function PaymentSuccessPage() {
     "verifying" | "success" | "failed" | "pending_slow" | "error"
   >("verifying");
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [guestToken, setGuestToken] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,13 +74,27 @@ function PaymentSuccessPage() {
       params.get("txRef") ??
       params.get("transaction_ref");
     const orderIdFromUrl = params.get("orderId") ?? params.get("order_id");
+    /**
+     * Some clients/email renderers turn `&` into `&amp;` when rewriting links.
+     * That shows up as a literal `amp;token` key in `URLSearchParams`. Accept
+     * both so the guest-checkout token survives a broken redirect chain.
+     */
+    const orderAccessToken =
+      params.get("token") ??
+      params.get("amp;token") ??
+      undefined;
+    if (orderAccessToken) {
+      setGuestToken(orderAccessToken);
+    }
 
     if (!txRef && !orderIdFromUrl) {
       setStatus("error");
       return;
     }
 
-    const verifyInput = txRef ? { txRef } : { orderId: orderIdFromUrl! };
+    const verifyInput = txRef
+      ? { txRef, ...(orderAccessToken ? { orderAccessToken } : {}) }
+      : { orderId: orderIdFromUrl!, ...(orderAccessToken ? { orderAccessToken } : {}) };
 
     void (async () => {
       try {
@@ -125,10 +153,17 @@ function PaymentSuccessPage() {
             <Button
               className="mt-6"
               onClick={() =>
-                void navigate({
-                  to: "/$locale/orders/$orderId",
-                  params: { locale, orderId: orderId ?? "" },
-                })
+                void navigate(
+                  guestToken
+                    ? {
+                        to: "/$locale/orders/by-token/$token",
+                        params: { locale, token: guestToken },
+                      }
+                    : {
+                        to: "/$locale/orders/$orderId",
+                        params: { locale, orderId: orderId ?? "" },
+                      },
+                )
               }
             >
               View Order
@@ -162,13 +197,17 @@ function PaymentSuccessPage() {
               className="mt-6"
               variant="outline"
               onClick={() =>
-                void navigate({
-                  to: "/$locale/orders",
-                  params: { locale },
-                })
+                void navigate(
+                  guestToken
+                    ? {
+                        to: "/$locale/orders/by-token/$token",
+                        params: { locale, token: guestToken },
+                      }
+                    : { to: "/$locale/orders", params: { locale } },
+                )
               }
             >
-              View Orders
+              View Order{guestToken ? "" : "s"}
             </Button>
           </>
         )}
@@ -198,13 +237,17 @@ function PaymentSuccessPage() {
               className="mt-6"
               variant="outline"
               onClick={() =>
-                void navigate({
-                  to: "/$locale/orders",
-                  params: { locale },
-                })
+                void navigate(
+                  guestToken
+                    ? {
+                        to: "/$locale/orders/by-token/$token",
+                        params: { locale, token: guestToken },
+                      }
+                    : { to: "/$locale/orders", params: { locale } },
+                )
               }
             >
-              View Orders
+              View Order{guestToken ? "" : "s"}
             </Button>
           </>
         )}
@@ -234,13 +277,17 @@ function PaymentSuccessPage() {
               className="mt-6"
               variant="outline"
               onClick={() =>
-                void navigate({
-                  to: "/$locale/orders",
-                  params: { locale },
-                })
+                void navigate(
+                  guestToken
+                    ? {
+                        to: "/$locale/orders/by-token/$token",
+                        params: { locale, token: guestToken },
+                      }
+                    : { to: "/$locale/orders", params: { locale } },
+                )
               }
             >
-              View Orders
+              View Order{guestToken ? "" : "s"}
             </Button>
           </>
         )}

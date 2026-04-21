@@ -7,11 +7,13 @@ import { prisma } from "../../lib/db";
 import { toNumber } from "../../lib/money";
 import {
   createCategorySchema,
+  createPromoCodeSchema,
   createPromotionSchema,
   listQuerySchema,
   patchCategorySchema,
   patchListingSchema,
   patchOrderSchema,
+  patchPromoCodeSchema,
   patchPromotionSchema,
   patchShopStatusSchema,
   patchUserSchema,
@@ -856,5 +858,141 @@ adminRouter.delete("/admin/promotions/:id", async (c) => {
     throw new HTTPException(404, { message: "Promotion not found" });
   }
   await prisma.promotion.delete({ where: { id } });
+  return c.json({ ok: true });
+});
+
+// ---------------------------------------------------------------------------
+// Promo codes (admin CRUD)
+// ---------------------------------------------------------------------------
+
+function serializePromoCode(p: {
+  id: string;
+  code: string;
+  description: string | null;
+  discountPercent: number | null;
+  discountAmount: Prisma.Decimal | null;
+  minSubtotal: Prisma.Decimal | null;
+  maxRedemptions: number | null;
+  perUserLimit: number | null;
+  redemptions: number;
+  validFrom: Date | null;
+  validUntil: Date | null;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: p.id,
+    code: p.code,
+    description: p.description,
+    discountPercent: p.discountPercent,
+    discountAmount: p.discountAmount != null ? toNumber(p.discountAmount) : null,
+    minSubtotal: p.minSubtotal != null ? toNumber(p.minSubtotal) : null,
+    maxRedemptions: p.maxRedemptions,
+    perUserLimit: p.perUserLimit,
+    redemptions: p.redemptions,
+    validFrom: p.validFrom?.toISOString() ?? null,
+    validUntil: p.validUntil?.toISOString() ?? null,
+    active: p.active,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  };
+}
+
+adminRouter.get("/admin/promo-codes", async (c) => {
+  const { page, pageSize, q } = parseListQuery(c);
+  const where: Prisma.PromoCodeWhereInput = q
+    ? { code: { contains: q.toUpperCase() } }
+    : {};
+  const [total, rows] = await prisma.$transaction([
+    prisma.promoCode.count({ where }),
+    prisma.promoCode.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+  ]);
+  return c.json({
+    promoCodes: rows.map(serializePromoCode),
+    page,
+    pageSize,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  });
+});
+
+adminRouter.post("/admin/promo-codes", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = createPromoCodeSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new HTTPException(400, { message: "Invalid body" });
+  }
+  const d = parsed.data;
+  try {
+    const created = await prisma.promoCode.create({
+      data: {
+        code: d.code,
+        description: d.description ?? null,
+        discountPercent: d.discountPercent ?? null,
+        discountAmount: d.discountAmount != null ? new Prisma.Decimal(d.discountAmount) : null,
+        minSubtotal: d.minSubtotal != null ? new Prisma.Decimal(d.minSubtotal) : null,
+        maxRedemptions: d.maxRedemptions ?? null,
+        perUserLimit: d.perUserLimit ?? null,
+        validFrom: d.validFrom ? new Date(d.validFrom) : null,
+        validUntil: d.validUntil ? new Date(d.validUntil) : null,
+        active: d.active,
+      },
+    });
+    return c.json({ promoCode: serializePromoCode(created) });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw new HTTPException(400, { message: "Promo code already exists" });
+    }
+    throw err;
+  }
+});
+
+adminRouter.patch("/admin/promo-codes/:id", async (c) => {
+  const id = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const parsed = patchPromoCodeSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new HTTPException(400, { message: "Invalid body" });
+  }
+  const existing = await prisma.promoCode.findUnique({ where: { id } });
+  if (!existing) {
+    throw new HTTPException(404, { message: "Promo code not found" });
+  }
+  const d = parsed.data;
+  const updated = await prisma.promoCode.update({
+    where: { id },
+    data: {
+      ...(d.code != null ? { code: d.code } : {}),
+      ...(d.description !== undefined ? { description: d.description ?? null } : {}),
+      ...(d.discountPercent !== undefined ? { discountPercent: d.discountPercent ?? null } : {}),
+      ...(d.discountAmount !== undefined
+        ? { discountAmount: d.discountAmount != null ? new Prisma.Decimal(d.discountAmount) : null }
+        : {}),
+      ...(d.minSubtotal !== undefined
+        ? { minSubtotal: d.minSubtotal != null ? new Prisma.Decimal(d.minSubtotal) : null }
+        : {}),
+      ...(d.maxRedemptions !== undefined ? { maxRedemptions: d.maxRedemptions ?? null } : {}),
+      ...(d.perUserLimit !== undefined ? { perUserLimit: d.perUserLimit ?? null } : {}),
+      ...(d.validFrom !== undefined ? { validFrom: d.validFrom ? new Date(d.validFrom) : null } : {}),
+      ...(d.validUntil !== undefined ? { validUntil: d.validUntil ? new Date(d.validUntil) : null } : {}),
+      ...(d.active !== undefined ? { active: d.active } : {}),
+    },
+  });
+  return c.json({ promoCode: serializePromoCode(updated) });
+});
+
+adminRouter.delete("/admin/promo-codes/:id", async (c) => {
+  const id = c.req.param("id");
+  const existing = await prisma.promoCode.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) {
+    throw new HTTPException(404, { message: "Promo code not found" });
+  }
+  await prisma.promoCode.delete({ where: { id } });
   return c.json({ ok: true });
 });

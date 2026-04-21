@@ -166,10 +166,11 @@ export function SellerRegisterPage() {
       ...(form.businessSpecificLocation?.trim()
         ? { businessSpecificLocation: form.businessSpecificLocation.trim() }
         : {}),
+      acceptedSellerPolicy: agreedToTerms,
     };
 
     await createShop.mutateAsync(body);
-    void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
+    void navigate({ to: "/$locale/sell/onboarding", params: { locale } });
   }
 
   return (

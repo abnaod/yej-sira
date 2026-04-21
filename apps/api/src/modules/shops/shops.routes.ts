@@ -8,9 +8,61 @@ import { prisma, publicListingVisibilityWhere } from "../../lib/db";
 import { requireUserId } from "../../lib/auth";
 import { getOwnedShop } from "./shops.authz";
 import { getListingCardInclude, mapListingCard } from "../catalog/catalog.mappers";
-import { createShopBodySchema, publicShopListingsQuerySchema } from "./shops.schema";
+import {
+  createShopBodySchema,
+  publicShopListingsQuerySchema,
+  updateShopBodySchema,
+} from "./shops.schema";
 
 export const shopsRouter = new Hono();
+
+type OnboardingStep = {
+  id:
+    | "profile"
+    | "policies"
+    | "payout"
+    | "firstListing"
+    | "acceptedSellerPolicy";
+  done: boolean;
+  label: string;
+};
+
+function computeOnboardingSteps(
+  shop: Shop,
+  listingCount: number,
+): OnboardingStep[] {
+  return [
+    {
+      id: "profile",
+      done: !!(shop.name && shop.description && shop.imageUrl),
+      label: "Shop name, description, and logo",
+    },
+    {
+      id: "policies",
+      done: !!(shop.shippingPolicy && shop.returnsPolicy),
+      label: "Shipping and returns policies",
+    },
+    {
+      id: "payout",
+      done: !!(
+        shop.payoutMethod &&
+        shop.payoutAccountName &&
+        shop.payoutAccountNumber
+      ),
+      label: "Payout account",
+    },
+    {
+      id: "firstListing",
+      done: listingCount > 0,
+      label: "At least one listing",
+    },
+    {
+      id: "acceptedSellerPolicy",
+      done: !!shop.acceptedSellerPolicyAt,
+      label: "Accept seller policy",
+    },
+  ];
+}
 
 function jsonShopForOwner(shop: Shop) {
   return {
@@ -34,6 +86,12 @@ function jsonShopForOwner(shop: Shop) {
     businessKebele: shop.businessKebele,
     businessHouseNumber: shop.businessHouseNumber,
     businessSpecificLocation: shop.businessSpecificLocation,
+    payoutMethod: shop.payoutMethod,
+    payoutAccountName: shop.payoutAccountName,
+    payoutAccountNumber: shop.payoutAccountNumber,
+    payoutBankCode: shop.payoutBankCode,
+    acceptedSellerPolicyAt: shop.acceptedSellerPolicyAt?.toISOString() ?? null,
+    onboardingCompletedAt: shop.onboardingCompletedAt?.toISOString() ?? null,
     createdAt: shop.createdAt.toISOString(),
     updatedAt: shop.updatedAt.toISOString(),
   };
@@ -52,6 +110,107 @@ async function shopsMeHandler(c: Context) {
 shopsRouter.get("/shops/me", shopsMeHandler);
 /** Some clients/proxies normalize with a trailing slash; without this, `/shops/me/` 404s. */
 shopsRouter.get("/shops/me/", shopsMeHandler);
+
+shopsRouter.get("/shops/me/onboarding", async (c) => {
+  const userId = await requireUserId(c);
+  const shop = await getOwnedShop(userId);
+  if (!shop) {
+    return c.json({ shop: null, steps: [], canPublish: false });
+  }
+  const listingCount = await prisma.listing.count({ where: { shopId: shop.id } });
+  const steps = computeOnboardingSteps(shop, listingCount);
+  const canPublish = steps.every((s) => s.done);
+  return c.json({
+    shop: jsonShopForOwner(shop),
+    steps,
+    canPublish,
+    status: shop.status,
+  });
+});
+
+shopsRouter.patch("/shops/me", async (c) => {
+  const userId = await requireUserId(c);
+  const shop = await getOwnedShop(userId);
+  if (!shop) {
+    throw new HTTPException(404, { message: "Shop not found" });
+  }
+  if (shop.status === "rejected" || shop.status === "suspended") {
+    throw new HTTPException(403, { message: "Shop cannot be edited" });
+  }
+
+  const body = await c.req.json().catch(() => null);
+  const parsed = updateShopBodySchema.safeParse(body);
+  if (!parsed.success) {
+    throw new HTTPException(400, { message: "Invalid body" });
+  }
+  const d = parsed.data;
+
+  const updated = await prisma.shop.update({
+    where: { id: shop.id },
+    data: {
+      ...(d.name != null ? { name: d.name } : {}),
+      ...(d.description !== undefined ? { description: d.description } : {}),
+      ...(d.imageUrl !== undefined ? { imageUrl: d.imageUrl } : {}),
+      ...(d.contactEmail !== undefined ? { contactEmail: d.contactEmail } : {}),
+      ...(d.contactPhone !== undefined ? { contactPhone: d.contactPhone } : {}),
+      ...(d.socialLinks !== undefined ? { socialLinks: d.socialLinks ?? {} } : {}),
+      ...(d.shippingPolicy !== undefined ? { shippingPolicy: d.shippingPolicy } : {}),
+      ...(d.returnsPolicy !== undefined ? { returnsPolicy: d.returnsPolicy } : {}),
+      ...(d.businessType !== undefined ? { businessType: d.businessType } : {}),
+      ...(d.businessLegalName !== undefined ? { businessLegalName: d.businessLegalName } : {}),
+      ...(d.businessTaxId !== undefined ? { businessTaxId: d.businessTaxId } : {}),
+      ...(d.businessCity !== undefined ? { businessCity: d.businessCity } : {}),
+      ...(d.businessSubcity !== undefined ? { businessSubcity: d.businessSubcity } : {}),
+      ...(d.businessWoreda !== undefined ? { businessWoreda: d.businessWoreda } : {}),
+      ...(d.businessKebele !== undefined ? { businessKebele: d.businessKebele } : {}),
+      ...(d.businessHouseNumber !== undefined ? { businessHouseNumber: d.businessHouseNumber } : {}),
+      ...(d.businessSpecificLocation !== undefined
+        ? { businessSpecificLocation: d.businessSpecificLocation }
+        : {}),
+      ...(d.payoutMethod !== undefined ? { payoutMethod: d.payoutMethod } : {}),
+      ...(d.payoutAccountName !== undefined ? { payoutAccountName: d.payoutAccountName } : {}),
+      ...(d.payoutAccountNumber !== undefined ? { payoutAccountNumber: d.payoutAccountNumber } : {}),
+      ...(d.payoutBankCode !== undefined ? { payoutBankCode: d.payoutBankCode } : {}),
+      ...(d.acceptedSellerPolicy === true
+        ? { acceptedSellerPolicyAt: new Date() }
+        : d.acceptedSellerPolicy === false
+          ? { acceptedSellerPolicyAt: null }
+          : {}),
+    },
+  });
+
+  return c.json({ shop: jsonShopForOwner(updated) });
+});
+
+shopsRouter.post("/shops/me/publish", async (c) => {
+  const userId = await requireUserId(c);
+  const shop = await getOwnedShop(userId);
+  if (!shop) {
+    throw new HTTPException(404, { message: "Shop not found" });
+  }
+  if (shop.status === "suspended" || shop.status === "rejected") {
+    throw new HTTPException(403, { message: "Shop cannot be published" });
+  }
+  if (shop.status === "active") {
+    return c.json({ shop: jsonShopForOwner(shop), alreadyActive: true });
+  }
+
+  const listingCount = await prisma.listing.count({ where: { shopId: shop.id } });
+  const steps = computeOnboardingSteps(shop, listingCount);
+  const missing = steps.filter((s) => !s.done).map((s) => s.id);
+  if (missing.length > 0) {
+    throw new HTTPException(400, {
+      message: `Onboarding incomplete: ${missing.join(", ")}`,
+    });
+  }
+
+  const updated = await prisma.shop.update({
+    where: { id: shop.id },
+    data: { status: "active", onboardingCompletedAt: new Date() },
+  });
+
+  return c.json({ shop: jsonShopForOwner(updated) });
+});
 
 shopsRouter.get("/shops/:slug", async (c) => {
   const locale = c.get("locale") as Locale;
@@ -141,8 +300,8 @@ shopsRouter.post("/shops", async (c) => {
       businessHouseNumber: d.businessHouseNumber,
       businessSpecificLocation: d.businessSpecificLocation,
       ownerUserId: userId,
-      // No admin moderation UI yet — new shops go live immediately.
-      status: "active",
+      status: "pending",
+      ...(d.acceptedSellerPolicy ? { acceptedSellerPolicyAt: new Date() } : {}),
     },
   });
 

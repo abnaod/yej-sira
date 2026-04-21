@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cartQuery } from "@/features/store/cart/cart.queries";
 import { currentUserQuery } from "@/features/shared/current-user.queries";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
@@ -41,6 +42,10 @@ export function Header() {
     enabled: !!session?.user,
   });
   const isAdmin = meQuery.data?.user.role === "admin";
+
+  const { data: cart } = useQuery(cartQuery(locale));
+  const cartItemCount =
+    cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
   const displayName =
     session?.user?.name?.trim() ||
@@ -151,10 +156,22 @@ export function Header() {
           <Link
             to="/$locale/cart"
             params={{ locale }}
-            className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-            aria-label={t("cart")}
+            className="relative inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
+            aria-label={
+              cartItemCount > 0
+                ? `${t("cart")} (${cartItemCount})`
+                : t("cart")
+            }
           >
             <ShoppingCart className="h-4 w-4" aria-hidden />
+            {cartItemCount > 0 ? (
+              <span
+                className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground tabular-nums"
+                aria-hidden
+              >
+                {cartItemCount > 99 ? "99+" : cartItemCount}
+              </span>
+            ) : null}
           </Link>
         </div>
       </div>

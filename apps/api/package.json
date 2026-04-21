@@ -4,17 +4,17 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=../../.env src/index.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2022 --outfile=dist/index.js --packages=external --sourcemap",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2022 --outfile=dist/index.js --sourcemap --external:dotenv --external:@prisma/client --external:@prisma/adapter-pg --external:pg --external:@hono/node-server --external:hono --external:better-auth --external:zod --external:@sentry/node",
     "start": "node --env-file=../../.env dist/index.js",
     "lint": "tsc --noEmit -p tsconfig.json",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
     "dotenv": "catalog:",
-    "@casl/ability": "catalog:",
-    "@casl/prisma": "catalog:",
     "@hono/node-server": "catalog:",
+    "@prisma/adapter-pg": "catalog:",
     "@prisma/client": "catalog:",
+    "pg": "catalog:",
     "@ys/db": "workspace:*",
     "@ys/intl": "workspace:*",
     "better-auth": "catalog:",

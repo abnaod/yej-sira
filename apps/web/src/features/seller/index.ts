@@ -8,8 +8,15 @@ export { SellerListingsPage } from "./listings/listings.page";
 export { SellerAppShell } from "./shell/app-shell";
 export {
   myShopQuery,
+  shopOnboardingQuery,
   createShopMutationOptions,
+  updateShopMutationOptions,
+  publishShopMutationOptions,
   type MyShop,
   type MyShopResponse,
   type CreateShopBody,
+  type UpdateShopBody,
+  type OnboardingStep,
+  type ShopOnboardingResponse,
 } from "./shared/shop.queries";
+export { SellerOnboardingPage } from "./onboarding/onboarding.page";

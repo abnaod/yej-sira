@@ -177,6 +177,13 @@ model Shop {
   businessKebele          String?    @map("business_kebele")
   businessHouseNumber     String?    @map("business_house_number")
   businessSpecificLocation String?   @map("business_specific_location")
+  /** Onboarding — Etsy-style checklist. Shop auto-activates when all required fields are set. */
+  acceptedSellerPolicyAt   DateTime?  @map("accepted_seller_policy_at")
+  payoutMethod             String?    @map("payout_method")
+  payoutAccountName        String?    @map("payout_account_name")
+  payoutAccountNumber      String?    @map("payout_account_number")
+  payoutBankCode           String?    @map("payout_bank_code")
+  onboardingCompletedAt    DateTime?  @map("onboarding_completed_at")
   listings             Listing[]
   createdAt            DateTime   @default(now()) @map("created_at")
   updatedAt            DateTime   @updatedAt @map("updated_at")
@@ -496,10 +503,32 @@ model Cart {
   user           User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   anonymousToken String?    @unique @map("anonymous_token")
   items          CartItem[]
+  /** Last applied promo code (denormalized for cart summary); validated on checkout. */
+  appliedPromoCode String?  @map("applied_promo_code")
   createdAt      DateTime   @default(now()) @map("created_at")
   updatedAt      DateTime   @updatedAt @map("updated_at")
 
   @@map("carts")
+}
+
+model PromoCode {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  description     String?
+  discountPercent Int?      @map("discount_percent")
+  discountAmount  Decimal?  @map("discount_amount") @db.Decimal(10, 2)
+  minSubtotal     Decimal?  @map("min_subtotal") @db.Decimal(10, 2)
+  maxRedemptions  Int?      @map("max_redemptions")
+  perUserLimit    Int?      @map("per_user_limit")
+  redemptions     Int       @default(0)
+  validFrom       DateTime? @map("valid_from")
+  validUntil      DateTime? @map("valid_until")
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([code])
+  @@map("promo_codes")
 }
 
 model CartItem {
@@ -534,10 +563,13 @@ model Order {
   shippingSpecificLocation String          @map("shipping_specific_location")
   items                    OrderItem[]
   payment                  Payment?
+  /** Idempotency key for checkout dedupe (userId + cart snapshot hash). */
+  idempotencyKey           String?         @map("idempotency_key")
   createdAt                DateTime        @default(now()) @map("created_at")
   updatedAt                DateTime        @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@index([idempotencyKey])
   @@map("orders")
 }
 

@@ -13,6 +13,11 @@ const monorepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 
 export default defineConfig({
   envDir: monorepoRoot,
+  build: {
+    rollupOptions: {
+      external: [/^@sentry\//],
+    },
+  },
   server: {
     /** Listen on all interfaces so both `localhost` and `127.0.0.1` work in dev. */
     host: true,

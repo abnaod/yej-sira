@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -71,12 +71,23 @@ export type AuthDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   redirectToSellerPortal?: boolean;
+  /**
+   * "checkout" renders the Etsy-style layout with "Continue as a guest" as the
+   * primary CTA above the sign-in/register form.
+   */
+  mode?: "default" | "checkout";
+  onContinueAsGuest?: () => void;
+  /** Invoked after a successful email or Google sign-in. */
+  onSignInSuccess?: () => void;
 };
 
 export function AuthDialog({
   open,
   onOpenChange,
   redirectToSellerPortal = false,
+  mode = "default",
+  onContinueAsGuest,
+  onSignInSuccess,
 }: AuthDialogProps) {
   const locale = useLocale() as Locale;
   const navigate = useNavigate();
@@ -123,6 +134,7 @@ export function AuthDialog({
       if (redirectToSellerPortal) {
         void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
       }
+      onSignInSuccess?.();
       onOpenChange(false);
     } finally {
       setPending(false);
@@ -169,6 +181,7 @@ export function AuthDialog({
       if (redirectToSellerPortal) {
         void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
       }
+      onSignInSuccess?.();
       onOpenChange(false);
     } finally {
       setPending(false);
@@ -181,22 +194,53 @@ export function AuthDialog({
     setOauthError(null);
   };
 
+  const isCheckout = mode === "checkout";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md gap-6 p-8 pb-6">
         <DialogHeader className="gap-1.5">
           <DialogTitle>
-            {tab === "login"
-              ? "Sign in to your account"
-              : "Create your YEJSIRA account"}
+            {isCheckout
+              ? "Go to checkout"
+              : tab === "login"
+                ? "Sign in to your account"
+                : "Create your YEJSIRA account"}
           </DialogTitle>
-          <DialogDescription>
-            Sign in or create an account to shop and track orders.
-          </DialogDescription>
+          {!isCheckout && (
+            <DialogDescription>
+              Sign in or create an account to shop and track orders.
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         <DialogBody className="flex-none max-h-[85dvh] py-2">
           <div className="flex flex-col gap-6">
+            {isCheckout && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="w-full text-sm"
+                  disabled={pending}
+                  onClick={() => {
+                    onContinueAsGuest?.();
+                    onOpenChange(false);
+                  }}
+                >
+                  Continue as a guest
+                </Button>
+                <div className="flex items-center gap-3">
+                  <Separator className="flex-1" />
+                  <span className="whitespace-nowrap text-sm text-muted-foreground">
+                    OR
+                  </span>
+                  <Separator className="flex-1" />
+                </div>
+                <p className="text-base font-semibold">Sign in or register</p>
+              </>
+            )}
             <div>
               {tab === "login" ? (
                 <form onSubmit={handleLogin} className="flex flex-col gap-5">
@@ -235,6 +279,16 @@ export function AuthDialog({
                   >
                     {pending ? "Signing in…" : "Sign in"}
                   </Button>
+                  <div className="text-center text-sm">
+                    <Link
+                      to="/$locale/auth/forgot-password"
+                      params={{ locale }}
+                      className="font-medium underline underline-offset-4"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      Forgot your password?
+                    </Link>
+                  </div>
                 </form>
               ) : (
                 <form onSubmit={handleRegister} className="flex flex-col gap-5">

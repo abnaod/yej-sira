@@ -57,11 +57,26 @@ export function SellerDashboardPage() {
     );
   }
 
+  if (shop.status === "pending") {
+    return (
+      <div className="mx-auto max-w-3xl px-4">
+        <p className="text-muted-foreground">
+          Your shop is still in setup. Finish onboarding to publish.
+        </p>
+        <Button className="mt-4" asChild>
+          <Link to="/$locale/sell/onboarding" params={{ locale }}>
+            Continue onboarding
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
   if (shop.status !== "active") {
     return (
       <div className="mx-auto max-w-3xl px-4">
         <p className="text-muted-foreground">
-          Your shop is {shop.status}. You can list listings once it&apos;s active.
+          Your shop is {shop.status}. Contact support if you believe this is an error.
         </p>
       </div>
     );

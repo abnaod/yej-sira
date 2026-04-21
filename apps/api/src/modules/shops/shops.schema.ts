@@ -46,6 +46,32 @@ export const createShopBodySchema = z.object({
   businessKebele: z.string().max(120).optional(),
   businessHouseNumber: z.string().max(80).optional(),
   businessSpecificLocation: z.string().max(500).optional(),
+  acceptedSellerPolicy: z.boolean().optional(),
+});
+
+export const updateShopBodySchema = z.object({
+  name: z.string().min(1).max(120).optional(),
+  description: z.string().max(2000).optional(),
+  imageUrl: imageRefSchema.optional(),
+  contactEmail: z.string().email().optional(),
+  contactPhone: z.string().max(40).optional(),
+  socialLinks: socialLinksSchema,
+  shippingPolicy: z.string().max(20000).optional(),
+  returnsPolicy: z.string().max(20000).optional(),
+  businessType: z.enum(["individual", "business"]).optional(),
+  businessLegalName: z.string().max(200).optional(),
+  businessTaxId: z.string().max(80).optional(),
+  businessCity: z.string().max(120).optional(),
+  businessSubcity: z.string().max(120).optional(),
+  businessWoreda: z.string().max(120).optional(),
+  businessKebele: z.string().max(120).optional(),
+  businessHouseNumber: z.string().max(80).optional(),
+  businessSpecificLocation: z.string().max(500).optional(),
+  payoutMethod: z.enum(["bank", "telebirr", "cbe"]).optional(),
+  payoutAccountName: z.string().max(200).optional(),
+  payoutAccountNumber: z.string().max(80).optional(),
+  payoutBankCode: z.string().max(40).optional(),
+  acceptedSellerPolicy: z.boolean().optional(),
 });
 
 export const publicShopListingsQuerySchema = z.object({

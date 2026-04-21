@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.turbo
+**/.turbo
+**/dist
+**/.output
+.git
+.github
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+tests/e2e
+**/.cache
+libs/db/prisma/migrations/*/migration.sql.tmp

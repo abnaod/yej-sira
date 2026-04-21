@@ -3,6 +3,8 @@ import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { OrderSummary } from "@/features/store/orders";
+import { useAuthDialog } from "@/features/shared/auth";
+import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,8 @@ export function CartPage() {
   const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { openAuth } = useAuthDialog();
+  const { data: session } = authClient.useSession();
 
   const { data: cartData } = useSuspenseQuery(cartQuery(locale));
 
@@ -63,8 +67,20 @@ export function CartPage() {
   const isEmpty = lineItems.length === 0;
   const totalUnits = lineItems.reduce((sum, i) => sum + i.quantity, 0);
 
-  const handleCheckout = () => {
+  const goToCheckout = () => {
     void router.navigate({ to: "/$locale/checkout", params: { locale } });
+  };
+
+  const handleCheckout = () => {
+    if (session?.user) {
+      goToCheckout();
+      return;
+    }
+    openAuth({
+      mode: "checkout",
+      onContinueAsGuest: goToCheckout,
+      onSignInSuccess: goToCheckout,
+    });
   };
 
   const handleApplyPromo = (code: string) => {

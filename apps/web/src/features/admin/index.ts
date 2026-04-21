@@ -7,6 +7,7 @@ export { AdminOrdersPage } from "./orders/orders.page";
 export { AdminOrderDetailPage } from "./orders/order-detail.page";
 export { AdminCategoriesPage } from "./categories/categories.page";
 export { AdminPromotionsPage } from "./promotions/promotions.page";
+export { AdminPromoCodesPage } from "./promo-codes/promo-codes.page";
 export {
   currentUserQuery,
   type CurrentUser,

@@ -1,14 +1,17 @@
-import type { ContentLocale } from "@prisma/client";
+import { Prisma, type ContentLocale } from "@prisma/client";
 import type { Locale } from "@ys/intl";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { createHash } from "crypto";
 
 import { pickListingName, pickVariantLabel } from "../catalog/catalog.localize";
 import { getOwnedShop } from "../shops/shops.authz";
 import { auth } from "../auth/auth";
+import { findOrCreateGuestUser } from "../auth/guest";
 import { prisma } from "../../lib/db";
 import { standardDeliveryFeeEtb } from "../../lib/delivery";
 import { toNumber } from "../../lib/money";
+import { signOrderAccess, verifyOrderAccess } from "../../lib/order-access";
 import { getOrCreateCart } from "../cart/cart.service";
 import { checkoutBodySchema } from "./orders.schema";
 
@@ -71,9 +74,6 @@ ordersRouter.get("/pickup-locations", async (c) => {
 ordersRouter.post("/checkout", async (c) => {
   const locale = c.get("locale");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session?.user) {
-    throw new HTTPException(401, { message: "Sign in required to checkout" });
-  }
 
   const body = await c.req.json().catch(() => null);
   const parsed = checkoutBodySchema.safeParse(body);
@@ -83,6 +83,7 @@ ordersRouter.post("/checkout", async (c) => {
   const data = parsed.data;
   const deliveryMethod = data.deliveryMethod;
   const paymentMethod = data.paymentMethod;
+  const isGuest = !session?.user;
 
   let pickupLoc: Awaited<ReturnType<typeof prisma.pickupLocation.findUnique>> = null;
   if (data.deliveryMethod === "pickup") {
@@ -112,14 +113,28 @@ ordersRouter.post("/checkout", async (c) => {
         };
 
   const phoneTrimmed = data.phone?.trim();
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: {
+  let buyerUserId: string;
+  let buyerEmail: string;
+  if (session?.user) {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        name: data.fullName,
+        email: data.email,
+        phone: phoneTrimmed ? phoneTrimmed : null,
+      },
+    });
+    buyerUserId = session.user.id;
+    buyerEmail = data.email;
+  } else {
+    const { user } = await findOrCreateGuestUser({
       name: data.fullName,
       email: data.email,
-      phone: phoneTrimmed ? phoneTrimmed : null,
-    },
-  });
+      phone: phoneTrimmed ?? null,
+    });
+    buyerUserId = user.id;
+    buyerEmail = user.email;
+  }
 
   const { cart } = await getOrCreateCart(c);
 
@@ -154,6 +169,49 @@ ordersRouter.post("/checkout", async (c) => {
     pickup: 0,
   } as const;
 
+  // Idempotency: dedupe accidental double-clicks on the same cart snapshot.
+  // Hash = userId + delivery + payment + each item (variantId, qty, unitPrice).
+  const snapshot = itemsPreview
+    .map((i) => `${i.variantId}:${i.quantity}:${toNumber(i.variant.price)}`)
+    .join("|");
+  const idempotencyKey = createHash("sha256")
+    .update(
+      [
+        buyerUserId,
+        deliveryMethod,
+        paymentMethod,
+        data.deliveryMethod === "pickup" ? data.pickupLocationId : "address",
+        snapshot,
+      ].join("#"),
+    )
+    .digest("hex");
+
+  const recent = await prisma.order.findFirst({
+    where: {
+      userId: buyerUserId,
+      idempotencyKey,
+      createdAt: { gt: new Date(Date.now() - 30_000) },
+    },
+    include: { payment: true },
+    orderBy: { createdAt: "desc" },
+  });
+  if (recent) {
+    return c.json({
+      order: {
+        id: recent.id,
+        status: recent.status,
+        total: toNumber(recent.total),
+        subtotal: toNumber(recent.subtotal),
+        shipping: toNumber(recent.shipping),
+        tax: toNumber(recent.tax),
+        deliveryMethod: recent.deliveryMethod,
+      },
+      txRef: recent.payment?.txRef ?? null,
+      orderAccessToken: isGuest ? signOrderAccess(recent.id, buyerEmail) : null,
+      idempotent: true,
+    });
+  }
+
   const txRef = `yejsira-txn-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
 
   const result = await prisma.$transaction(async (tx) => {
@@ -176,7 +234,7 @@ ordersRouter.post("/checkout", async (c) => {
 
     const order = await tx.order.create({
       data: {
-        userId: session.user.id,
+        userId: buyerUserId,
         status: orderStatus,
         subtotal,
         shipping,
@@ -184,6 +242,7 @@ ordersRouter.post("/checkout", async (c) => {
         total,
         deliveryMethod,
         pickupLocationId: data.deliveryMethod === "pickup" ? pickupLoc!.id : null,
+        idempotencyKey,
         ...shippingSnapshot,
         items: {
           create: items.map((line) => {
@@ -246,6 +305,7 @@ ordersRouter.post("/checkout", async (c) => {
       deliveryMethod: result.deliveryMethod,
     },
     txRef,
+    orderAccessToken: isGuest ? signOrderAccess(result.id, buyerEmail) : null,
   });
 });
 
@@ -294,6 +354,60 @@ ordersRouter.get("/orders", async (c) => {
   });
 });
 
+const orderDetailInclude = {
+  items: true,
+  user: { select: { email: true } },
+  payment: { select: { paymentMethod: true, status: true } },
+  pickupLocation: {
+    select: {
+      id: true,
+      name: true,
+      line1: true,
+      line2: true,
+      city: true,
+      postalCode: true,
+      country: true,
+    },
+  },
+} satisfies Prisma.OrderInclude;
+
+type OrderWithDetail = Prisma.OrderGetPayload<{ include: typeof orderDetailInclude }>;
+
+function mapOrderDetailResponse(order: OrderWithDetail) {
+  return {
+    id: order.id,
+    status: order.status,
+    subtotal: toNumber(order.subtotal),
+    shipping: toNumber(order.shipping),
+    tax: toNumber(order.tax),
+    total: toNumber(order.total),
+    deliveryMethod: order.deliveryMethod,
+    pickupLocation: order.pickupLocation,
+    shippingAddress: {
+      city: order.shippingCity,
+      subcity: order.shippingSubcity,
+      woreda: order.shippingWoreda,
+      kebele: order.shippingKebele,
+      specificLocation: order.shippingSpecificLocation,
+    },
+    createdAt: order.createdAt.toISOString(),
+    payment: order.payment
+      ? {
+          method: order.payment.paymentMethod,
+          status: order.payment.status,
+        }
+      : null,
+    items: order.items.map((i) => ({
+      id: i.id,
+      listingName: i.listingName,
+      variantLabel: i.variantLabel,
+      unitPrice: toNumber(i.unitPrice),
+      quantity: i.quantity,
+      imageUrl: i.imageUrl,
+    })),
+  };
+}
+
 ordersRouter.get("/orders/:id", async (c) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
@@ -303,21 +417,7 @@ ordersRouter.get("/orders/:id", async (c) => {
   const id = c.req.param("id");
   const order = await prisma.order.findFirst({
     where: { id },
-    include: {
-      items: true,
-      payment: { select: { paymentMethod: true, status: true } },
-      pickupLocation: {
-        select: {
-          id: true,
-          name: true,
-          line1: true,
-          line2: true,
-          city: true,
-          postalCode: true,
-          country: true,
-        },
-      },
-    },
+    include: orderDetailInclude,
   });
 
   if (!order) {
@@ -347,38 +447,29 @@ ordersRouter.get("/orders/:id", async (c) => {
     throw new HTTPException(404, { message: "Order not found" });
   }
 
-  return c.json({
-    order: {
-      id: order.id,
-      status: order.status,
-      subtotal: toNumber(order.subtotal),
-      shipping: toNumber(order.shipping),
-      tax: toNumber(order.tax),
-      total: toNumber(order.total),
-      deliveryMethod: order.deliveryMethod,
-      pickupLocation: order.pickupLocation,
-      shippingAddress: {
-        city: order.shippingCity,
-        subcity: order.shippingSubcity,
-        woreda: order.shippingWoreda,
-        kebele: order.shippingKebele,
-        specificLocation: order.shippingSpecificLocation,
-      },
-      createdAt: order.createdAt.toISOString(),
-      payment: order.payment
-        ? {
-            method: order.payment.paymentMethod,
-            status: order.payment.status,
-          }
-        : null,
-      items: order.items.map((i) => ({
-        id: i.id,
-        listingName: i.listingName,
-        variantLabel: i.variantLabel,
-        unitPrice: toNumber(i.unitPrice),
-        quantity: i.quantity,
-        imageUrl: i.imageUrl,
-      })),
-    },
+  return c.json({ order: mapOrderDetailResponse(order) });
+});
+
+/**
+ * Unauthenticated order lookup for guest checkouts. Token is an HMAC-signed
+ * payload binding `orderId + email`. The buyer receives it in the checkout
+ * response (so they can view their order immediately) and in the order
+ * confirmation email.
+ */
+ordersRouter.get("/orders/by-token/:token", async (c) => {
+  const token = c.req.param("token");
+  const verified = verifyOrderAccess(token);
+  if (!verified) {
+    throw new HTTPException(404, { message: "Order not found" });
+  }
+
+  const order = await prisma.order.findFirst({
+    where: { id: verified.orderId },
+    include: orderDetailInclude,
   });
+  if (!order || order.user?.email?.toLowerCase() !== verified.email) {
+    throw new HTTPException(404, { message: "Order not found" });
+  }
+
+  return c.json({ order: mapOrderDetailResponse(order) });
 });
