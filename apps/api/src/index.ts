@@ -99,6 +99,8 @@ app.use(
 );
 
 const api = new Hono();
+/** Same payload as `GET /health`; useful when a reverse proxy only forwards `/api/*` to this service. */
+api.get("/health", (c) => c.json({ ok: true }));
 api.use("*", localeMiddleware);
 
 api.use(
