@@ -58,7 +58,7 @@ pnpm + Turborepo monorepo: **TanStack Start** (`apps/web`), **Hono** API (`apps/
 ## Workspace layout
 
 - `apps/web` — TanStack Start, Tailwind v4, shadcn-style UI (`src/components/ui`), `auth-client` for Better Auth.
-- `apps/api` — Hono on port **3001**; Better Auth at `/api/auth/*`; storefront JSON API under `/api` (categories, listings, cart, checkout, orders); static assets at `/static/*` (served from `<repo>/public`).
+- `apps/api` — Hono on port **5001**; Better Auth at `/api/auth/*`; storefront JSON API under `/api` (categories, listings, cart, checkout, orders); static assets at `/static/*` (served from `<repo>/public`).
 - `libs/db` — Prisma schema (PostgreSQL) and shared `PrismaClient`.
 - `libs/tsconfig` — Shared `tsconfig` JSON presets.
 - `public/` — Static image assets served by the API at `/static/*`. Subfolders:
@@ -71,8 +71,8 @@ pnpm + Turborepo monorepo: **TanStack Start** (`apps/web`), **Hono** API (`apps/
 
 ## Ports
 
-- Web: `http://localhost:3000`
-- API: `http://localhost:3001`
+- Web: `http://localhost:5000`
+- API: `http://localhost:5001`
 
 TanStack Router regenerates `apps/web/src/routeTree.gen.ts` when you run `vite build` or `vite dev`. Commit updates after adding or changing routes.
 
@@ -99,7 +99,13 @@ Build and run the full stack:
 docker compose up --build
 ```
 
-Stop any local `pnpm dev` first — it binds the same host ports (`3000`, `3001`). `docker compose` loads your root **`.env`** for variable substitution and passes it into the `api` and `web` services (same secrets and app settings you use locally). Set **`POSTGRES_USER`**, **`POSTGRES_PASSWORD`**, and **`POSTGRES_DB`** in `.env` to match the credentials and database name in `DATABASE_URL` — Compose uses them for the Postgres container and builds the in-cluster API `DATABASE_URL` (host `postgres`). If your password breaks URL interpolation, set **`DOCKER_DATABASE_URL`** to the full URL with host `postgres` (see `.env.example`). Postgres is published on **`localhost:5433`** on the host so it does not fight with a local PostgreSQL on `5432`.
+Stop any local `pnpm dev` first — it binds the same host ports (`5000`, `5001`). `docker compose` loads your root **`.env`** for variable substitution and passes it into the `api` and `web` services (same secrets and app settings you use locally). Set **`POSTGRES_USER`**, **`POSTGRES_PASSWORD`**, and **`POSTGRES_DB`** in `.env` to match the credentials and database name in `DATABASE_URL` — Compose uses them for the Postgres container and builds the in-cluster API `DATABASE_URL` (host `postgres`). If your password breaks URL interpolation, set **`DOCKER_DATABASE_URL`** to the full URL with host `postgres` (see `.env.example`). Postgres is published on **`localhost:5433`** on the host so it does not fight with a local PostgreSQL on `5432`.
+
+### `public/` (static files and uploads)
+
+The API serves `<repo>/public` at `/static/*`. The **`api` service** bind-mounts **`./public` → `/app/public`** (read–write) so you can add catalog/seed images (many paths are gitignored) and, when S3 is not configured, **user uploads** under `public/uploads/`, without rebuilding the image. The image still contains a `COPY` of `public` from the build; the **mount wins at runtime** and overrides those files.
+
+**Dokploy (or any host):** attach a **volume** to the API container at **`/app/public`** and copy or sync your `public` tree (and ensure the container user can read and write that directory if you use local uploads). Your reverse proxy must still route `/static/*` to the API.
 
 ### First run: apply migrations (and optionally seed)
 
@@ -122,4 +128,4 @@ pnpm --filter @ys/e2e exec playwright install chromium
 pnpm --filter @ys/e2e test
 ```
 
-The tests expect the web app at `http://localhost:3000` and API at `http://localhost:3001`. Override with `E2E_BASE_URL` / `E2E_API_URL`.
+The tests expect the web app at `http://localhost:5000` and API at `http://localhost:5001`. Override with `E2E_BASE_URL` / `E2E_API_URL`.

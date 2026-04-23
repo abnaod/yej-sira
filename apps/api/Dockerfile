@@ -6,13 +6,20 @@
 #   Build type:     Dockerfile
 #   Build context:  . (repository root)
 #   Dockerfile:     apps/api/Dockerfile
-#   Exposed port:   3001
+#   Exposed port:   5001
+#   Root directory: leave empty or "." (repo root). If set to apps/api, Dokploy
+#   may try to write apps/api/.env under that folder and fail with
+#   .../code/apps/api/apps/api/.env (directory nonexistent).
 #
 # Required runtime env (set in Dokploy "Environment"):
 #   DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL,
 #   CORS_ORIGIN, PUBLIC_WEB_URL, CHAPA_SECRET_KEY, CHAPA_WEBHOOK_SECRET, ...
 # Optional:
 #   RUN_MIGRATIONS=false   # skip `prisma migrate deploy` on boot (default: true)
+#
+# Public assets: mount a volume to /app/public (read-write) so catalog files and
+# public/uploads/ persist without rebuilding. Same path in Docker Compose: ./public -> /app/public.
+# In Dokploy, add a volume and mount it to /app/public on the API service.
 
 ARG NODE_VERSION=20
 
@@ -53,7 +60,7 @@ FROM node:${NODE_VERSION}-alpine AS runtime
 RUN apk add --no-cache tini wget
 WORKDIR /app
 ENV NODE_ENV=production \
-    PORT=3001 \
+    PORT=5001 \
     HOST=0.0.0.0 \
     RUN_MIGRATIONS=true
 
@@ -71,7 +78,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
 USER app
 
 WORKDIR /app/apps/api
-EXPOSE 3001
+EXPOSE 5001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD wget -qO- "http://127.0.0.1:${PORT}/health" || exit 1
 

@@ -6,15 +6,15 @@
 #   Build type:     Dockerfile
 #   Build context:  . (repository root)
 #   Dockerfile:     apps/web/Dockerfile
-#   Exposed port:   3000
+#   Exposed port:   5000
 #
 # Build args (set in Dokploy "Build Args"):
 #   VITE_API_URL     Public URL the BROWSER uses to reach the API (e.g. https://api.example.com).
 #                    Baked into the client bundle — rebuilds are required to change it.
 #
 # Runtime env (set in Dokploy "Environment"):
-#   PORT=3000
-#   SERVER_API_URL   Internal URL the SSR server uses to reach the API (e.g. http://api:3001
+#   PORT=5000
+#   SERVER_API_URL   Internal URL the SSR server uses to reach the API (e.g. http://api:5001
 #                    in a compose stack, or the same public URL in a split deployment).
 #   NODE_ENV=production
 
@@ -57,7 +57,7 @@ FROM node:${NODE_VERSION}-alpine AS runtime
 RUN apk add --no-cache tini wget
 WORKDIR /app
 ENV NODE_ENV=production \
-    PORT=3000 \
+    PORT=5000 \
     HOST=0.0.0.0 \
     HOSTNAME=0.0.0.0
 
@@ -67,7 +67,7 @@ RUN addgroup -S app && adduser -S app -G app \
  && chown -R app:app /app
 USER app
 
-EXPOSE 3000
+EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD wget -qO- "http://127.0.0.1:${PORT}/" >/dev/null 2>&1 || exit 1
 
