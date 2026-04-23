@@ -1,45 +1,79 @@
-## Multi-stage Dockerfile for the Hono API.
-# Context: project root (run: `docker build -f apps/api/Dockerfile .`).
+# syntax=docker/dockerfile:1.7
+#
+# Multi-stage Dockerfile for the Hono API, tuned for Dokploy.
+#
+# Dokploy build settings:
+#   Build type:     Dockerfile
+#   Build context:  . (repository root)
+#   Dockerfile:     apps/api/Dockerfile
+#   Exposed port:   3001
+#
+# Required runtime env (set in Dokploy "Environment"):
+#   DATABASE_URL, BETTER_AUTH_SECRET, BETTER_AUTH_URL,
+#   CORS_ORIGIN, PUBLIC_WEB_URL, CHAPA_SECRET_KEY, CHAPA_WEBHOOK_SECRET, ...
+# Optional:
+#   RUN_MIGRATIONS=false   # skip `prisma migrate deploy` on boot (default: true)
 
-FROM node:20-alpine AS base
+ARG NODE_VERSION=20
+
+FROM node:${NODE_VERSION}-alpine AS base
 RUN corepack enable
 WORKDIR /repo
+ENV CI=true \
+    PNPM_HOME=/pnpm \
+    PATH=/pnpm:$PATH
 
-# --- deps layer ---
+# --- dependencies ---------------------------------------------------------
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
 COPY apps/api/package.json apps/api/package.json
 COPY libs ./libs
-RUN pnpm fetch --prod=false
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm fetch --prod=false
 
-# --- build ---
+# --- build ----------------------------------------------------------------
 FROM base AS build
 COPY --from=deps /repo /repo
 COPY . .
-RUN pnpm install --offline --frozen-lockfile
-# prisma.config.ts uses env("DATABASE_URL"); .env is not copied into the image (.dockerignore).
-# `prisma generate` does not connect — any valid URL satisfies the config.
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+    pnpm install --offline --frozen-lockfile
+# prisma.config.ts resolves DATABASE_URL via env(); the value only needs to parse
+# since `prisma generate` does not open a connection.
 ENV DATABASE_URL="postgresql://dockerbuild:dockerbuild@127.0.0.1:5432/dockerbuild?schema=public"
 RUN pnpm --filter @ys/db db:generate
 RUN pnpm --filter @ys/api build
 
-# --- runtime ---
-# esbuild bundles with --packages=external, so deps like `dotenv`, `hono`, `@prisma/client`
-# are resolved at runtime. pnpm stores real packages in /repo/node_modules/.pnpm and
-# exposes direct deps via symlinks in /repo/apps/api/node_modules, so we must preserve
-# the workspace layout (api + libs + root node_modules) for Node resolution to work.
-FROM node:20-alpine AS runtime
-RUN corepack enable
+# --- runtime --------------------------------------------------------------
+# esbuild bundles with `--packages=external`, so runtime packages (hono, prisma,
+# better-auth, …) are resolved by Node from the workspace's node_modules. pnpm
+# stores real packages under `/repo/node_modules/.pnpm` and exposes direct deps
+# via symlinks under `apps/api/node_modules` and `libs/*/node_modules`, so we
+# must preserve that layout in the runtime image.
+FROM node:${NODE_VERSION}-alpine AS runtime
+RUN apk add --no-cache tini wget
 WORKDIR /app
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    PORT=3001 \
+    HOST=0.0.0.0 \
+    RUN_MIGRATIONS=true
+
+# Workspace layout + installed deps (including prisma CLI for `migrate deploy`).
 COPY --from=build /repo/node_modules ./node_modules
 COPY --from=build /repo/apps/api ./apps/api
 COPY --from=build /repo/libs ./libs
 COPY --from=build /repo/package.json ./package.json
 COPY --from=build /repo/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --from=build /repo/public ./public
+COPY apps/api/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
+ && addgroup -S app && adduser -S app -G app \
+ && chown -R app:app /app
+USER app
 
 WORKDIR /app/apps/api
 EXPOSE 3001
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1:3001/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD wget -qO- "http://127.0.0.1:${PORT}/health" || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "dist/index.js"]
