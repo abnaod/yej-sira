@@ -13,56 +13,12 @@ import {
   publicShopListingsQuerySchema,
   updateShopBodySchema,
 } from "./shops.schema";
+import {
+  computeOnboardingSteps,
+  tryActivateShopIfOnboardingComplete,
+} from "./shops.onboarding";
 
 export const shopsRouter = new Hono();
-
-type OnboardingStep = {
-  id:
-    | "profile"
-    | "policies"
-    | "payout"
-    | "firstListing"
-    | "acceptedSellerPolicy";
-  done: boolean;
-  label: string;
-};
-
-function computeOnboardingSteps(
-  shop: Shop,
-  listingCount: number,
-): OnboardingStep[] {
-  return [
-    {
-      id: "profile",
-      done: !!(shop.name && shop.description && shop.imageUrl),
-      label: "Shop name, description, and logo",
-    },
-    {
-      id: "policies",
-      done: !!(shop.shippingPolicy && shop.returnsPolicy),
-      label: "Shipping and returns policies",
-    },
-    {
-      id: "payout",
-      done: !!(
-        shop.payoutMethod &&
-        shop.payoutAccountName &&
-        shop.payoutAccountNumber
-      ),
-      label: "Payout account",
-    },
-    {
-      id: "firstListing",
-      done: listingCount > 0,
-      label: "At least one listing",
-    },
-    {
-      id: "acceptedSellerPolicy",
-      done: !!shop.acceptedSellerPolicyAt,
-      label: "Accept seller policy",
-    },
-  ];
-}
 
 function jsonShopForOwner(shop: Shop) {
   return {
@@ -179,7 +135,8 @@ shopsRouter.patch("/shops/me", async (c) => {
     },
   });
 
-  return c.json({ shop: jsonShopForOwner(updated) });
+  const final = await tryActivateShopIfOnboardingComplete(updated.id);
+  return c.json({ shop: jsonShopForOwner(final) });
 });
 
 shopsRouter.post("/shops/me/publish", async (c) => {
@@ -195,21 +152,17 @@ shopsRouter.post("/shops/me/publish", async (c) => {
     return c.json({ shop: jsonShopForOwner(shop), alreadyActive: true });
   }
 
-  const listingCount = await prisma.listing.count({ where: { shopId: shop.id } });
-  const steps = computeOnboardingSteps(shop, listingCount);
-  const missing = steps.filter((s) => !s.done).map((s) => s.id);
-  if (missing.length > 0) {
-    throw new HTTPException(400, {
-      message: `Onboarding incomplete: ${missing.join(", ")}`,
-    });
+  const final = await tryActivateShopIfOnboardingComplete(shop.id);
+  if (final.status === "active") {
+    return c.json({ shop: jsonShopForOwner(final) });
   }
 
-  const updated = await prisma.shop.update({
-    where: { id: shop.id },
-    data: { status: "active", onboardingCompletedAt: new Date() },
+  const listingCount = await prisma.listing.count({ where: { shopId: shop.id } });
+  const steps = computeOnboardingSteps(final, listingCount);
+  const missing = steps.filter((s) => !s.done).map((s) => s.id);
+  throw new HTTPException(400, {
+    message: `Onboarding incomplete: ${missing.join(", ")}`,
   });
-
-  return c.json({ shop: jsonShopForOwner(updated) });
 });
 
 shopsRouter.get("/shops/:slug", async (c) => {
@@ -300,7 +253,8 @@ shopsRouter.post("/shops", async (c) => {
       businessHouseNumber: d.businessHouseNumber,
       businessSpecificLocation: d.businessSpecificLocation,
       ownerUserId: userId,
-      status: "pending",
+      status: "active",
+      onboardingCompletedAt: new Date(),
       ...(d.acceptedSellerPolicy ? { acceptedSellerPolicyAt: new Date() } : {}),
     },
   });

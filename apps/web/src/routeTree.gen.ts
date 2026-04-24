@@ -22,6 +22,7 @@ import { Route as LocalesellerSellRouteRouteImport } from './routes/$locale/(sel
 import { Route as LocaleadminAdminRouteRouteImport } from './routes/$locale/(admin)/admin/route'
 import { Route as LocalestoreSearchIndexRouteImport } from './routes/$locale/(store)/search/index'
 import { Route as LocalestoreOrdersIndexRouteImport } from './routes/$locale/(store)/orders/index'
+import { Route as LocalestoreMessagesIndexRouteImport } from './routes/$locale/(store)/messages/index'
 import { Route as LocalestoreFavoritesIndexRouteImport } from './routes/$locale/(store)/favorites/index'
 import { Route as LocalestoreCheckoutIndexRouteImport } from './routes/$locale/(store)/checkout/index'
 import { Route as LocalestoreCartIndexRouteImport } from './routes/$locale/(store)/cart/index'
@@ -30,6 +31,7 @@ import { Route as LocaleadminAdminIndexRouteImport } from './routes/$locale/(adm
 import { Route as LocalestoreShopsShopSlugRouteImport } from './routes/$locale/(store)/shops/$shopSlug'
 import { Route as LocalestorePromotionsSlugRouteImport } from './routes/$locale/(store)/promotions/$slug'
 import { Route as LocalestoreOrdersOrderIdRouteImport } from './routes/$locale/(store)/orders/$orderId'
+import { Route as LocalestoreMessagesConversationIdRouteImport } from './routes/$locale/(store)/messages/$conversationId'
 import { Route as LocalestoreListingsListingIdRouteImport } from './routes/$locale/(store)/listings/$listingId'
 import { Route as LocalestoreLegalTermsRouteImport } from './routes/$locale/(store)/legal/terms'
 import { Route as LocalestoreLegalSellerPolicyRouteImport } from './routes/$locale/(store)/legal/seller-policy'
@@ -46,13 +48,16 @@ import { Route as LocaleadminAdminPromoCodesRouteImport } from './routes/$locale
 import { Route as LocaleadminAdminListingsRouteImport } from './routes/$locale/(admin)/admin/listings'
 import { Route as LocaleadminAdminDashboardRouteImport } from './routes/$locale/(admin)/admin/dashboard'
 import { Route as LocaleadminAdminCategoriesRouteImport } from './routes/$locale/(admin)/admin/categories'
+import { Route as LocalesellerSellMessagesRouteRouteImport } from './routes/$locale/(seller)/sell/messages/route'
 import { Route as LocalestorePaymentsSuccessIndexRouteImport } from './routes/$locale/(store)/payments/success/index'
 import { Route as LocalesellerSellOrdersIndexRouteImport } from './routes/$locale/(seller)/sell/orders/index'
+import { Route as LocalesellerSellMessagesIndexRouteImport } from './routes/$locale/(seller)/sell/messages/index'
 import { Route as LocalesellerSellListingsIndexRouteImport } from './routes/$locale/(seller)/sell/listings/index'
 import { Route as LocaleadminAdminOrdersIndexRouteImport } from './routes/$locale/(admin)/admin/orders/index'
 import { Route as LocalestorePreviewListingsListingIdRouteImport } from './routes/$locale/(store)/preview/listings.$listingId'
 import { Route as LocalestoreOrdersByTokenTokenRouteImport } from './routes/$locale/(store)/orders/by-token/$token'
 import { Route as LocalesellerSellOrdersOrderIdRouteImport } from './routes/$locale/(seller)/sell/orders/$orderId'
+import { Route as LocalesellerSellMessagesConversationIdRouteImport } from './routes/$locale/(seller)/sell/messages/$conversationId'
 import { Route as LocalesellerSellListingsNewRouteImport } from './routes/$locale/(seller)/sell/listings/new'
 import { Route as LocalesellerSellListingsListingIdRouteImport } from './routes/$locale/(seller)/sell/listings/$listingId'
 import { Route as LocaleadminAdminOrdersOrderIdRouteImport } from './routes/$locale/(admin)/admin/orders/$orderId'
@@ -120,6 +125,12 @@ const LocalestoreOrdersIndexRoute = LocalestoreOrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => LocalestoreRouteRoute,
 } as any)
+const LocalestoreMessagesIndexRoute =
+  LocalestoreMessagesIndexRouteImport.update({
+    id: '/messages/',
+    path: '/messages/',
+    getParentRoute: () => LocalestoreRouteRoute,
+  } as any)
 const LocalestoreFavoritesIndexRoute =
   LocalestoreFavoritesIndexRouteImport.update({
     id: '/favorites/',
@@ -163,6 +174,12 @@ const LocalestoreOrdersOrderIdRoute =
   LocalestoreOrdersOrderIdRouteImport.update({
     id: '/orders/$orderId',
     path: '/orders/$orderId',
+    getParentRoute: () => LocalestoreRouteRoute,
+  } as any)
+const LocalestoreMessagesConversationIdRoute =
+  LocalestoreMessagesConversationIdRouteImport.update({
+    id: '/messages/$conversationId',
+    path: '/messages/$conversationId',
     getParentRoute: () => LocalestoreRouteRoute,
   } as any)
 const LocalestoreListingsListingIdRoute =
@@ -256,6 +273,12 @@ const LocaleadminAdminCategoriesRoute =
     path: '/categories',
     getParentRoute: () => LocaleadminAdminRouteRoute,
   } as any)
+const LocalesellerSellMessagesRouteRoute =
+  LocalesellerSellMessagesRouteRouteImport.update({
+    id: '/messages',
+    path: '/messages',
+    getParentRoute: () => LocalesellerSellRouteRoute,
+  } as any)
 const LocalestorePaymentsSuccessIndexRoute =
   LocalestorePaymentsSuccessIndexRouteImport.update({
     id: '/payments/success/',
@@ -267,6 +290,12 @@ const LocalesellerSellOrdersIndexRoute =
     id: '/orders/',
     path: '/orders/',
     getParentRoute: () => LocalesellerSellRouteRoute,
+  } as any)
+const LocalesellerSellMessagesIndexRoute =
+  LocalesellerSellMessagesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => LocalesellerSellMessagesRouteRoute,
   } as any)
 const LocalesellerSellListingsIndexRoute =
   LocalesellerSellListingsIndexRouteImport.update({
@@ -298,6 +327,12 @@ const LocalesellerSellOrdersOrderIdRoute =
     path: '/orders/$orderId',
     getParentRoute: () => LocalesellerSellRouteRoute,
   } as any)
+const LocalesellerSellMessagesConversationIdRoute =
+  LocalesellerSellMessagesConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => LocalesellerSellMessagesRouteRoute,
+  } as any)
 const LocalesellerSellListingsNewRoute =
   LocalesellerSellListingsNewRouteImport.update({
     id: '/listings/new',
@@ -326,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/$locale/auth/reset-password': typeof LocaleAuthResetPasswordRoute
   '/$locale/auth/verify-email': typeof LocaleAuthVerifyEmailRoute
   '/$locale/': typeof LocalestoreIndexRoute
+  '/$locale/sell/messages': typeof LocalesellerSellMessagesRouteRouteWithChildren
   '/$locale/admin/categories': typeof LocaleadminAdminCategoriesRoute
   '/$locale/admin/dashboard': typeof LocaleadminAdminDashboardRoute
   '/$locale/admin/listings': typeof LocaleadminAdminListingsRoute
@@ -342,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/$locale/legal/seller-policy': typeof LocalestoreLegalSellerPolicyRoute
   '/$locale/legal/terms': typeof LocalestoreLegalTermsRoute
   '/$locale/listings/$listingId': typeof LocalestoreListingsListingIdRoute
+  '/$locale/messages/$conversationId': typeof LocalestoreMessagesConversationIdRoute
   '/$locale/orders/$orderId': typeof LocalestoreOrdersOrderIdRoute
   '/$locale/promotions/$slug': typeof LocalestorePromotionsSlugRoute
   '/$locale/shops/$shopSlug': typeof LocalestoreShopsShopSlugRoute
@@ -350,16 +387,19 @@ export interface FileRoutesByFullPath {
   '/$locale/cart/': typeof LocalestoreCartIndexRoute
   '/$locale/checkout/': typeof LocalestoreCheckoutIndexRoute
   '/$locale/favorites/': typeof LocalestoreFavoritesIndexRoute
+  '/$locale/messages/': typeof LocalestoreMessagesIndexRoute
   '/$locale/orders/': typeof LocalestoreOrdersIndexRoute
   '/$locale/search/': typeof LocalestoreSearchIndexRoute
   '/$locale/admin/orders/$orderId': typeof LocaleadminAdminOrdersOrderIdRoute
   '/$locale/sell/listings/$listingId': typeof LocalesellerSellListingsListingIdRoute
   '/$locale/sell/listings/new': typeof LocalesellerSellListingsNewRoute
+  '/$locale/sell/messages/$conversationId': typeof LocalesellerSellMessagesConversationIdRoute
   '/$locale/sell/orders/$orderId': typeof LocalesellerSellOrdersOrderIdRoute
   '/$locale/orders/by-token/$token': typeof LocalestoreOrdersByTokenTokenRoute
   '/$locale/preview/listings/$listingId': typeof LocalestorePreviewListingsListingIdRoute
   '/$locale/admin/orders/': typeof LocaleadminAdminOrdersIndexRoute
   '/$locale/sell/listings/': typeof LocalesellerSellListingsIndexRoute
+  '/$locale/sell/messages/': typeof LocalesellerSellMessagesIndexRoute
   '/$locale/sell/orders/': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/payments/success/': typeof LocalestorePaymentsSuccessIndexRoute
 }
@@ -385,6 +425,7 @@ export interface FileRoutesByTo {
   '/$locale/legal/seller-policy': typeof LocalestoreLegalSellerPolicyRoute
   '/$locale/legal/terms': typeof LocalestoreLegalTermsRoute
   '/$locale/listings/$listingId': typeof LocalestoreListingsListingIdRoute
+  '/$locale/messages/$conversationId': typeof LocalestoreMessagesConversationIdRoute
   '/$locale/orders/$orderId': typeof LocalestoreOrdersOrderIdRoute
   '/$locale/promotions/$slug': typeof LocalestorePromotionsSlugRoute
   '/$locale/shops/$shopSlug': typeof LocalestoreShopsShopSlugRoute
@@ -393,16 +434,19 @@ export interface FileRoutesByTo {
   '/$locale/cart': typeof LocalestoreCartIndexRoute
   '/$locale/checkout': typeof LocalestoreCheckoutIndexRoute
   '/$locale/favorites': typeof LocalestoreFavoritesIndexRoute
+  '/$locale/messages': typeof LocalestoreMessagesIndexRoute
   '/$locale/orders': typeof LocalestoreOrdersIndexRoute
   '/$locale/search': typeof LocalestoreSearchIndexRoute
   '/$locale/admin/orders/$orderId': typeof LocaleadminAdminOrdersOrderIdRoute
   '/$locale/sell/listings/$listingId': typeof LocalesellerSellListingsListingIdRoute
   '/$locale/sell/listings/new': typeof LocalesellerSellListingsNewRoute
+  '/$locale/sell/messages/$conversationId': typeof LocalesellerSellMessagesConversationIdRoute
   '/$locale/sell/orders/$orderId': typeof LocalesellerSellOrdersOrderIdRoute
   '/$locale/orders/by-token/$token': typeof LocalestoreOrdersByTokenTokenRoute
   '/$locale/preview/listings/$listingId': typeof LocalestorePreviewListingsListingIdRoute
   '/$locale/admin/orders': typeof LocaleadminAdminOrdersIndexRoute
   '/$locale/sell/listings': typeof LocalesellerSellListingsIndexRoute
+  '/$locale/sell/messages': typeof LocalesellerSellMessagesIndexRoute
   '/$locale/sell/orders': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/payments/success': typeof LocalestorePaymentsSuccessIndexRoute
 }
@@ -419,6 +463,7 @@ export interface FileRoutesById {
   '/$locale/auth/reset-password': typeof LocaleAuthResetPasswordRoute
   '/$locale/auth/verify-email': typeof LocaleAuthVerifyEmailRoute
   '/$locale/(store)/': typeof LocalestoreIndexRoute
+  '/$locale/(seller)/sell/messages': typeof LocalesellerSellMessagesRouteRouteWithChildren
   '/$locale/(admin)/admin/categories': typeof LocaleadminAdminCategoriesRoute
   '/$locale/(admin)/admin/dashboard': typeof LocaleadminAdminDashboardRoute
   '/$locale/(admin)/admin/listings': typeof LocaleadminAdminListingsRoute
@@ -435,6 +480,7 @@ export interface FileRoutesById {
   '/$locale/(store)/legal/seller-policy': typeof LocalestoreLegalSellerPolicyRoute
   '/$locale/(store)/legal/terms': typeof LocalestoreLegalTermsRoute
   '/$locale/(store)/listings/$listingId': typeof LocalestoreListingsListingIdRoute
+  '/$locale/(store)/messages/$conversationId': typeof LocalestoreMessagesConversationIdRoute
   '/$locale/(store)/orders/$orderId': typeof LocalestoreOrdersOrderIdRoute
   '/$locale/(store)/promotions/$slug': typeof LocalestorePromotionsSlugRoute
   '/$locale/(store)/shops/$shopSlug': typeof LocalestoreShopsShopSlugRoute
@@ -443,16 +489,19 @@ export interface FileRoutesById {
   '/$locale/(store)/cart/': typeof LocalestoreCartIndexRoute
   '/$locale/(store)/checkout/': typeof LocalestoreCheckoutIndexRoute
   '/$locale/(store)/favorites/': typeof LocalestoreFavoritesIndexRoute
+  '/$locale/(store)/messages/': typeof LocalestoreMessagesIndexRoute
   '/$locale/(store)/orders/': typeof LocalestoreOrdersIndexRoute
   '/$locale/(store)/search/': typeof LocalestoreSearchIndexRoute
   '/$locale/(admin)/admin/orders/$orderId': typeof LocaleadminAdminOrdersOrderIdRoute
   '/$locale/(seller)/sell/listings/$listingId': typeof LocalesellerSellListingsListingIdRoute
   '/$locale/(seller)/sell/listings/new': typeof LocalesellerSellListingsNewRoute
+  '/$locale/(seller)/sell/messages/$conversationId': typeof LocalesellerSellMessagesConversationIdRoute
   '/$locale/(seller)/sell/orders/$orderId': typeof LocalesellerSellOrdersOrderIdRoute
   '/$locale/(store)/orders/by-token/$token': typeof LocalestoreOrdersByTokenTokenRoute
   '/$locale/(store)/preview/listings/$listingId': typeof LocalestorePreviewListingsListingIdRoute
   '/$locale/(admin)/admin/orders/': typeof LocaleadminAdminOrdersIndexRoute
   '/$locale/(seller)/sell/listings/': typeof LocalesellerSellListingsIndexRoute
+  '/$locale/(seller)/sell/messages/': typeof LocalesellerSellMessagesIndexRoute
   '/$locale/(seller)/sell/orders/': typeof LocalesellerSellOrdersIndexRoute
   '/$locale/(store)/payments/success/': typeof LocalestorePaymentsSuccessIndexRoute
 }
@@ -467,6 +516,7 @@ export interface FileRouteTypes {
     | '/$locale/auth/reset-password'
     | '/$locale/auth/verify-email'
     | '/$locale/'
+    | '/$locale/sell/messages'
     | '/$locale/admin/categories'
     | '/$locale/admin/dashboard'
     | '/$locale/admin/listings'
@@ -483,6 +533,7 @@ export interface FileRouteTypes {
     | '/$locale/legal/seller-policy'
     | '/$locale/legal/terms'
     | '/$locale/listings/$listingId'
+    | '/$locale/messages/$conversationId'
     | '/$locale/orders/$orderId'
     | '/$locale/promotions/$slug'
     | '/$locale/shops/$shopSlug'
@@ -491,16 +542,19 @@ export interface FileRouteTypes {
     | '/$locale/cart/'
     | '/$locale/checkout/'
     | '/$locale/favorites/'
+    | '/$locale/messages/'
     | '/$locale/orders/'
     | '/$locale/search/'
     | '/$locale/admin/orders/$orderId'
     | '/$locale/sell/listings/$listingId'
     | '/$locale/sell/listings/new'
+    | '/$locale/sell/messages/$conversationId'
     | '/$locale/sell/orders/$orderId'
     | '/$locale/orders/by-token/$token'
     | '/$locale/preview/listings/$listingId'
     | '/$locale/admin/orders/'
     | '/$locale/sell/listings/'
+    | '/$locale/sell/messages/'
     | '/$locale/sell/orders/'
     | '/$locale/payments/success/'
   fileRoutesByTo: FileRoutesByTo
@@ -526,6 +580,7 @@ export interface FileRouteTypes {
     | '/$locale/legal/seller-policy'
     | '/$locale/legal/terms'
     | '/$locale/listings/$listingId'
+    | '/$locale/messages/$conversationId'
     | '/$locale/orders/$orderId'
     | '/$locale/promotions/$slug'
     | '/$locale/shops/$shopSlug'
@@ -534,16 +589,19 @@ export interface FileRouteTypes {
     | '/$locale/cart'
     | '/$locale/checkout'
     | '/$locale/favorites'
+    | '/$locale/messages'
     | '/$locale/orders'
     | '/$locale/search'
     | '/$locale/admin/orders/$orderId'
     | '/$locale/sell/listings/$listingId'
     | '/$locale/sell/listings/new'
+    | '/$locale/sell/messages/$conversationId'
     | '/$locale/sell/orders/$orderId'
     | '/$locale/orders/by-token/$token'
     | '/$locale/preview/listings/$listingId'
     | '/$locale/admin/orders'
     | '/$locale/sell/listings'
+    | '/$locale/sell/messages'
     | '/$locale/sell/orders'
     | '/$locale/payments/success'
   id:
@@ -559,6 +617,7 @@ export interface FileRouteTypes {
     | '/$locale/auth/reset-password'
     | '/$locale/auth/verify-email'
     | '/$locale/(store)/'
+    | '/$locale/(seller)/sell/messages'
     | '/$locale/(admin)/admin/categories'
     | '/$locale/(admin)/admin/dashboard'
     | '/$locale/(admin)/admin/listings'
@@ -575,6 +634,7 @@ export interface FileRouteTypes {
     | '/$locale/(store)/legal/seller-policy'
     | '/$locale/(store)/legal/terms'
     | '/$locale/(store)/listings/$listingId'
+    | '/$locale/(store)/messages/$conversationId'
     | '/$locale/(store)/orders/$orderId'
     | '/$locale/(store)/promotions/$slug'
     | '/$locale/(store)/shops/$shopSlug'
@@ -583,16 +643,19 @@ export interface FileRouteTypes {
     | '/$locale/(store)/cart/'
     | '/$locale/(store)/checkout/'
     | '/$locale/(store)/favorites/'
+    | '/$locale/(store)/messages/'
     | '/$locale/(store)/orders/'
     | '/$locale/(store)/search/'
     | '/$locale/(admin)/admin/orders/$orderId'
     | '/$locale/(seller)/sell/listings/$listingId'
     | '/$locale/(seller)/sell/listings/new'
+    | '/$locale/(seller)/sell/messages/$conversationId'
     | '/$locale/(seller)/sell/orders/$orderId'
     | '/$locale/(store)/orders/by-token/$token'
     | '/$locale/(store)/preview/listings/$listingId'
     | '/$locale/(admin)/admin/orders/'
     | '/$locale/(seller)/sell/listings/'
+    | '/$locale/(seller)/sell/messages/'
     | '/$locale/(seller)/sell/orders/'
     | '/$locale/(store)/payments/success/'
   fileRoutesById: FileRoutesById
@@ -695,6 +758,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalestoreOrdersIndexRouteImport
       parentRoute: typeof LocalestoreRouteRoute
     }
+    '/$locale/(store)/messages/': {
+      id: '/$locale/(store)/messages/'
+      path: '/messages'
+      fullPath: '/$locale/messages/'
+      preLoaderRoute: typeof LocalestoreMessagesIndexRouteImport
+      parentRoute: typeof LocalestoreRouteRoute
+    }
     '/$locale/(store)/favorites/': {
       id: '/$locale/(store)/favorites/'
       path: '/favorites'
@@ -749,6 +819,13 @@ declare module '@tanstack/react-router' {
       path: '/orders/$orderId'
       fullPath: '/$locale/orders/$orderId'
       preLoaderRoute: typeof LocalestoreOrdersOrderIdRouteImport
+      parentRoute: typeof LocalestoreRouteRoute
+    }
+    '/$locale/(store)/messages/$conversationId': {
+      id: '/$locale/(store)/messages/$conversationId'
+      path: '/messages/$conversationId'
+      fullPath: '/$locale/messages/$conversationId'
+      preLoaderRoute: typeof LocalestoreMessagesConversationIdRouteImport
       parentRoute: typeof LocalestoreRouteRoute
     }
     '/$locale/(store)/listings/$listingId': {
@@ -863,6 +940,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleadminAdminCategoriesRouteImport
       parentRoute: typeof LocaleadminAdminRouteRoute
     }
+    '/$locale/(seller)/sell/messages': {
+      id: '/$locale/(seller)/sell/messages'
+      path: '/messages'
+      fullPath: '/$locale/sell/messages'
+      preLoaderRoute: typeof LocalesellerSellMessagesRouteRouteImport
+      parentRoute: typeof LocalesellerSellRouteRoute
+    }
     '/$locale/(store)/payments/success/': {
       id: '/$locale/(store)/payments/success/'
       path: '/payments/success'
@@ -876,6 +960,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/sell/orders/'
       preLoaderRoute: typeof LocalesellerSellOrdersIndexRouteImport
       parentRoute: typeof LocalesellerSellRouteRoute
+    }
+    '/$locale/(seller)/sell/messages/': {
+      id: '/$locale/(seller)/sell/messages/'
+      path: '/'
+      fullPath: '/$locale/sell/messages/'
+      preLoaderRoute: typeof LocalesellerSellMessagesIndexRouteImport
+      parentRoute: typeof LocalesellerSellMessagesRouteRoute
     }
     '/$locale/(seller)/sell/listings/': {
       id: '/$locale/(seller)/sell/listings/'
@@ -911,6 +1002,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/sell/orders/$orderId'
       preLoaderRoute: typeof LocalesellerSellOrdersOrderIdRouteImport
       parentRoute: typeof LocalesellerSellRouteRoute
+    }
+    '/$locale/(seller)/sell/messages/$conversationId': {
+      id: '/$locale/(seller)/sell/messages/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/$locale/sell/messages/$conversationId'
+      preLoaderRoute: typeof LocalesellerSellMessagesConversationIdRouteImport
+      parentRoute: typeof LocalesellerSellMessagesRouteRoute
     }
     '/$locale/(seller)/sell/listings/new': {
       id: '/$locale/(seller)/sell/listings/new'
@@ -978,7 +1076,25 @@ const LocaleadminRouteRouteChildren: LocaleadminRouteRouteChildren = {
 const LocaleadminRouteRouteWithChildren =
   LocaleadminRouteRoute._addFileChildren(LocaleadminRouteRouteChildren)
 
+interface LocalesellerSellMessagesRouteRouteChildren {
+  LocalesellerSellMessagesConversationIdRoute: typeof LocalesellerSellMessagesConversationIdRoute
+  LocalesellerSellMessagesIndexRoute: typeof LocalesellerSellMessagesIndexRoute
+}
+
+const LocalesellerSellMessagesRouteRouteChildren: LocalesellerSellMessagesRouteRouteChildren =
+  {
+    LocalesellerSellMessagesConversationIdRoute:
+      LocalesellerSellMessagesConversationIdRoute,
+    LocalesellerSellMessagesIndexRoute: LocalesellerSellMessagesIndexRoute,
+  }
+
+const LocalesellerSellMessagesRouteRouteWithChildren =
+  LocalesellerSellMessagesRouteRoute._addFileChildren(
+    LocalesellerSellMessagesRouteRouteChildren,
+  )
+
 interface LocalesellerSellRouteRouteChildren {
+  LocalesellerSellMessagesRouteRoute: typeof LocalesellerSellMessagesRouteRouteWithChildren
   LocalesellerSellDashboardRoute: typeof LocalesellerSellDashboardRoute
   LocalesellerSellOnboardingRoute: typeof LocalesellerSellOnboardingRoute
   LocalesellerSellRegisterRoute: typeof LocalesellerSellRegisterRoute
@@ -991,6 +1107,8 @@ interface LocalesellerSellRouteRouteChildren {
 }
 
 const LocalesellerSellRouteRouteChildren: LocalesellerSellRouteRouteChildren = {
+  LocalesellerSellMessagesRouteRoute:
+    LocalesellerSellMessagesRouteRouteWithChildren,
   LocalesellerSellDashboardRoute: LocalesellerSellDashboardRoute,
   LocalesellerSellOnboardingRoute: LocalesellerSellOnboardingRoute,
   LocalesellerSellRegisterRoute: LocalesellerSellRegisterRoute,
@@ -1027,12 +1145,14 @@ interface LocalestoreRouteRouteChildren {
   LocalestoreLegalSellerPolicyRoute: typeof LocalestoreLegalSellerPolicyRoute
   LocalestoreLegalTermsRoute: typeof LocalestoreLegalTermsRoute
   LocalestoreListingsListingIdRoute: typeof LocalestoreListingsListingIdRoute
+  LocalestoreMessagesConversationIdRoute: typeof LocalestoreMessagesConversationIdRoute
   LocalestoreOrdersOrderIdRoute: typeof LocalestoreOrdersOrderIdRoute
   LocalestorePromotionsSlugRoute: typeof LocalestorePromotionsSlugRoute
   LocalestoreShopsShopSlugRoute: typeof LocalestoreShopsShopSlugRoute
   LocalestoreCartIndexRoute: typeof LocalestoreCartIndexRoute
   LocalestoreCheckoutIndexRoute: typeof LocalestoreCheckoutIndexRoute
   LocalestoreFavoritesIndexRoute: typeof LocalestoreFavoritesIndexRoute
+  LocalestoreMessagesIndexRoute: typeof LocalestoreMessagesIndexRoute
   LocalestoreOrdersIndexRoute: typeof LocalestoreOrdersIndexRoute
   LocalestoreSearchIndexRoute: typeof LocalestoreSearchIndexRoute
   LocalestoreOrdersByTokenTokenRoute: typeof LocalestoreOrdersByTokenTokenRoute
@@ -1048,12 +1168,15 @@ const LocalestoreRouteRouteChildren: LocalestoreRouteRouteChildren = {
   LocalestoreLegalSellerPolicyRoute: LocalestoreLegalSellerPolicyRoute,
   LocalestoreLegalTermsRoute: LocalestoreLegalTermsRoute,
   LocalestoreListingsListingIdRoute: LocalestoreListingsListingIdRoute,
+  LocalestoreMessagesConversationIdRoute:
+    LocalestoreMessagesConversationIdRoute,
   LocalestoreOrdersOrderIdRoute: LocalestoreOrdersOrderIdRoute,
   LocalestorePromotionsSlugRoute: LocalestorePromotionsSlugRoute,
   LocalestoreShopsShopSlugRoute: LocalestoreShopsShopSlugRoute,
   LocalestoreCartIndexRoute: LocalestoreCartIndexRoute,
   LocalestoreCheckoutIndexRoute: LocalestoreCheckoutIndexRoute,
   LocalestoreFavoritesIndexRoute: LocalestoreFavoritesIndexRoute,
+  LocalestoreMessagesIndexRoute: LocalestoreMessagesIndexRoute,
   LocalestoreOrdersIndexRoute: LocalestoreOrdersIndexRoute,
   LocalestoreSearchIndexRoute: LocalestoreSearchIndexRoute,
   LocalestoreOrdersByTokenTokenRoute: LocalestoreOrdersByTokenTokenRoute,

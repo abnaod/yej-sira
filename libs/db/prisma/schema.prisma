@@ -14,22 +14,25 @@ enum UserRole {
 }
 
 model User {
-  id             String          @id
-  name           String
-  email          String
-  phone          String?
-  emailVerified  Boolean         @map("email_verified")
-  image          String?
-  role           UserRole        @default(customer)
-  createdAt      DateTime        @map("created_at")
-  updatedAt      DateTime        @map("updated_at")
-  sessions       Session[]
-  accounts       Account[]
-  carts          Cart[]
-  orders         Order[]
-  favorites      Favorite[]
-  listingRatings ListingRating[]
-  ownedShop      Shop?
+  id                     String                         @id
+  name                   String
+  email                  String
+  phone                  String?
+  emailVerified          Boolean                        @map("email_verified")
+  image                  String?
+  role                   UserRole                       @default(customer)
+  createdAt              DateTime                       @map("created_at")
+  updatedAt              DateTime                       @map("updated_at")
+  sessions               Session[]
+  accounts               Account[]
+  carts                  Cart[]
+  orders                 Order[]
+  favorites              Favorite[]
+  listingRatings         ListingRating[]
+  ownedShop              Shop?
+  buyerConversations     Conversation[]                 @relation("ConversationBuyer")
+  messageSender          Message[]                      @relation("MessageSender")
+  conversationReadStates ConversationParticipantState[]
 
   @@unique([email])
   @@map("user")
@@ -155,38 +158,49 @@ enum BusinessType {
 }
 
 model Shop {
-  id                   String     @id @default(cuid())
-  slug                 String     @unique
-  name                 String
-  description          String?
-  imageUrl             String?    @map("image_url")
-  ownerUserId          String?    @map("owner_user_id")
-  owner                User?      @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
-  status               ShopStatus @default(pending)
-  contactEmail         String?    @map("contact_email")
-  contactPhone         String?    @map("contact_phone")
-  socialLinks          Json?      @map("social_links")
-  shippingPolicy       String?    @map("shipping_policy") @db.Text
-  returnsPolicy        String?    @map("returns_policy") @db.Text
-  businessType            BusinessType? @map("business_type")
-  businessLegalName       String?    @map("business_legal_name")
-  businessTaxId           String?    @map("business_tax_id")
-  businessCity            String?    @map("business_city")
-  businessSubcity         String?    @map("business_subcity")
-  businessWoreda          String?    @map("business_woreda")
-  businessKebele          String?    @map("business_kebele")
-  businessHouseNumber     String?    @map("business_house_number")
-  businessSpecificLocation String?   @map("business_specific_location")
-  /** Onboarding — Etsy-style checklist. Shop auto-activates when all required fields are set. */
-  acceptedSellerPolicyAt   DateTime?  @map("accepted_seller_policy_at")
-  payoutMethod             String?    @map("payout_method")
-  payoutAccountName        String?    @map("payout_account_name")
-  payoutAccountNumber      String?    @map("payout_account_number")
-  payoutBankCode           String?    @map("payout_bank_code")
-  onboardingCompletedAt    DateTime?  @map("onboarding_completed_at")
-  listings             Listing[]
-  createdAt            DateTime   @default(now()) @map("created_at")
-  updatedAt            DateTime   @updatedAt @map("updated_at")
+  id                       String         @id @default(cuid())
+  slug                     String         @unique
+  name                     String
+  description              String?
+  imageUrl                 String?        @map("image_url")
+  ownerUserId              String?        @map("owner_user_id")
+  owner                    User?          @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
+  status                   ShopStatus     @default(pending)
+  contactEmail             String?        @map("contact_email")
+  contactPhone             String?        @map("contact_phone")
+  socialLinks              Json?          @map("social_links")
+  shippingPolicy           String?        @map("shipping_policy") @db.Text
+  returnsPolicy            String?        @map("returns_policy") @db.Text
+  businessType             BusinessType?  @map("business_type")
+  businessLegalName        String?        @map("business_legal_name")
+  businessTaxId            String?        @map("business_tax_id")
+  businessCity             String?        @map("business_city")
+  businessSubcity          String?        @map("business_subcity")
+  businessWoreda           String?        @map("business_woreda")
+  businessKebele           String?        @map("business_kebele")
+  businessHouseNumber      String?        @map("business_house_number")
+  businessSpecificLocation String?        @map("business_specific_location")
+  /**
+   * Onboarding — Etsy-style checklist. Shop auto-activates when all required fields are set.
+   */
+  acceptedSellerPolicyAt   DateTime?      @map("accepted_seller_policy_at")
+  payoutMethod             String?        @map("payout_method")
+  payoutAccountName        String?        @map("payout_account_name")
+  payoutAccountNumber      String?        @map("payout_account_number")
+  payoutBankCode           String?        @map("payout_bank_code")
+  onboardingCompletedAt    DateTime?      @map("onboarding_completed_at")
+  /**
+   * Denormalized: rolling avg seconds to first reply; updated on message events.
+   */
+  responseTimeAvgSeconds   Int?           @map("response_time_avg_seconds")
+  /**
+   * Denormalized: 0.0–1.0; fraction of first buyer messages with reply within 24h.
+   */
+  responseRate             Decimal?       @map("response_rate") @db.Decimal(4, 3)
+  listings                 Listing[]
+  conversations            Conversation[]
+  createdAt                DateTime       @default(now()) @map("created_at")
+  updatedAt                DateTime       @updatedAt @map("updated_at")
 
   @@unique([ownerUserId])
   @@index([status])
@@ -396,6 +410,7 @@ model Listing {
   ratings           ListingRating[]
   attributeValues   ListingAttributeValue[]
   orderItems        OrderItem[]
+  conversations     Conversation[]
   createdAt         DateTime                @default(now()) @map("created_at")
   updatedAt         DateTime                @updatedAt @map("updated_at")
 
@@ -498,15 +513,17 @@ model ListingVariantTranslation {
 }
 
 model Cart {
-  id             String     @id @default(cuid())
-  userId         String?    @unique @map("user_id")
-  user           User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  anonymousToken String?    @unique @map("anonymous_token")
-  items          CartItem[]
-  /** Last applied promo code (denormalized for cart summary); validated on checkout. */
-  appliedPromoCode String?  @map("applied_promo_code")
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
+  id               String     @id @default(cuid())
+  userId           String?    @unique @map("user_id")
+  user             User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  anonymousToken   String?    @unique @map("anonymous_token")
+  items            CartItem[]
+  /**
+   * Last applied promo code (denormalized for cart summary); validated on checkout.
+   */
+  appliedPromoCode String?    @map("applied_promo_code")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
 
   @@map("carts")
 }
@@ -563,7 +580,9 @@ model Order {
   shippingSpecificLocation String          @map("shipping_specific_location")
   items                    OrderItem[]
   payment                  Payment?
-  /** Idempotency key for checkout dedupe (userId + cart snapshot hash). */
+  /**
+   * Idempotency key for checkout dedupe (userId + cart snapshot hash).
+   */
   idempotencyKey           String?         @map("idempotency_key")
   createdAt                DateTime        @default(now()) @map("created_at")
   updatedAt                DateTime        @updatedAt @map("updated_at")
@@ -607,4 +626,76 @@ model Payment {
   @@index([txRef])
   @@index([orderId])
   @@map("payments")
+}
+
+enum ConversationOutcome {
+  open
+  purchased
+  no_response
+  price_too_high
+  changed_mind
+  other
+
+  @@map("conversation_outcome")
+}
+
+enum MessageKind {
+  text
+  system
+  intent
+  quick_action
+  agreement_nudge
+
+  @@map("message_kind")
+}
+
+model Conversation {
+  id             String                         @id @default(cuid())
+  buyerUserId    String                         @map("buyer_user_id")
+  buyer          User                           @relation("ConversationBuyer", fields: [buyerUserId], references: [id], onDelete: Cascade)
+  sellerShopId   String                         @map("seller_shop_id")
+  shop           Shop                           @relation(fields: [sellerShopId], references: [id], onDelete: Restrict)
+  listingId      String                         @map("listing_id")
+  listing        Listing                        @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  lastMessageAt  DateTime                       @default(now()) @map("last_message_at")
+  outcome        ConversationOutcome            @default(open) @map("outcome")
+  outcomeAskedAt DateTime?                      @map("outcome_asked_at")
+  closedAt       DateTime?                      @map("closed_at")
+  messages       Message[]
+  readStates     ConversationParticipantState[]
+  createdAt      DateTime                       @default(now()) @map("created_at")
+
+  @@unique([buyerUserId, listingId])
+  @@index([sellerShopId, lastMessageAt])
+  @@index([buyerUserId, lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String                         @id @default(cuid())
+  conversationId String                         @map("conversation_id")
+  conversation   Conversation                   @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderUserId   String                         @map("sender_user_id")
+  sender         User                           @relation("MessageSender", fields: [senderUserId], references: [id], onDelete: Cascade)
+  kind           MessageKind                    @default(text)
+  body           String                         @db.Text
+  meta           Json?
+  createdAt      DateTime                       @default(now()) @map("created_at")
+  readStates     ConversationParticipantState[] @relation("LastReadMessage")
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model ConversationParticipantState {
+  conversationId    String       @map("conversation_id")
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId            String       @map("user_id")
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadMessageId String?      @map("last_read_message_id")
+  lastReadMessage   Message?     @relation("LastReadMessage", fields: [lastReadMessageId], references: [id], onDelete: SetNull)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_participant_states")
 }

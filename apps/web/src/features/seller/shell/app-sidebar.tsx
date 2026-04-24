@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Package, ShoppingBag, Store } from "lucide-react";
+import { LayoutDashboard, MessageSquare, Package, ShoppingBag, Store } from "lucide-react";
 
 import {
   Sidebar,
@@ -91,6 +91,17 @@ export function SellerAppSidebar() {
                   <Link to="/$locale/sell/orders" params={{ locale }}>
                     <ShoppingBag />
                     <span>Orders</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={matchesSellPath(pathname, locale, "/messages")}
+                >
+                  <Link to="/$locale/sell/messages" params={{ locale }}>
+                    <MessageSquare />
+                    <span>Messages</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

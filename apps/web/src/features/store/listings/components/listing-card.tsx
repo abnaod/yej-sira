@@ -3,6 +3,7 @@ import { Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { assetUrl } from "@/lib/api";
+import { featureCartCheckout } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -226,20 +227,22 @@ export function ListingCard({
           className={compact ? "mt-0.5" : "mt-1"}
         />
 
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!defaultVariantId}
-          className={cn(
-            "w-fit border-border bg-transparent text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground",
-            compact
-              ? "mt-1.5 h-7 px-2 text-[11px]"
-              : "mt-2",
-          )}
-          onClick={() => defaultVariantId && onAddToCart?.(defaultVariantId)}
-        >
-          {t("addToCart")}
-        </Button>
+        {featureCartCheckout && onAddToCart ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!defaultVariantId}
+            className={cn(
+              "w-fit border-border bg-transparent text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground",
+              compact
+                ? "mt-1.5 h-7 px-2 text-[11px]"
+                : "mt-2",
+            )}
+            onClick={() => defaultVariantId && onAddToCart(defaultVariantId)}
+          >
+            {t("addToCart")}
+          </Button>
+        ) : null}
       </div>
     </div>
   );

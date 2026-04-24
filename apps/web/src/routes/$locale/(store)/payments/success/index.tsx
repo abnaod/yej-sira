@@ -1,8 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { apiFetchJson } from "@/lib/api";
+import { featureCartCheckout } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 import { Button } from "@/components/ui/button";
 
@@ -52,6 +53,11 @@ async function verifyPaymentWithRetries(input: {
 }
 
 export const Route = createFileRoute("/$locale/(store)/payments/success/")({
+  beforeLoad: ({ params }) => {
+    if (!featureCartCheckout) {
+      throw redirect({ to: "/$locale", params: { locale: params.locale } });
+    }
+  },
   component: PaymentSuccessPage,
 });
 

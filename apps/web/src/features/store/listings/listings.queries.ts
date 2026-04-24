@@ -34,6 +34,8 @@ export type ListingDetailResponse = {
     priceFrom: number;
     promotion?: ListingPromotionDto;
     attributes: { key: string; label: string; displayValue: string }[];
+    /** True when the signed-in user owns the listing shop (cannot start a buyer conversation). */
+    isViewerShopOwner: boolean;
   };
 };
 

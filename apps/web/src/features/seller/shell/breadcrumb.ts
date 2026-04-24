@@ -32,6 +32,10 @@ export function sellerPortalHeaderTitle(
     return "Listings";
   }
 
+  if (segments[0] === "messages") {
+    return "";
+  }
+
   return segments.at(-1) ?? "Page";
 }
 
@@ -61,6 +65,10 @@ export function sellerPortalHeaderSubtitle(
       return "Update listing details, pricing, and inventory.";
     }
     return "Manage your catalog and inventory.";
+  }
+
+  if (segments[0] === "messages") {
+    return "";
   }
 
   return "Seller portal";

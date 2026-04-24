@@ -52,6 +52,8 @@ export function ListingPage() {
         <ListingGallery images={listing.images} listingName={listing.name} />
 
         <BuyBox
+          listingId={listing.id}
+          messageSellerDisabled={listing.isViewerShopOwner}
           name={listing.name}
           shop={listing.shop}
           monthlyPrice={99.99}

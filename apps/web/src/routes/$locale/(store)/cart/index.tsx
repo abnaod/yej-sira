@@ -1,10 +1,16 @@
 import type { Locale } from "@ys/intl";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { CartPage } from "@/features/store/cart";
 import { cartQuery } from "@/features/store/cart/cart.queries";
+import { featureCartCheckout } from "@/lib/features";
 
 export const Route = createFileRoute("/$locale/(store)/cart/")({
+  beforeLoad: ({ params }) => {
+    if (!featureCartCheckout) {
+      throw redirect({ to: "/$locale", params: { locale: params.locale } });
+    }
+  },
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(cartQuery(params.locale as Locale)),
   pendingComponent: () => (

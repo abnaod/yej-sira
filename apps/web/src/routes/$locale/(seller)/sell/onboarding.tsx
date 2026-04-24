@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { SellerOnboardingPage } from "@/features/seller";
-
+/** Onboarding is merged into the open-shop form; this URL is kept for old links. */
 export const Route = createFileRoute("/$locale/(seller)/sell/onboarding")({
-  component: SellerOnboardingPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: "/$locale/sell/dashboard", params: { locale: params.locale } });
+  },
 });

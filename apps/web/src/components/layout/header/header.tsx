@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  Bell,
   ChevronDown,
   Heart,
   LogOut,
+  MessageSquare,
   Package,
   Shield,
   ShoppingCart,
@@ -24,6 +26,7 @@ import {
 import { cartQuery } from "@/features/store/cart/cart.queries";
 import { currentUserQuery } from "@/features/shared/current-user.queries";
 import { authClient } from "@/lib/auth-client";
+import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 import { BrandLogo } from "../brand-logo";
 import { AnnouncementBar } from "./announcement-bar";
@@ -43,7 +46,10 @@ export function Header() {
   });
   const isAdmin = meQuery.data?.user.role === "admin";
 
-  const { data: cart } = useQuery(cartQuery(locale));
+  const { data: cart } = useQuery({
+    ...cartQuery(locale),
+    enabled: featureCartCheckout,
+  });
   const cartItemCount =
     cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
@@ -93,12 +99,22 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/$locale/orders" params={{ locale }}>
-                    <Package />
-                    {t("orders")}
-                  </Link>
-                </DropdownMenuItem>
+                {featureCartCheckout ? (
+                  <DropdownMenuItem asChild>
+                    <Link to="/$locale/orders" params={{ locale }}>
+                      <Package />
+                      {t("orders")}
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
+                {featureConversations ? (
+                  <DropdownMenuItem asChild>
+                    <Link to="/$locale/messages" params={{ locale }}>
+                      <MessageSquare />
+                      {t("messages")}
+                    </Link>
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem asChild>
                   <Link to="/$locale/sell" params={{ locale }}>
                     <Store />
@@ -143,6 +159,16 @@ export function Header() {
               <span className="hidden sm:inline">{t("account")}</span>
             </Button>
           )}
+          {!isPending && session?.user && featureConversations && (
+            <Link
+              to="/$locale/messages"
+              params={{ locale }}
+              className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
+              aria-label={t("notifications")}
+            >
+              <Bell className="h-4 w-4" aria-hidden />
+            </Link>
+          )}
           {!isPending && session?.user && (
             <Link
               to="/$locale/favorites"
@@ -153,26 +179,28 @@ export function Header() {
               <Heart className="h-4 w-4" aria-hidden />
             </Link>
           )}
-          <Link
-            to="/$locale/cart"
-            params={{ locale }}
-            className="relative inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-            aria-label={
-              cartItemCount > 0
-                ? `${t("cart")} (${cartItemCount})`
-                : t("cart")
-            }
-          >
-            <ShoppingCart className="h-4 w-4" aria-hidden />
-            {cartItemCount > 0 ? (
-              <span
-                className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground tabular-nums"
-                aria-hidden
-              >
-                {cartItemCount > 99 ? "99+" : cartItemCount}
-              </span>
-            ) : null}
-          </Link>
+          {featureCartCheckout ? (
+            <Link
+              to="/$locale/cart"
+              params={{ locale }}
+              className="relative inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
+              aria-label={
+                cartItemCount > 0
+                  ? `${t("cart")} (${cartItemCount})`
+                  : t("cart")
+              }
+            >
+              <ShoppingCart className="h-4 w-4" aria-hidden />
+              {cartItemCount > 0 ? (
+                <span
+                  className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground tabular-nums"
+                  aria-hidden
+                >
+                  {cartItemCount > 99 ? "99+" : cartItemCount}
+                </span>
+              ) : null}
+            </Link>
+          ) : null}
         </div>
       </div>
     </header>

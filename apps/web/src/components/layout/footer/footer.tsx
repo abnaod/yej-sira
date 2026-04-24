@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { featureCartCheckout } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 
 /** Slugs align with catalog seed */
@@ -144,7 +145,9 @@ export function Footer() {
             />
             <FooterColumn
               title={t("footerHelp")}
-              links={[...helpKeys]}
+              links={
+                featureCartCheckout ? [...helpKeys] : helpKeys.filter((k) => k !== "footerHelp3")
+              }
               locale={locale}
               t={t}
             />

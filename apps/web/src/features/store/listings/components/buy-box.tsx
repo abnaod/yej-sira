@@ -2,8 +2,13 @@ import { useState } from "react";
 import { Heart, Minus, Plus } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import type { Locale } from "@ys/intl";
 
 import type { AddToCartInput } from "@/features/store/cart/cart.queries";
+import { useAuthDialog } from "@/features/shared/auth";
+import { IntentSheet } from "@/features/store/conversations/components/intent-sheet";
+import { featureCartCheckout, featureConversations } from "@/lib/features";
+import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -18,6 +23,8 @@ export interface ListingVariantOption {
 }
 
 interface BuyBoxProps {
+  /** Listing cuid (for conversation API). */
+  listingId: string;
   name: string;
   description?: string;
   shop?: { slug: string; name: string; imageUrl: string | null };
@@ -33,12 +40,16 @@ interface BuyBoxProps {
   /** When set, purchase CTAs are disabled (e.g. draft storefront preview). */
   purchaseDisabled?: boolean;
   purchaseDisabledReason?: string;
+  /** Shop owner / preview: open conversation is not allowed. */
+  messageSellerDisabled?: boolean;
+  messageSellerDisabledReason?: string;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   favoritePending?: boolean;
 }
 
 export function BuyBox({
+  listingId,
   name,
   description,
   shop,
@@ -51,15 +62,22 @@ export function BuyBox({
   onAddToCart,
   purchaseDisabled,
   purchaseDisabledReason,
+  messageSellerDisabled,
+  messageSellerDisabledReason,
   isFavorite,
   onToggleFavorite,
   favoritePending,
   promotion,
 }: BuyBoxProps) {
   const { t } = useTranslation("common");
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
+  const { data: session } = authClient.useSession();
+  const { openAuth } = useAuthDialog();
+  const showMessage = featureConversations;
+  const showCommerce = featureCartCheckout;
   const [selected, setSelected] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [intentOpen, setIntentOpen] = useState(false);
 
   const v = variants[selected];
   const price = v?.price ?? 0;
@@ -73,6 +91,21 @@ export function BuyBox({
   if (!v) {
     return null;
   }
+
+  const ownListingHint =
+    messageSellerDisabled && (messageSellerDisabledReason ?? t("cannotMessageOwnListing"));
+
+  const openMessageFlow = () => {
+    if (!session?.user) {
+      openAuth({
+        onSignInSuccess: () => {
+          setIntentOpen(true);
+        },
+      });
+      return;
+    }
+    setIntentOpen(true);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -219,27 +252,55 @@ export function BuyBox({
       {purchaseDisabled && purchaseDisabledReason ? (
         <p className="text-sm text-muted-foreground">{purchaseDisabledReason}</p>
       ) : null}
-      <div className="flex gap-3">
+      {ownListingHint ? (
+        <p className="text-sm text-muted-foreground">{ownListingHint}</p>
+      ) : null}
+      {showMessage && (
         <Button
           size="lg"
-          className="flex-1"
-          disabled={stock < 1 || purchaseDisabled}
-          onClick={() => onBuyNow?.({ variantId: v.id, quantity, listingName: name })}
+          className="w-full"
+          disabled={stock < 1 || purchaseDisabled || messageSellerDisabled}
+          onClick={openMessageFlow}
         >
-          Buy Now
+          {t("messageSellerAboutItem")}
         </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          className="flex-1"
-          disabled={stock < 1 || purchaseDisabled}
-          onClick={() =>
-            onAddToCart?.({ variantId: v.id, quantity, listingName: name })
-          }
-        >
-          Add to Cart
-        </Button>
-      </div>
+      )}
+
+      {showCommerce && (
+        <div className="flex gap-3">
+          <Button
+            size="lg"
+            className="flex-1"
+            disabled={stock < 1 || purchaseDisabled}
+            onClick={() => onBuyNow?.({ variantId: v.id, quantity, listingName: name })}
+          >
+            {t("buyNow")}
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex-1"
+            disabled={stock < 1 || purchaseDisabled}
+            onClick={() =>
+              onAddToCart?.({ variantId: v.id, quantity, listingName: name })
+            }
+          >
+            {t("addToCart")}
+          </Button>
+        </div>
+      )}
+
+      {showMessage && !messageSellerDisabled && (
+        <IntentSheet
+          open={intentOpen}
+          onOpenChange={setIntentOpen}
+          listingId={listingId}
+          listingName={name}
+          variantLabel={v.label}
+          quantity={quantity}
+          locale={locale}
+        />
+      )}
     </div>
   );
 }

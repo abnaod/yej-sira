@@ -256,7 +256,17 @@ export function AuthDialog({
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="auth-login-password">Password</Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="auth-login-password">Password</Label>
+                      <Link
+                        to="/$locale/auth/forgot-password"
+                        params={{ locale }}
+                        className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        onClick={() => onOpenChange(false)}
+                      >
+                        Forgot your password?
+                      </Link>
+                    </div>
                     <Input
                       id="auth-login-password"
                       type="password"
@@ -279,16 +289,6 @@ export function AuthDialog({
                   >
                     {pending ? "Signing in…" : "Sign in"}
                   </Button>
-                  <div className="text-center text-sm">
-                    <Link
-                      to="/$locale/auth/forgot-password"
-                      params={{ locale }}
-                      className="font-medium underline underline-offset-4"
-                      onClick={() => onOpenChange(false)}
-                    >
-                      Forgot your password?
-                    </Link>
-                  </div>
                 </form>
               ) : (
                 <form onSubmit={handleRegister} className="flex flex-col gap-5">

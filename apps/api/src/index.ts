@@ -25,6 +25,7 @@ import { promotionsRouter } from "./modules/promotions/promotions.routes";
 import { shopsRouter } from "./modules/shops/shops.routes";
 import { sellerRouter } from "./modules/seller/seller.routes";
 import { paymentsRouter } from "./modules/payments/payments.routes";
+import { conversationsRouter } from "./modules/conversations/conversations.routes";
 import { seoRouter } from "./modules/seo/seo.routes";
 import { uploadsRouter } from "./modules/uploads/uploads.routes";
 
@@ -128,7 +129,17 @@ api.use(
 );
 api.use(
   "/listings/*/reviews",
-  rateLimit({ name: "reviews", limit: 5, windowMs: 60 * 60 * 1000, keyBy: "user" }),
+  rateLimit({
+    name: "reviews.write",
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+    keyBy: "user",
+    methods: ["POST", "DELETE"],
+  }),
+);
+api.use(
+  "/conversations/:id/messages",
+  rateLimit({ name: "conversations.send", limit: 60, windowMs: 60_000, keyBy: "user" }),
 );
 
 api.route("/", authRouter);
@@ -143,6 +154,7 @@ api.route("/", sellerRouter);
 api.route("/", paymentsRouter);
 api.route("/", uploadsRouter);
 api.route("/", adminRouter);
+api.route("/", conversationsRouter);
 
 app.route("/api", api);
 

@@ -1,9 +1,15 @@
 import type { Locale } from "@ys/intl";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { OrderDetailPage, orderDetailQuery } from "@/features/store/orders";
+import { featureCartCheckout } from "@/lib/features";
 
 export const Route = createFileRoute("/$locale/(store)/orders/$orderId")({
+  beforeLoad: ({ params }) => {
+    if (!featureCartCheckout) {
+      throw redirect({ to: "/$locale", params: { locale: params.locale } });
+    }
+  },
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(
       orderDetailQuery(params.locale as Locale, params.orderId),

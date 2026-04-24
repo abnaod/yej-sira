@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
+import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { sellerDashboardQuery } from "./dashboard.queries";
 import { SellerDashboardSectionCards } from "./dashboard-section-cards";
+import { SellerMessageMetricsCards } from "./message-metrics-cards";
 import { SellerDashboardRecentOrders } from "./recent-orders-card";
 import { sellerOrdersQuery } from "../orders/orders.queries";
 import { myShopQuery } from "../shared/shop.queries";
@@ -24,13 +26,17 @@ export function SellerDashboardPage() {
     ...myShopQuery(locale),
     enabled: !!session?.user,
   });
+  const shopStatus = shopState.data?.shop?.status;
+  const sellerCanUsePortal =
+    shopStatus === "active" || shopStatus === "pending";
+
   const dashboardState = useQuery({
     ...sellerDashboardQuery(locale),
-    enabled: !!session?.user && shopState.data?.shop?.status === "active",
+    enabled: !!session?.user && sellerCanUsePortal,
   });
   const recentOrdersState = useQuery({
     ...sellerOrdersQuery(locale, { page: 1, pageSize: 8 }),
-    enabled: !!session?.user && shopState.data?.shop?.status === "active",
+    enabled: !!session?.user && sellerCanUsePortal,
   });
   if (!session?.user) {
     return (
@@ -62,22 +68,7 @@ export function SellerDashboardPage() {
     );
   }
 
-  if (shop.status === "pending") {
-    return (
-      <div className="mx-auto max-w-3xl px-4">
-        <p className="text-muted-foreground">
-          Your shop is still in setup. Finish onboarding to publish.
-        </p>
-        <Button className="mt-4" asChild>
-          <Link to="/$locale/sell/onboarding" params={{ locale }}>
-            Continue onboarding
-          </Link>
-        </Button>
-      </div>
-    );
-  }
-
-  if (shop.status !== "active") {
+  if (shop.status === "rejected" || shop.status === "suspended") {
     return (
       <div className="mx-auto max-w-3xl px-4">
         <p className="text-muted-foreground">
@@ -92,6 +83,8 @@ export function SellerDashboardPage() {
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-4">
+      {featureConversations && !featureCartCheckout ? <SellerMessageMetricsCards /> : null}
+
       <SellerDashboardSectionCards
         stats={
           stats

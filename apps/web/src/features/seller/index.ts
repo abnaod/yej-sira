@@ -19,4 +19,3 @@ export {
   type OnboardingStep,
   type ShopOnboardingResponse,
 } from "./shared/shop.queries";
-export { SellerOnboardingPage } from "./onboarding/onboarding.page";

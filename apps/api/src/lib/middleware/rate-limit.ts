@@ -53,6 +53,11 @@ export type RateLimitOptions = {
   keyBy?: RateLimitKeyStrategy;
   /** Human-readable bucket tag (included in 429 headers and logs). */
   name: string;
+  /**
+   * When set, only these HTTP methods consume the limit (case-insensitive).
+   * Other methods skip rate limiting. Omit to limit all methods.
+   */
+  methods?: string[];
 };
 
 function getClientIp(c: Context): string {
@@ -88,6 +93,14 @@ async function deriveKey(
 
 export function rateLimit(opts: RateLimitOptions): MiddlewareHandler {
   return async (c, next) => {
+    if (opts.methods?.length) {
+      const method = c.req.method.toUpperCase();
+      const scoped = opts.methods.map((m) => m.toUpperCase());
+      if (!scoped.includes(method)) {
+        await next();
+        return;
+      }
+    }
     const strategy: RateLimitKeyStrategy = opts.keyBy ?? "ip";
     const key = await deriveKey(c, strategy, opts.name);
     const { allowed, retryAfter } = store.hit(key, opts.limit, opts.windowMs);

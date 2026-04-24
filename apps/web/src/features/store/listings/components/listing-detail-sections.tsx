@@ -51,7 +51,7 @@ export function ListingDetailSections({
           </dl>
         )}
         {description.trim() ? (
-          <p className="max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-foreground md:text-base">
+          <p className="max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-foreground">
             {description}
           </p>
         ) : (

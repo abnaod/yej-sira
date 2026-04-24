@@ -170,7 +170,7 @@ export function SellerRegisterPage() {
     };
 
     await createShop.mutateAsync(body);
-    void navigate({ to: "/$locale/sell/onboarding", params: { locale } });
+    void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
   }
 
   return (
