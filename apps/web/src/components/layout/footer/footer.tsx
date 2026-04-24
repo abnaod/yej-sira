@@ -21,20 +21,12 @@ const aboutKeys = [
   "footerAbout3",
 ] as const;
 
-const serviceLinks: { labelKey: "footerService1" | "footerService2" | "footerService3"; to?: "/$locale/sell" }[] = [
+const serviceLinks: { labelKey: "footerService1" | "footerService3"; to?: "/$locale/sell" }[] = [
   { labelKey: "footerService1" },
-  { labelKey: "footerService2" },
   { labelKey: "footerService3", to: "/$locale/sell" },
 ];
 
-const helpKeys = [
-  "footerHelp1",
-  "footerHelp2",
-  "footerHelp3",
-  "footerHelp4",
-  "footerHelp5",
-  "footerHelp6",
-] as const;
+const helpKeys = ["footerHelp3", "footerHelp4"] as const;
 
 function FooterLink({ children }: { children: React.ReactNode }) {
   return (

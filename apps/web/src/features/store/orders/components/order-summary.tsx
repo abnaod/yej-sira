@@ -160,7 +160,7 @@ export function OrderSummary({
 
         {onApplyPromo && (
           <div className="flex flex-col gap-1.5 pt-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="relative min-w-0 flex-1">
                 <TicketPercent
                   className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
@@ -184,7 +184,7 @@ export function OrderSummary({
                 size="sm"
                 onClick={handleApplyPromo}
                 disabled={isApplyingPromo || !promoCode.trim()}
-                className="h-9 shrink-0"
+                className="h-9 w-full shrink-0 sm:w-auto"
               >
                 Apply
               </Button>
