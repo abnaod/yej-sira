@@ -29,7 +29,15 @@ export default defineConfig({
     },
   },
   plugins: [
-    nitro({ rollupConfig: { external: [/^@sentry\//] } }),
+    nitro({
+      rollupConfig: { external: [/^@sentry\//] },
+      /** Hashed Vite assets are safe to cache forever; improves repeat visits (Lighthouse “cache lifetimes”). */
+      routeRules: {
+        "/assets/**": {
+          headers: { "cache-control": "public, max-age=31536000, immutable" },
+        },
+      },
+    }),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
     tailwindcss(),
     tanstackStart(),

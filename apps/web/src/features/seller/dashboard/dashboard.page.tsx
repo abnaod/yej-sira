@@ -1,16 +1,21 @@
 import type { Locale } from "@ys/intl";
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { sellerDashboardQuery } from "./dashboard.queries";
 import { SellerDashboardSectionCards } from "./dashboard-section-cards";
 import { SellerDashboardRecentOrders } from "./recent-orders-card";
-import { SellerOrdersChart } from "./orders-chart";
 import { sellerOrdersQuery } from "../orders/orders.queries";
 import { myShopQuery } from "../shared/shop.queries";
+
+const SellerOrdersChart = React.lazy(() =>
+  import("./orders-chart").then((m) => ({ default: m.SellerOrdersChart })),
+);
 
 export function SellerDashboardPage() {
   const locale = useLocale() as Locale;
@@ -101,7 +106,17 @@ export function SellerDashboardPage() {
         isLoading={dashboardLoading}
       />
 
-      <SellerOrdersChart data={stats?.ordersByDay ?? []} isLoading={dashboardLoading} />
+      <React.Suspense
+        fallback={
+          <div className="rounded-lg border bg-card p-6">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="mt-2 h-4 w-64" />
+            <Skeleton className="mt-6 h-[250px] w-full" />
+          </div>
+        }
+      >
+        <SellerOrdersChart data={stats?.ordersByDay ?? []} isLoading={dashboardLoading} />
+      </React.Suspense>
 
       <SellerDashboardRecentOrders
         orders={recentOrdersState.data?.orders ?? []}

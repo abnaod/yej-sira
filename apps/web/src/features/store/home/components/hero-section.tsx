@@ -44,6 +44,11 @@ export function HeroSection() {
           <img
             src={assetUrl(sellerHeroImage)}
             alt="Artisan hands carving a traditional clay jebena outdoors — handmade pottery"
+            width={960}
+            height={1200}
+            sizes="(min-width: 640px) 40vw, 100vw"
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover"
           />
         </div>
@@ -54,6 +59,11 @@ export function HeroSection() {
         <img
           src={assetUrl(promo?.heroImageUrl ?? fallbackDealImage)}
           alt=""
+          width={720}
+          height={900}
+          sizes="(min-width: 1024px) 30vw, 100vw"
+          fetchPriority="low"
+          decoding="async"
           className="absolute inset-0 h-full w-full object-cover"
         />
         <div

@@ -198,6 +198,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@fontsource/noto-sans':
+        specifier: ^5.2.10
+        version: 5.2.10
+      '@fontsource/noto-sans-ethiopic':
+        specifier: ^5.2.7
+        version: 5.2.7
       '@iconify/react':
         specifier: ^6.0.2
         version: 6.0.2(react@19.2.4)
@@ -897,6 +903,12 @@ packages:
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
+
+  '@fontsource/noto-sans-ethiopic@5.2.7':
+    resolution: {integrity: sha512-Co2bpNTpQ7hBZb00z8/FQOwQZjhu1KM8cucwgLPgyRaK91pmnPC25Q+RGghXP2SZlUuPOIj1UjY8NXCaJFgGLQ==}
+
+  '@fontsource/noto-sans@5.2.10':
+    resolution: {integrity: sha512-J58RVfS/C0Z2VBF+PoU260Tx8cdRGYuS+e3yQe4hYaIYDl0sEVn5CzlLo5zVRvQD0HaIUTV8AZMfqR7rtdEpqQ==}
 
   '@hono/node-server@1.19.11':
     resolution: {integrity: sha512-dr8/3zEaB+p0D2n/IUrlPF1HZm586qgJNXK1a9fhg/PzdtkK7Ksd5l312tJX2yBuALqDYBlG20QEbayqPyxn+g==}
@@ -4224,6 +4236,10 @@ snapshots:
       react-dom: 19.2.4(react@19.2.4)
 
   '@floating-ui/utils@0.2.11': {}
+
+  '@fontsource/noto-sans-ethiopic@5.2.7': {}
+
+  '@fontsource/noto-sans@5.2.10': {}
 
   '@hono/node-server@1.19.11(hono@4.12.9)':
     dependencies:

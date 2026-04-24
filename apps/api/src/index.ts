@@ -95,6 +95,9 @@ app.use(
   serveStatic({
     root: publicRootRelative,
     rewriteRequestPath: (requestPath) => requestPath.replace(/^\/static/, ""),
+    onFound: (_path, c) => {
+      c.header("Cache-Control", "public, max-age=31536000, immutable");
+    },
   }),
 );
 

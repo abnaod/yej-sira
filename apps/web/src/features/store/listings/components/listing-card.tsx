@@ -71,6 +71,15 @@ export function ListingCard({
         <img
           src={assetUrl(imageUrl)}
           alt={name}
+          width={800}
+          height={600}
+          sizes={
+            compact
+              ? "11rem"
+              : "(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+          }
+          loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {(promotion || onSale) && (
