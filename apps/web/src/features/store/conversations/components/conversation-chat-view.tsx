@@ -347,7 +347,8 @@ function MessageBubble(props: {
         isSelf ? "bg-primary text-primary-foreground" : "bg-white text-foreground shadow-sm",
         m.kind === "quick_action" &&
           "border border-dashed border-primary/40 bg-primary/5 text-foreground shadow-none",
-        m.kind === "intent" && "border border-border bg-amber-50/80",
+        m.kind === "intent" &&
+          "border border-border bg-amber-50 text-amber-950 shadow-sm dark:bg-amber-950/45 dark:text-amber-50 dark:border-amber-800/35",
       )}
     >
       {m.kind === "quick_action" && (
