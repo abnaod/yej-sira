@@ -20,6 +20,8 @@
 # Public assets: mount a volume to /app/public (read-write) so catalog files and
 # public/uploads/ persist without rebuilding. Same path in Docker Compose: ./public -> /app/public.
 # In Dokploy, add a volume and mount it to /app/public on the API service.
+# The entrypoint chowns that path to the non-root `app` user; bind mounts are often
+# root-owned, which would otherwise cause EACCES on upload.
 
 ARG NODE_VERSION=20
 
@@ -57,7 +59,7 @@ RUN pnpm --filter @ys/api build
 # via symlinks under `apps/api/node_modules` and `libs/*/node_modules`, so we
 # must preserve that layout in the runtime image.
 FROM node:${NODE_VERSION}-alpine AS runtime
-RUN apk add --no-cache tini wget
+RUN apk add --no-cache tini wget su-exec
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=5001 \
@@ -75,8 +77,8 @@ COPY apps/api/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
  && addgroup -S app && adduser -S app -G app \
  && chown -R app:app /app
-USER app
 
+# Start as root so entrypoint can chown a mounted /app/public, then su-exec to `app` for the server.
 WORKDIR /app/apps/api
 EXPOSE 5001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
