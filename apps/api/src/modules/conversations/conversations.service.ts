@@ -199,6 +199,19 @@ export async function listConversationsForUser(
     },
   });
 
+  const otherIdSet = new Set<string>();
+  for (const c of rows) {
+    const oid = role === "buyer" ? c.shop.ownerUserId ?? c.buyerUserId : c.buyerUserId;
+    if (oid) otherIdSet.add(oid);
+  }
+  const otherUsers = await prisma.user.findMany({
+    where: { id: { in: [...otherIdSet] } },
+    select: { id: true, name: true, email: true },
+  });
+  const otherNameById = new Map(
+    otherUsers.map((u) => [u.id, otherPartyDisplayName(u)] as const),
+  );
+
   const result: ReturnType<typeof mapListRow>[] = [];
   for (const c of rows) {
     const otherId =
@@ -219,6 +232,7 @@ export async function listConversationsForUser(
     const last = c.messages[0] ?? null;
     const imageUrl = c.listing.images[0]?.url ?? "";
     const responseRate = c.shop.responseRate != null ? toNumber(c.shop.responseRate) : null;
+    const otherUserName = otherNameById.get(otherId) ?? "Customer";
     result.push(
       mapListRow(
         c,
@@ -228,6 +242,7 @@ export async function listConversationsForUser(
         role,
         responseRate,
         c.shop.responseTimeAvgSeconds,
+        otherUserName,
       ),
     );
   }
@@ -241,6 +256,10 @@ async function getOwnedShopId(userId: string): Promise<string | null> {
     select: { id: true },
   });
   return s?.id ?? null;
+}
+
+function otherPartyDisplayName(u: { name: string | null; email: string | null }): string {
+  return u.name?.trim() || (u.email ? u.email.split("@")[0] : "") || "Customer";
 }
 
 function mapListRow(
@@ -259,6 +278,7 @@ function mapListRow(
   role: "buyer" | "seller",
   responseRate: number | null,
   responseTimeAvgSec: number | null,
+  otherUserName: string,
 ) {
   return {
     id: c.id,
@@ -271,6 +291,7 @@ function mapListRow(
       imageUrl,
     },
     shop: { name: c.shop.name, slug: c.shop.slug },
+    otherUserName,
     lastMessage: last
       ? {
           id: last.id,
@@ -353,10 +374,7 @@ export async function getConversationMessages(
     where: { id: otherUserId },
     select: { name: true, email: true },
   });
-  const otherUserName =
-    otherUser?.name?.trim() ||
-    (otherUser?.email ? otherUser.email.split("@")[0] : "") ||
-    "Customer";
+  const otherUserName = otherUser ? otherPartyDisplayName(otherUser) : "Customer";
 
   return {
     conversation: {

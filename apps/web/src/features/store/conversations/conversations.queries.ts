@@ -11,6 +11,8 @@ export type ConversationSummary = {
   outcome: string;
   listing: { id: string; slug: string; name: string; imageUrl: string };
   shop: { name: string; slug: string };
+  /** The other chat participant (buyer when you’re the seller; shop owner when you’re the buyer). */
+  otherUserName: string;
   lastMessage: {
     id: string;
     body: string;

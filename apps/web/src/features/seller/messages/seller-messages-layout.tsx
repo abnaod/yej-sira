@@ -53,7 +53,7 @@ export function SellerMessagesLayout() {
     return list.filter(
       (c) =>
         c.listing.name.toLowerCase().includes(q) ||
-        c.shop.name.toLowerCase().includes(q) ||
+        c.otherUserName.toLowerCase().includes(q) ||
         (c.lastMessage?.body.toLowerCase().includes(q) ?? false),
     );
   }, [data?.conversations, query]);
@@ -173,7 +173,7 @@ function InboxItem(props: {
             <p className="truncate text-sm font-semibold leading-tight text-foreground">{c.listing.name}</p>
             <span className="shrink-0 text-[11px] text-muted-foreground">{tInboxTime(c.lastMessageAt)}</span>
           </div>
-          <p className="truncate text-xs text-muted-foreground">{c.shop.name}</p>
+          <p className="truncate text-xs text-muted-foreground">{c.otherUserName}</p>
           {c.lastMessage ? (
             <p className="mt-0.5 line-clamp-1 text-xs text-foreground/80">{c.lastMessage.body}</p>
           ) : null}

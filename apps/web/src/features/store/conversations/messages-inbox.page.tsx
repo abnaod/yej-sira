@@ -96,7 +96,9 @@ function InboxRow(props: {
               {new Date(c.lastMessageAt).toLocaleDateString()}
             </span>
           </div>
-          <p className="truncate text-sm text-muted-foreground">{c.shop.name}</p>
+          <p className="truncate text-sm text-muted-foreground">
+            {c.role === "seller" ? c.otherUserName : c.shop.name}
+          </p>
           {c.lastMessage && (
             <p className="mt-0.5 line-clamp-2 text-sm text-foreground/90">{c.lastMessage.body}</p>
           )}

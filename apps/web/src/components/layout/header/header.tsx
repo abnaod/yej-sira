@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  Bell,
   ChevronDown,
   Heart,
   LogOut,
@@ -164,9 +163,9 @@ export function Header() {
               to="/$locale/messages"
               params={{ locale }}
               className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-              aria-label={t("notifications")}
+              aria-label={t("messages")}
             >
-              <Bell className="h-4 w-4" aria-hidden />
+              <MessageSquare className="h-4 w-4" aria-hidden />
             </Link>
           )}
           {!isPending && session?.user && (
