@@ -1,12 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 import { requireUserId } from "../../lib/auth";
 import { logger } from "../../lib/logger";
+import { getPublicUploadsDir } from "../../lib/paths";
 import { getS3Config, putObject } from "../../lib/storage/s3";
 
 export const uploadsRouter = new Hono();
@@ -22,9 +22,6 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
 /** Limit a single upload to 5MB — covers logos and listing photos without
  *  encouraging oversized originals to be served directly from `/static/*`. */
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
-
-const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.resolve(moduleDir, "../../../../../public/uploads");
 
 /** Allowed folder namespaces — requests specifying a `folder` form field are
  *  validated against this list so the server only ever writes into known,
@@ -73,7 +70,7 @@ uploadsRouter.post("/uploads", async (c) => {
   }
 
   // Local disk fallback (development / single-host deploys only).
-  const targetDir = path.join(uploadsDir, folder);
+  const targetDir = path.join(getPublicUploadsDir(), folder);
   await mkdir(targetDir, { recursive: true });
   await writeFile(path.join(targetDir, filename), buffer);
   return c.json({ url: `/static/uploads/${folder}/${filename}` });

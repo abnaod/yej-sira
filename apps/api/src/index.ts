@@ -1,6 +1,5 @@
 import "./load-env.js";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
@@ -8,6 +7,7 @@ import { cors } from "hono/cors";
 
 import { onError } from "./lib/error";
 import { getBrowserOrigins, getEnv } from "./lib/env";
+import { getRepoPublicDir } from "./lib/paths";
 import { logger } from "./lib/logger";
 import { initSentry } from "./lib/sentry";
 import { prisma } from "./lib/db";
@@ -84,11 +84,10 @@ app.get("/ready", async (c) => {
 /**
  * Static assets (category, listing, shop images) live in `<repo>/public` and are
  * served under `/static/*`. `@hono/node-server/serve-static` requires the root
- * to be expressed relative to `process.cwd()`, so we resolve the repo-level
- * folder from this file's location and translate it to a relative path.
+ * to be relative to `process.cwd()`; see `lib/paths.ts` for how `public/` is
+ * resolved (aligns with Docker `WORKDIR` and the `/app/public` volume).
  */
-const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const publicDir = path.resolve(moduleDir, "../../../public");
+const publicDir = getRepoPublicDir();
 const publicRootRelative = path.relative(process.cwd(), publicDir) || ".";
 
 app.use(
