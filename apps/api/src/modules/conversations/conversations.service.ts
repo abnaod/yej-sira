@@ -349,6 +349,15 @@ export async function getConversationMessages(
     ),
   });
 
+  const otherUser = await prisma.user.findUnique({
+    where: { id: otherUserId },
+    select: { name: true, email: true },
+  });
+  const otherUserName =
+    otherUser?.name?.trim() ||
+    (otherUser?.email ? otherUser.email.split("@")[0] : "") ||
+    "Customer";
+
   return {
     conversation: {
       id: conversation.id,
@@ -371,6 +380,7 @@ export async function getConversationMessages(
     },
     role,
     otherUserId,
+    otherUserName,
     messages: chronological.map((m) => ({
       id: m.id,
       kind: m.kind,

@@ -15,7 +15,7 @@ export function ChatHeader(props: {
   imageUrl: string;
   shopName: string;
   estimatedMinutes: number;
-  /** Replaces the shop + “usually replies” block (e.g. seller split: “Customer”). */
+  /** Replaces the shop + “usually replies” block (e.g. seller split: buyer’s name). */
   leadingSubtitle?: string;
   variant?: "default" | "split";
   showMobileBack?: boolean;

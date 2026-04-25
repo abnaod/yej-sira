@@ -171,7 +171,7 @@ export function ConversationChatView(props: {
     send.mutate({ kind: "text", body: text });
   };
 
-  const headerSubtitle = backContext === "seller" && isSplit ? t("customer") : undefined;
+  const headerSubtitle = backContext === "seller" && isSplit ? data.otherUserName : undefined;
 
   const mainClasses = isSplit
     ? "flex h-full min-h-0 w-full min-w-0 flex-1 flex-col bg-background"
@@ -241,7 +241,7 @@ export function ConversationChatView(props: {
                   selfId={userId ?? ""}
                   variant={isSplit ? "split" : "default"}
                   locale={locale}
-                  otherLabel={t("customer")}
+                  otherLabel={data.otherUserName}
                 />
               )}
             </Fragment>

@@ -49,6 +49,8 @@ export type ConversationDetailResponse = {
   shop: { name: string; slug: string; responseRate: number | null; estimatedReplyMinutes: number };
   role: "buyer" | "seller";
   otherUserId: string;
+  /** Display name for the other participant (e.g. buyer name in seller chat). */
+  otherUserName: string;
   messages: ConversationMessageDto[];
   nextCursor?: string;
   unreadCount: number;
