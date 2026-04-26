@@ -8,6 +8,8 @@ export type ShopSocialLinks = {
   instagram?: string;
   facebook?: string;
   tiktok?: string;
+  telegram?: string;
+  whatsapp?: string;
 };
 
 export type BusinessType = "individual" | "business";
@@ -19,6 +21,8 @@ export type MyShop = {
   name: string;
   description: string | null;
   imageUrl: string | null;
+  bannerImageUrl: string | null;
+  accentColor: string | null;
   status: "pending" | "active" | "rejected" | "suspended";
   contactEmail: string | null;
   contactPhone: string | null;
@@ -78,6 +82,8 @@ export type CreateShopBody = {
   slug: string;
   description?: string;
   imageUrl?: string;
+  bannerImageUrl?: string;
+  accentColor?: string;
   contactEmail?: string;
   contactPhone?: string;
   socialLinks?: ShopSocialLinks;
@@ -95,7 +101,11 @@ export type CreateShopBody = {
   acceptedSellerPolicy?: boolean;
 };
 
-export type UpdateShopBody = Partial<Omit<CreateShopBody, "slug">> & {
+export type UpdateShopBody = Partial<Omit<CreateShopBody, "slug" | "bannerImageUrl" | "accentColor">> & {
+  /** Pass `null` to clear the banner image. */
+  bannerImageUrl?: string | null;
+  /** Pass `null` to reset the accent color to the platform default. */
+  accentColor?: string | null;
   payoutMethod?: PayoutMethod;
   payoutAccountName?: string;
   payoutAccountNumber?: string;

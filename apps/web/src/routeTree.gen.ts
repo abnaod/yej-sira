@@ -38,6 +38,7 @@ import { Route as LocalestoreLegalSellerPolicyRouteImport } from './routes/$loca
 import { Route as LocalestoreLegalReturnsRouteImport } from './routes/$locale/(store)/legal/returns'
 import { Route as LocalestoreLegalPrivacyRouteImport } from './routes/$locale/(store)/legal/privacy'
 import { Route as LocalestoreCategoriesCategoryIdRouteImport } from './routes/$locale/(store)/categories/$categoryId'
+import { Route as LocalesellerSellStorefrontRouteImport } from './routes/$locale/(seller)/sell/storefront'
 import { Route as LocalesellerSellRegisterRouteImport } from './routes/$locale/(seller)/sell/register'
 import { Route as LocalesellerSellOnboardingRouteImport } from './routes/$locale/(seller)/sell/onboarding'
 import { Route as LocalesellerSellDashboardRouteImport } from './routes/$locale/(seller)/sell/dashboard'
@@ -215,6 +216,12 @@ const LocalestoreCategoriesCategoryIdRoute =
     path: '/categories/$categoryId',
     getParentRoute: () => LocalestoreRouteRoute,
   } as any)
+const LocalesellerSellStorefrontRoute =
+  LocalesellerSellStorefrontRouteImport.update({
+    id: '/storefront',
+    path: '/storefront',
+    getParentRoute: () => LocalesellerSellRouteRoute,
+  } as any)
 const LocalesellerSellRegisterRoute =
   LocalesellerSellRegisterRouteImport.update({
     id: '/register',
@@ -372,6 +379,7 @@ export interface FileRoutesByFullPath {
   '/$locale/sell/dashboard': typeof LocalesellerSellDashboardRoute
   '/$locale/sell/onboarding': typeof LocalesellerSellOnboardingRoute
   '/$locale/sell/register': typeof LocalesellerSellRegisterRoute
+  '/$locale/sell/storefront': typeof LocalesellerSellStorefrontRoute
   '/$locale/categories/$categoryId': typeof LocalestoreCategoriesCategoryIdRoute
   '/$locale/legal/privacy': typeof LocalestoreLegalPrivacyRoute
   '/$locale/legal/returns': typeof LocalestoreLegalReturnsRoute
@@ -419,6 +427,7 @@ export interface FileRoutesByTo {
   '/$locale/sell/dashboard': typeof LocalesellerSellDashboardRoute
   '/$locale/sell/onboarding': typeof LocalesellerSellOnboardingRoute
   '/$locale/sell/register': typeof LocalesellerSellRegisterRoute
+  '/$locale/sell/storefront': typeof LocalesellerSellStorefrontRoute
   '/$locale/categories/$categoryId': typeof LocalestoreCategoriesCategoryIdRoute
   '/$locale/legal/privacy': typeof LocalestoreLegalPrivacyRoute
   '/$locale/legal/returns': typeof LocalestoreLegalReturnsRoute
@@ -474,6 +483,7 @@ export interface FileRoutesById {
   '/$locale/(seller)/sell/dashboard': typeof LocalesellerSellDashboardRoute
   '/$locale/(seller)/sell/onboarding': typeof LocalesellerSellOnboardingRoute
   '/$locale/(seller)/sell/register': typeof LocalesellerSellRegisterRoute
+  '/$locale/(seller)/sell/storefront': typeof LocalesellerSellStorefrontRoute
   '/$locale/(store)/categories/$categoryId': typeof LocalestoreCategoriesCategoryIdRoute
   '/$locale/(store)/legal/privacy': typeof LocalestoreLegalPrivacyRoute
   '/$locale/(store)/legal/returns': typeof LocalestoreLegalReturnsRoute
@@ -527,6 +537,7 @@ export interface FileRouteTypes {
     | '/$locale/sell/dashboard'
     | '/$locale/sell/onboarding'
     | '/$locale/sell/register'
+    | '/$locale/sell/storefront'
     | '/$locale/categories/$categoryId'
     | '/$locale/legal/privacy'
     | '/$locale/legal/returns'
@@ -574,6 +585,7 @@ export interface FileRouteTypes {
     | '/$locale/sell/dashboard'
     | '/$locale/sell/onboarding'
     | '/$locale/sell/register'
+    | '/$locale/sell/storefront'
     | '/$locale/categories/$categoryId'
     | '/$locale/legal/privacy'
     | '/$locale/legal/returns'
@@ -628,6 +640,7 @@ export interface FileRouteTypes {
     | '/$locale/(seller)/sell/dashboard'
     | '/$locale/(seller)/sell/onboarding'
     | '/$locale/(seller)/sell/register'
+    | '/$locale/(seller)/sell/storefront'
     | '/$locale/(store)/categories/$categoryId'
     | '/$locale/(store)/legal/privacy'
     | '/$locale/(store)/legal/returns'
@@ -870,6 +883,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocalestoreCategoriesCategoryIdRouteImport
       parentRoute: typeof LocalestoreRouteRoute
     }
+    '/$locale/(seller)/sell/storefront': {
+      id: '/$locale/(seller)/sell/storefront'
+      path: '/storefront'
+      fullPath: '/$locale/sell/storefront'
+      preLoaderRoute: typeof LocalesellerSellStorefrontRouteImport
+      parentRoute: typeof LocalesellerSellRouteRoute
+    }
     '/$locale/(seller)/sell/register': {
       id: '/$locale/(seller)/sell/register'
       path: '/register'
@@ -1098,6 +1118,7 @@ interface LocalesellerSellRouteRouteChildren {
   LocalesellerSellDashboardRoute: typeof LocalesellerSellDashboardRoute
   LocalesellerSellOnboardingRoute: typeof LocalesellerSellOnboardingRoute
   LocalesellerSellRegisterRoute: typeof LocalesellerSellRegisterRoute
+  LocalesellerSellStorefrontRoute: typeof LocalesellerSellStorefrontRoute
   LocalesellerSellIndexRoute: typeof LocalesellerSellIndexRoute
   LocalesellerSellListingsListingIdRoute: typeof LocalesellerSellListingsListingIdRoute
   LocalesellerSellListingsNewRoute: typeof LocalesellerSellListingsNewRoute
@@ -1112,6 +1133,7 @@ const LocalesellerSellRouteRouteChildren: LocalesellerSellRouteRouteChildren = {
   LocalesellerSellDashboardRoute: LocalesellerSellDashboardRoute,
   LocalesellerSellOnboardingRoute: LocalesellerSellOnboardingRoute,
   LocalesellerSellRegisterRoute: LocalesellerSellRegisterRoute,
+  LocalesellerSellStorefrontRoute: LocalesellerSellStorefrontRoute,
   LocalesellerSellIndexRoute: LocalesellerSellIndexRoute,
   LocalesellerSellListingsListingIdRoute:
     LocalesellerSellListingsListingIdRoute,

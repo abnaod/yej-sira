@@ -58,6 +58,57 @@ export type ConversationDetailResponse = {
   unreadCount: number;
 };
 
+function sortConversationsByActivity(conversations: ConversationSummary[]) {
+  return [...conversations].sort(
+    (a, b) => Date.parse(b.lastMessageAt) - Date.parse(a.lastMessageAt),
+  );
+}
+
+function mergeConversationMessages(
+  current: ConversationMessageDto[],
+  additions: ConversationMessageDto[],
+) {
+  const merged = [...current];
+  const seenIds = new Set(current.map((message) => message.id));
+
+  for (const message of additions) {
+    if (!seenIds.has(message.id)) {
+      merged.push(message);
+      seenIds.add(message.id);
+    }
+  }
+
+  return merged.sort(
+    (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt),
+  );
+}
+
+function updateConversationListsCache(
+  queryClient: QueryClient,
+  locale: Locale,
+  conversationId: string,
+  updater: (conversation: ConversationSummary) => ConversationSummary,
+) {
+  queryClient.setQueriesData<ConversationListResponse>(
+    { queryKey: ["conversations", locale] },
+    (current) => {
+      if (!current) return current;
+      const hasConversation = current.conversations.some(
+        (conversation) => conversation.id === conversationId,
+      );
+      if (!hasConversation) return current;
+
+      return {
+        conversations: sortConversationsByActivity(
+          current.conversations.map((conversation) =>
+            conversation.id === conversationId ? updater(conversation) : conversation,
+          ),
+        ),
+      };
+    },
+  );
+}
+
 export const conversationsListQuery = (locale: Locale, role: "buyer" | "seller") =>
   queryOptions({
     queryKey: ["conversations", locale, role] as const,
@@ -117,14 +168,52 @@ export function sendConversationMessageMutationOptions(
         locale,
         body: JSON.stringify(body),
       }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["conversation", locale, conversationId] });
-      void queryClient.invalidateQueries({ queryKey: ["conversations", locale] });
+    onSuccess: (data) => {
+      const additions = data.agreementNudge
+        ? [data.message, data.agreementNudge]
+        : [data.message];
+      const lastMessage = additions[additions.length - 1] ?? data.message;
+
+      queryClient.setQueryData<ConversationDetailResponse>(
+        ["conversation", locale, conversationId],
+        (current) => {
+          if (!current) return current;
+          return {
+            ...current,
+            conversation: {
+              ...current.conversation,
+              lastMessageAt: lastMessage.createdAt,
+            },
+            messages: mergeConversationMessages(current.messages, additions),
+          };
+        },
+      );
+
+      updateConversationListsCache(
+        queryClient,
+        locale,
+        conversationId,
+        (conversation) => ({
+          ...conversation,
+          lastMessageAt: lastMessage.createdAt,
+          lastMessage: {
+            id: lastMessage.id,
+            body: lastMessage.body,
+            kind: lastMessage.kind,
+            createdAt: lastMessage.createdAt,
+            senderUserId: lastMessage.senderUserId,
+          },
+        }),
+      );
     },
   });
 }
 
-export function markConversationReadMutationOptions(locale: Locale, conversationId: string) {
+export function markConversationReadMutationOptions(
+  queryClient: QueryClient,
+  locale: Locale,
+  conversationId: string,
+) {
   return mutationOptions({
     mutationFn: (lastReadMessageId: string) =>
       apiFetchJson<{ ok: true }>(`/api/conversations/${encodeURIComponent(conversationId)}/read`, {
@@ -132,6 +221,28 @@ export function markConversationReadMutationOptions(locale: Locale, conversation
         locale,
         body: JSON.stringify({ lastReadMessageId }),
       }),
+    onSuccess: () => {
+      queryClient.setQueryData<ConversationDetailResponse>(
+        ["conversation", locale, conversationId],
+        (current) =>
+          current
+            ? {
+                ...current,
+                unreadCount: 0,
+              }
+            : current,
+      );
+
+      updateConversationListsCache(
+        queryClient,
+        locale,
+        conversationId,
+        (conversation) => ({
+          ...conversation,
+          unreadCount: 0,
+        }),
+      );
+    },
   });
 }
 
@@ -150,8 +261,32 @@ export function setConversationOutcomeMutationOptions(
           body: JSON.stringify({ outcome }),
         },
       ),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["conversation", locale, conversationId] });
+    onSuccess: (_, outcome) => {
+      queryClient.setQueryData<ConversationDetailResponse>(
+        ["conversation", locale, conversationId],
+        (current) =>
+          current
+            ? {
+                ...current,
+                conversation: {
+                  ...current.conversation,
+                  outcome,
+                  closedAt:
+                    outcome === "open" ? null : new Date().toISOString(),
+                },
+              }
+            : current,
+      );
+
+      updateConversationListsCache(
+        queryClient,
+        locale,
+        conversationId,
+        (conversation) => ({
+          ...conversation,
+          outcome,
+        }),
+      );
     },
   });
 }

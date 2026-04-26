@@ -61,6 +61,7 @@
   "viewShop": "View shop",
   "sellerGetStarted": "Start Selling",
   "cannotMessageOwnListing": "You can’t start a chat on your own listing. Sign in as a different account to test buyer messages.",
+  "messageSeller": "Message seller",
   "messageSellerAboutItem": "Message seller about this item",
   "messageSellerIntentTitle": "What do you want to ask?",
   "messageSellerIntentSubtitle": "Choose a quick option or send a custom message. We’ll open a chat with the seller.",

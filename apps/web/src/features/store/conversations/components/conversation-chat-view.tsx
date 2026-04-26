@@ -3,15 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  Image as ImageIcon,
-  MoreHorizontal,
-  Paperclip,
-  Send,
-  Smile,
-  User,
-} from "lucide-react";
+import { ArrowLeft, Send, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -36,6 +28,7 @@ import { OutcomeSheet } from "./outcome-sheet";
 import { QuickActionsBar } from "./quick-actions-bar";
 
 const IDLE_MS = 24 * 60 * 60 * 1000;
+const THREAD_POLL_MS = 8_000;
 
 type BackRoute = "/$locale/messages" | "/$locale/sell/messages";
 
@@ -72,13 +65,15 @@ export function ConversationChatView(props: {
 
   const { data, isLoading, error } = useQuery({
     ...conversationDetailQuery(locale, conversationId),
-    refetchInterval: 5000,
+    refetchInterval: THREAD_POLL_MS,
     refetchOnWindowFocus: true,
     enabled: !!session?.user,
   });
 
   const send = useMutation(sendConversationMessageMutationOptions(queryClient, locale, conversationId));
-  const markRead = useMutation(markConversationReadMutationOptions(locale, conversationId));
+  const markRead = useMutation(
+    markConversationReadMutationOptions(queryClient, locale, conversationId),
+  );
   const setOutcome = useMutation(setConversationOutcomeMutationOptions(queryClient, locale, conversationId));
   const [draft, setDraft] = useState("");
 
@@ -259,29 +254,15 @@ export function ConversationChatView(props: {
         />
 
         {isSplit ? (
-          <div className="mt-2 flex items-end gap-1 rounded-2xl border border-border/80 bg-white px-1 py-1 pl-2 shadow-sm">
+          <div className="mt-2 flex items-end gap-2 rounded-2xl border border-border/80 bg-white px-2 py-2 shadow-sm">
             <input
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), onSend())}
-              placeholder="Aa"
+              placeholder={t("typeMessage")}
               className="min-h-9 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
             />
-            <div className="flex shrink-0 items-center">
-              <Button type="button" size="icon" variant="ghost" className="size-9 text-muted-foreground" aria-label="Emoji">
-                <Smile className="size-4" />
-              </Button>
-              <Button type="button" size="icon" variant="ghost" className="size-9 text-muted-foreground" aria-label="More">
-                <MoreHorizontal className="size-4" />
-              </Button>
-              <Button type="button" size="icon" variant="ghost" className="size-9 text-muted-foreground" aria-label="Attach">
-                <Paperclip className="size-4" />
-              </Button>
-              <Button type="button" size="icon" variant="ghost" className="size-9 text-muted-foreground" aria-label="Image">
-                <ImageIcon className="size-4" />
-              </Button>
-            </div>
             <Button
               type="button"
               size="icon"

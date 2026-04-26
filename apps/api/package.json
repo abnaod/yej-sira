@@ -7,6 +7,7 @@
     "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2022 --outfile=dist/index.js --sourcemap --external:dotenv --external:@prisma/client --external:@prisma/adapter-pg --external:pg --external:@hono/node-server --external:hono --external:better-auth --external:zod --external:@sentry/node",
     "start": "node --env-file=../../.env dist/index.js",
     "lint": "tsc --noEmit -p tsconfig.json",
+    "test": "node --import tsx --test src/**/*.test.ts",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {

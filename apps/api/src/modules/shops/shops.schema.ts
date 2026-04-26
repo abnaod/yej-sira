@@ -23,15 +23,28 @@ export const socialLinksSchema = z
     instagram: z.string().url().optional(),
     facebook: z.string().url().optional(),
     tiktok: z.string().url().optional(),
+    /** Full Telegram URL, e.g. `https://t.me/yourshop`. */
+    telegram: z.string().url().optional(),
+    /** Full WhatsApp URL, e.g. `https://wa.me/2519XXXXXXX`. */
+    whatsapp: z.string().url().optional(),
   })
   .strict()
   .optional();
+
+/** 3-, 4-, 6-, or 8-digit hex color (case-insensitive), with leading `#`. */
+const accentColorSchema = z
+  .string()
+  .regex(/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/, {
+    message: "Must be a hex color like #1f6feb",
+  });
 
 export const createShopBodySchema = z.object({
   name: z.string().min(1).max(120),
   slug: slugSchema,
   description: z.string().max(2000).optional(),
   imageUrl: imageRefSchema.optional(),
+  bannerImageUrl: imageRefSchema.optional(),
+  accentColor: accentColorSchema.optional(),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().max(40).optional(),
   socialLinks: socialLinksSchema,
@@ -53,6 +66,10 @@ export const updateShopBodySchema = z.object({
   name: z.string().min(1).max(120).optional(),
   description: z.string().max(2000).optional(),
   imageUrl: imageRefSchema.optional(),
+  /** Pass `null` to clear the banner. */
+  bannerImageUrl: imageRefSchema.nullable().optional(),
+  /** Pass `null` to reset to the default theme color. */
+  accentColor: accentColorSchema.nullable().optional(),
   contactEmail: z.string().email().optional(),
   contactPhone: z.string().max(40).optional(),
   socialLinks: socialLinksSchema,

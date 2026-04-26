@@ -6,6 +6,7 @@ import { HTTPException } from "hono/http-exception";
 
 import { prisma, publicListingVisibilityWhere } from "../../lib/db";
 import { requireUserId } from "../../lib/auth";
+import { toNumber } from "../../lib/money";
 import { getOwnedShop } from "./shops.authz";
 import { getListingCardInclude, mapListingCard } from "../catalog/catalog.mappers";
 import {
@@ -27,6 +28,8 @@ function jsonShopForOwner(shop: Shop) {
     name: shop.name,
     description: shop.description,
     imageUrl: shop.imageUrl,
+    bannerImageUrl: shop.bannerImageUrl,
+    accentColor: shop.accentColor,
     status: shop.status,
     contactEmail: shop.contactEmail,
     contactPhone: shop.contactPhone,
@@ -107,6 +110,8 @@ shopsRouter.patch("/shops/me", async (c) => {
       ...(d.name != null ? { name: d.name } : {}),
       ...(d.description !== undefined ? { description: d.description } : {}),
       ...(d.imageUrl !== undefined ? { imageUrl: d.imageUrl } : {}),
+      ...(d.bannerImageUrl !== undefined ? { bannerImageUrl: d.bannerImageUrl } : {}),
+      ...(d.accentColor !== undefined ? { accentColor: d.accentColor } : {}),
       ...(d.contactEmail !== undefined ? { contactEmail: d.contactEmail } : {}),
       ...(d.contactPhone !== undefined ? { contactPhone: d.contactPhone } : {}),
       ...(d.socialLinks !== undefined ? { socialLinks: d.socialLinks ?? {} } : {}),
@@ -201,6 +206,15 @@ shopsRouter.get("/shops/:slug", async (c) => {
     }),
   ]);
 
+  /**
+   * Estimated reply window for the public storefront (mirrors conversation
+   * detail logic in `conversations.service`). Defaults to 15 minutes when no
+   * data has been recorded yet, so new shops still show a plausible signal.
+   */
+  const estimatedReplyMinutes = shop.responseTimeAvgSeconds
+    ? Math.max(1, Math.round(shop.responseTimeAvgSeconds / 60))
+    : 15;
+
   return c.json({
     shop: {
       id: shop.id,
@@ -208,6 +222,17 @@ shopsRouter.get("/shops/:slug", async (c) => {
       name: shop.name,
       description: shop.description,
       imageUrl: shop.imageUrl,
+      bannerImageUrl: shop.bannerImageUrl,
+      accentColor: shop.accentColor,
+      contactEmail: shop.contactEmail,
+      contactPhone: shop.contactPhone,
+      socialLinks: shop.socialLinks,
+      city: shop.businessCity,
+      subcity: shop.businessSubcity,
+      createdAt: shop.createdAt.toISOString(),
+      responseRate: shop.responseRate != null ? toNumber(shop.responseRate) : null,
+      estimatedReplyMinutes,
+      listingCount: total,
     },
     listings: listings.map((p) => mapListingCard(p, locale)),
     page,
@@ -238,6 +263,8 @@ shopsRouter.post("/shops", async (c) => {
       slug: d.slug,
       description: d.description,
       imageUrl: d.imageUrl,
+      bannerImageUrl: d.bannerImageUrl,
+      accentColor: d.accentColor,
       contactEmail: d.contactEmail,
       contactPhone: d.contactPhone,
       socialLinks: d.socialLinks,

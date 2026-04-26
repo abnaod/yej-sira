@@ -1,12 +1,22 @@
-import type { Conversation, Message, MessageKind, Prisma } from "@prisma/client";
+import {
+  ContentLocale,
+  Prisma,
+  type Conversation,
+  type Message,
+  type MessageKind,
+} from "@prisma/client";
 import { HTTPException } from "hono/http-exception";
+import type { Locale } from "@ys/intl";
 
 import { prisma } from "../../lib/db";
 import { toNumber } from "../../lib/money";
 import { agreementNudgeMeta, detectAgreementIntent } from "./intent-detection";
 import { pickListingName } from "../catalog/catalog.localize";
-import type { Locale } from "@ys/intl";
-import { ContentLocale } from "@prisma/client";
+import {
+  buildConversationMessage,
+  buildInitialConversationMessage,
+  type ConversationMessageDraft,
+} from "./conversations.messages";
 
 const AGREEMENT_NUDGE_BODY_EN =
   "Ready to complete your purchase? You can share how you want to pay and arrange delivery in chat.";
@@ -65,15 +75,140 @@ async function ensureParticipantStates(
   });
 }
 
-function unreadCountWhere(
+type QueryableClient = Prisma.TransactionClient | typeof prisma;
+
+function toMessageCreateInput(
   conversationId: string,
-  fromUserId: string,
-  lastReadAt: Date | null,
-): Prisma.MessageWhereInput {
+  senderUserId: string,
+  draft: ConversationMessageDraft,
+): Prisma.MessageUncheckedCreateInput {
   return {
     conversationId,
-    senderUserId: fromUserId,
-    ...(lastReadAt ? { createdAt: { gt: lastReadAt } } : {}),
+    senderUserId,
+    kind: draft.kind,
+    body: draft.body,
+    meta: draft.meta === undefined ? undefined : (draft.meta as Prisma.InputJsonValue),
+  };
+}
+
+async function createConversationMessage(
+  tx: Prisma.TransactionClient,
+  conversationId: string,
+  senderUserId: string,
+  draft: ConversationMessageDraft,
+) {
+  const message = await tx.message.create({
+    data: toMessageCreateInput(conversationId, senderUserId, draft),
+  });
+
+  await tx.conversation.update({
+    where: { id: conversationId },
+    data: { lastMessageAt: message.createdAt },
+  });
+
+  return message;
+}
+
+async function getUnreadCountsForUser(
+  db: QueryableClient,
+  userId: string,
+  conversationIds: string[],
+) {
+  if (conversationIds.length === 0) {
+    return new Map<string, number>();
+  }
+
+  const rows = await db.$queryRaw<Array<{ conversationId: string; unreadCount: number }>>(
+    Prisma.sql`
+      SELECT
+        c.id AS "conversationId",
+        COUNT(m.id)::int AS "unreadCount"
+      FROM "conversations" c
+      LEFT JOIN "conversation_participant_states" s
+        ON s."conversation_id" = c.id
+       AND s."user_id" = ${userId}
+      LEFT JOIN "messages" lr
+        ON lr.id = s."last_read_message_id"
+      LEFT JOIN "messages" m
+        ON m."conversation_id" = c.id
+       AND m."sender_user_id" <> ${userId}
+       AND (lr."created_at" IS NULL OR m."created_at" > lr."created_at")
+      WHERE c.id IN (${Prisma.join(conversationIds)})
+      GROUP BY c.id
+    `,
+  );
+
+  return new Map(rows.map((row) => [row.conversationId, Number(row.unreadCount)]));
+}
+
+async function getSellerMessageMetricsSnapshot(
+  db: QueryableClient,
+  shopId: string,
+) {
+  const [row] = await db.$queryRaw<
+    Array<{
+      leads: number;
+      responseRate: number | null;
+      avgResponseSeconds: number | null;
+    }>
+  >(Prisma.sql`
+    WITH convs AS (
+      SELECT id, buyer_user_id
+      FROM "conversations"
+      WHERE seller_shop_id = ${shopId}
+    ),
+    first_buyer AS (
+      SELECT
+        m.conversation_id,
+        MIN(m.created_at) AS buyer_at
+      FROM "messages" m
+      INNER JOIN convs c
+        ON c.id = m.conversation_id
+      WHERE m.sender_user_id = c.buyer_user_id
+      GROUP BY m.conversation_id
+    ),
+    first_seller AS (
+      SELECT
+        fb.conversation_id,
+        MIN(m.created_at) AS seller_at
+      FROM first_buyer fb
+      INNER JOIN convs c
+        ON c.id = fb.conversation_id
+      INNER JOIN "messages" m
+        ON m.conversation_id = fb.conversation_id
+      WHERE m.sender_user_id <> c.buyer_user_id
+        AND m.kind IN ('text', 'quick_action')
+        AND m.created_at >= fb.buyer_at
+      GROUP BY fb.conversation_id
+    )
+    SELECT
+      (SELECT COUNT(*)::int FROM convs) AS "leads",
+      CASE
+        WHEN COUNT(fb.conversation_id) = 0 THEN NULL
+        ELSE AVG(
+          CASE
+            WHEN fs.seller_at IS NOT NULL
+             AND fs.seller_at < fb.buyer_at + INTERVAL '24 hours'
+              THEN 1.0
+            ELSE 0.0
+          END
+        )::float8
+      END AS "responseRate",
+      CASE
+        WHEN COUNT(fs.conversation_id) = 0 THEN NULL
+        ELSE AVG(EXTRACT(EPOCH FROM (fs.seller_at - fb.buyer_at)))::float8
+      END AS "avgResponseSeconds"
+    FROM first_buyer fb
+    LEFT JOIN first_seller fs
+      ON fs.conversation_id = fb.conversation_id
+  `);
+
+  return {
+    leads: Number(row?.leads ?? 0),
+    responseRate:
+      row?.responseRate == null ? null : Number(row.responseRate),
+    avgResponseSeconds:
+      row?.avgResponseSeconds == null ? null : Math.round(Number(row.avgResponseSeconds)),
   };
 }
 
@@ -82,8 +217,8 @@ export async function createOrAppendConversation(
   listingId: string,
   body: string,
   locale: Locale,
-  _intentKind: string | undefined,
-  _meta: Record<string, unknown> | undefined,
+  intentKind: string | undefined,
+  meta: Record<string, unknown> | undefined,
 ) {
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },
@@ -108,21 +243,16 @@ export async function createOrAppendConversation(
   const existing = await prisma.conversation.findUnique({
     where: { buyerUserId_listingId: { buyerUserId: userId, listingId: listing.id } },
   });
+  const initialMessage = buildInitialConversationMessage(body, intentKind, meta);
 
   if (existing) {
     return prisma.$transaction(async (tx) => {
-      const msg = await tx.message.create({
-        data: {
-          conversationId: existing.id,
-          senderUserId: userId,
-          kind: "text" as MessageKind,
-          body,
-        },
-      });
-      await tx.conversation.update({
-        where: { id: existing.id },
-        data: { lastMessageAt: msg.createdAt },
-      });
+      const msg = await createConversationMessage(
+        tx,
+        existing.id,
+        userId,
+        initialMessage,
+      );
       await ensureParticipantStates(
         tx,
         existing.id,
@@ -142,18 +272,7 @@ export async function createOrAppendConversation(
         lastMessageAt: new Date(),
       },
     });
-    const first = await tx.message.create({
-      data: {
-        conversationId: conv.id,
-        senderUserId: userId,
-        kind: "intent" as MessageKind,
-        body,
-      },
-    });
-    await tx.conversation.update({
-      where: { id: conv.id },
-      data: { lastMessageAt: first.createdAt },
-    });
+    const first = await createConversationMessage(tx, conv.id, userId, initialMessage);
     await ensureParticipantStates(
       tx,
       conv.id,
@@ -211,24 +330,16 @@ export async function listConversationsForUser(
   const otherNameById = new Map(
     otherUsers.map((u) => [u.id, otherPartyDisplayName(u)] as const),
   );
+  const unreadByConversationId = await getUnreadCountsForUser(
+    prisma,
+    userId,
+    rows.map((row) => row.id),
+  );
 
   const result: ReturnType<typeof mapListRow>[] = [];
   for (const c of rows) {
     const otherId =
       role === "buyer" ? c.shop.ownerUserId ?? c.buyerUserId : c.buyerUserId;
-    const state = await prisma.conversationParticipantState.findUnique({
-      where: { conversationId_userId: { conversationId: c.id, userId: userId } },
-    });
-    const lastRead = state?.lastReadMessageId
-      ? await prisma.message.findUnique({ where: { id: state.lastReadMessageId } })
-      : null;
-    const unread = await prisma.message.count({
-      where: unreadCountWhere(
-        c.id,
-        otherId,
-        lastRead?.createdAt ?? null,
-      ),
-    });
     const last = c.messages[0] ?? null;
     const imageUrl = c.listing.images[0]?.url ?? "";
     const responseRate = c.shop.responseRate != null ? toNumber(c.shop.responseRate) : null;
@@ -238,7 +349,7 @@ export async function listConversationsForUser(
         c,
         last,
         imageUrl,
-        unread,
+        unreadByConversationId.get(c.id) ?? 0,
         role,
         responseRate,
         c.shop.responseTimeAvgSeconds,
@@ -356,19 +467,8 @@ export async function getConversationMessages(
   // Return chronological for UI
   const chronological = [...page].reverse();
 
-  const state = await prisma.conversationParticipantState.findUnique({
-    where: { conversationId_userId: { conversationId, userId } },
-  });
-  const lastRead = state?.lastReadMessageId
-    ? await prisma.message.findUnique({ where: { id: state.lastReadMessageId } })
-    : null;
-  const unread = await prisma.message.count({
-    where: unreadCountWhere(
-      conversationId,
-      otherUserId,
-      lastRead?.createdAt ?? null,
-    ),
-  });
+  const unreadByConversationId = await getUnreadCountsForUser(prisma, userId, [conversationId]);
+  const unread = unreadByConversationId.get(conversationId) ?? 0;
 
   const otherUser = await prisma.user.findUnique({
     where: { id: otherUserId },
@@ -424,36 +524,32 @@ export async function appendMessage(
     throw new HTTPException(400, { message: "Cannot send this message kind" });
   }
   return prisma.$transaction(async (tx) => {
-    const msg = await tx.message.create({
-      data: {
-        conversationId,
-        senderUserId: userId,
-        kind,
-        body,
-        meta: meta === undefined ? undefined : (meta as Prisma.InputJsonValue),
-      },
-    });
-    await tx.conversation.update({
-      where: { id: conversationId },
-      data: { lastMessageAt: msg.createdAt },
-    });
+    const msg = await createConversationMessage(
+      tx,
+      conversationId,
+      userId,
+      buildConversationMessage(kind, body, meta),
+    );
 
-    // Optional: recompute shop rolling stats from this reply (lightweight: skip heavy aggregation here)
-    let extra: { id: string; kind: MessageKind; body: string; meta: unknown; createdAt: string; senderUserId: string } | null = null;
+    let extra: {
+      id: string;
+      kind: MessageKind;
+      body: string;
+      meta: unknown;
+      createdAt: string;
+      senderUserId: string;
+    } | null = null;
     if (kind === "text" && detectAgreementIntent(body) && role === "buyer") {
-      const nudge = await tx.message.create({
-        data: {
-          conversationId,
-          senderUserId: userId,
-          kind: "agreement_nudge" as MessageKind,
-          body: AGREEMENT_NUDGE_BODY_EN,
-          meta: { ...agreementNudgeMeta } as Prisma.InputJsonValue,
-        },
-      });
-      await tx.conversation.update({
-        where: { id: conversationId },
-        data: { lastMessageAt: nudge.createdAt },
-      });
+      const nudge = await createConversationMessage(
+        tx,
+        conversationId,
+        userId,
+        buildConversationMessage(
+          "agreement_nudge",
+          AGREEMENT_NUDGE_BODY_EN,
+          agreementNudgeMeta as unknown as Record<string, unknown>,
+        ),
+      );
       extra = {
         id: nudge.id,
         kind: nudge.kind,
@@ -463,20 +559,15 @@ export async function appendMessage(
         senderUserId: nudge.senderUserId,
       };
     }
-    // Update shop denormalized response metrics on seller reply
+
     if (role === "seller" && kind === "text") {
-      void updateShopResponseAfterSellerReply(
-        tx,
-        conversation,
-        userId,
-        msg.createdAt,
-      ).catch(() => {});
+      await updateShopResponseAfterSellerReply(tx, conversation, userId, msg.createdAt);
     }
     return { message: msg, agreementNudge: extra };
   });
 }
 
-/** First seller text after the first buyer message: update responseTimeAvgSeconds. */
+/** First seller text after the first buyer message: refresh shop reply metrics. */
 async function updateShopResponseAfterSellerReply(
   tx: Prisma.TransactionClient,
   conversation: Conversation,
@@ -502,16 +593,13 @@ async function updateShopResponseAfterSellerReply(
   }
   const seconds = (replyTime.getTime() - firstBuyer.createdAt.getTime()) / 1000;
   if (seconds < 0) return;
-  const shop = await tx.shop.findUnique({
-    where: { id: conversation.sellerShopId },
-    select: { responseTimeAvgSeconds: true, responseRate: true },
-  });
-  if (!shop) return;
-  const prev = shop.responseTimeAvgSeconds;
-  const nextAvg = prev == null ? Math.round(seconds) : Math.round((prev * 0.7 + seconds * 0.3) / 1);
+  const metrics = await getSellerMessageMetricsSnapshot(tx, conversation.sellerShopId);
   await tx.shop.update({
     where: { id: conversation.sellerShopId },
-    data: { responseTimeAvgSeconds: nextAvg, responseRate: shop.responseRate ?? 0.9 },
+    data: {
+      responseTimeAvgSeconds: metrics.avgResponseSeconds,
+      responseRate: metrics.responseRate,
+    },
   });
 }
 
@@ -563,42 +651,7 @@ export async function markOutcomeAsked(userId: string, conversationId: string) {
 }
 
 export async function getSellerMessageMetrics(shopId: string) {
-  const convs = await prisma.conversation.findMany({
-    where: { sellerShopId: shopId },
-    select: { id: true, buyerUserId: true, createdAt: true },
-  });
-  const leads = convs.length;
-  if (leads === 0) {
-    return { leads: 0, responseRate: null as number | null, avgResponseSeconds: null as number | null };
-  }
-  const deltas: number[] = [];
-  let repliedIn24h = 0;
-  let withBuyerMessage = 0;
-  for (const c of convs) {
-    const firstBuyer = await prisma.message.findFirst({
-      where: { conversationId: c.id, senderUserId: c.buyerUserId },
-      orderBy: { createdAt: "asc" },
-    });
-    if (!firstBuyer) continue;
-    withBuyerMessage += 1;
-    const firstSeller = await prisma.message.findFirst({
-      where: {
-        conversationId: c.id,
-        senderUserId: { not: c.buyerUserId },
-        kind: { in: ["text", "quick_action"] },
-      },
-      orderBy: { createdAt: "asc" },
-    });
-    if (firstSeller) {
-      const sec = (firstSeller.createdAt.getTime() - firstBuyer.createdAt.getTime()) / 1000;
-      if (sec >= 0) deltas.push(sec);
-      if (sec < 24 * 3600) repliedIn24h += 1;
-    }
-  }
-  const responseRate = withBuyerMessage > 0 ? repliedIn24h / withBuyerMessage : null;
-  const avgResponseSeconds =
-    deltas.length > 0 ? Math.round(deltas.reduce((a, b) => a + b, 0) / deltas.length) : null;
-  return { leads, responseRate, avgResponseSeconds };
+  return getSellerMessageMetricsSnapshot(prisma, shopId);
 }
 
 /** Export for routes that need the raw `getOwnedShopId`. */

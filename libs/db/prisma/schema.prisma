@@ -163,6 +163,15 @@ model Shop {
   name                     String
   description              String?
   imageUrl                 String?        @map("image_url")
+  /**
+   * Wide hero image displayed on the public storefront page (`/shops/:slug`).
+   */
+  bannerImageUrl           String?        @map("banner_image_url")
+  /**
+   * Optional brand accent (hex like `#1f6feb`) used to tint storefront chrome
+   * (CTAs, highlights). Stored as a 7-character string; validated at the edge.
+   */
+  accentColor              String?        @map("accent_color")
   ownerUserId              String?        @map("owner_user_id")
   owner                    User?          @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
   status                   ShopStatus     @default(pending)
