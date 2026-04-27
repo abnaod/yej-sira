@@ -1,20 +1,18 @@
-import { Link } from "@tanstack/react-router";
-import type { Locale } from "@ys/intl";
+import { Link, useParams } from "@tanstack/react-router";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "@ys/intl";
 
 import { useAuthDialog } from "@/features/shared/auth";
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { useLocale } from "@/lib/locale-path";
 
-/**
- * Header for public seller marketing routes (`/sell`, `/sell/onboarding`).
- * `activeOptions.exact` is required: the default prefix match treats `/en/sell/...` as
- * “active” for `to="/$locale"` (storefront home), which breaks navigation semantics and
- * can confuse focus/active styling.
- */
 export function SellerMarketingHeader() {
-  const locale = useLocale() as Locale;
+  const localeParam = useParams({
+    from: "/$locale",
+    select: (p) => p.locale,
+  });
+  const locale: Locale = isLocale(localeParam) ? localeParam : DEFAULT_LOCALE;
+
   const { openAuth } = useAuthDialog();
   const { data: session, isPending: sessionPending } = authClient.useSession();
 
@@ -24,6 +22,7 @@ export function SellerMarketingHeader() {
         <Link
           to="/$locale"
           params={{ locale }}
+          reloadDocument
           activeOptions={{ exact: true }}
           className="flex shrink-0 items-center"
         >

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/$locale/(seller)/sell/messages/")({
 function SellerMessagesIndex() {
   const { t } = useTranslation("common");
   return (
-    <div className="flex h-full min-h-[16rem] flex-1 flex-col items-center justify-center gap-2 px-6 text-center max-lg:min-h-[20rem]">
+    <div className="flex h-full min-h-64 flex-1 flex-col items-center justify-center gap-2 px-6 text-center max-lg:min-h-80">
       <div className="flex size-14 items-center justify-center rounded-lg bg-primary/10 text-primary">
         <MessageSquare className="size-7" />
       </div>
