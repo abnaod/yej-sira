@@ -243,23 +243,30 @@ export async function createOrAppendConversation(
   const existing = await prisma.conversation.findUnique({
     where: { buyerUserId_listingId: { buyerUserId: userId, listingId: listing.id } },
   });
-  const initialMessage = buildInitialConversationMessage(body, intentKind, meta);
+  const trimmedBody = body.trim();
+  const initialDraft =
+    trimmedBody.length > 0
+      ? buildInitialConversationMessage(trimmedBody, intentKind, meta)
+      : null;
 
   if (existing) {
     return prisma.$transaction(async (tx) => {
-      const msg = await createConversationMessage(
-        tx,
-        existing.id,
-        userId,
-        initialMessage,
-      );
+      let firstMessage = null;
+      if (initialDraft) {
+        firstMessage = await createConversationMessage(
+          tx,
+          existing.id,
+          userId,
+          initialDraft,
+        );
+      }
       await ensureParticipantStates(
         tx,
         existing.id,
         userId,
         listing.shop.ownerUserId!,
       );
-      return { conversationId: existing.id, created: false as const, firstMessage: msg };
+      return { conversationId: existing.id, created: false as const, firstMessage };
     });
   }
 
@@ -272,14 +279,17 @@ export async function createOrAppendConversation(
         lastMessageAt: new Date(),
       },
     });
-    const first = await createConversationMessage(tx, conv.id, userId, initialMessage);
+    let firstMessage = null;
+    if (initialDraft) {
+      firstMessage = await createConversationMessage(tx, conv.id, userId, initialDraft);
+    }
     await ensureParticipantStates(
       tx,
       conv.id,
       userId,
       listing.shop.ownerUserId!,
     );
-    return { conversationId: conv.id, created: true as const, firstMessage: first };
+    return { conversationId: conv.id, created: true as const, firstMessage };
   });
 }
 

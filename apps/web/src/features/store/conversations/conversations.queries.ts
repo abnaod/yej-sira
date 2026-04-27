@@ -133,7 +133,7 @@ export function createConversationMutationOptions(
   return mutationOptions({
     mutationFn: (body: {
       listingId: string;
-      initialMessage: string;
+      initialMessage?: string;
       intentKind?: string;
     }) =>
       apiFetchJson<{ conversationId: string; created: boolean }>("/api/conversations", {
@@ -243,64 +243,6 @@ export function markConversationReadMutationOptions(
         }),
       );
     },
-  });
-}
-
-export function setConversationOutcomeMutationOptions(
-  queryClient: QueryClient,
-  locale: Locale,
-  conversationId: string,
-) {
-  return mutationOptions({
-    mutationFn: (outcome: string) =>
-      apiFetchJson<{ ok: true; listingId: string }>(
-        `/api/conversations/${encodeURIComponent(conversationId)}/outcome`,
-        {
-          method: "PATCH",
-          locale,
-          body: JSON.stringify({ outcome }),
-        },
-      ),
-    onSuccess: (_, outcome) => {
-      queryClient.setQueryData<ConversationDetailResponse>(
-        ["conversation", locale, conversationId],
-        (current) =>
-          current
-            ? {
-                ...current,
-                conversation: {
-                  ...current.conversation,
-                  outcome,
-                  closedAt:
-                    outcome === "open" ? null : new Date().toISOString(),
-                },
-              }
-            : current,
-      );
-
-      updateConversationListsCache(
-        queryClient,
-        locale,
-        conversationId,
-        (conversation) => ({
-          ...conversation,
-          outcome,
-        }),
-      );
-    },
-  });
-}
-
-export function markOutcomeAskedMutationOptions(locale: Locale, conversationId: string) {
-  return mutationOptions({
-    mutationFn: () =>
-      apiFetchJson<{ ok: true }>(
-        `/api/conversations/${encodeURIComponent(conversationId)}/outcome-asked`,
-        {
-          method: "POST",
-          locale,
-        },
-      ),
   });
 }
 

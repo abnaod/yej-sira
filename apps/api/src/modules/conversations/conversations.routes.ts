@@ -39,7 +39,7 @@ conversationsRouter.post("/conversations", async (c) => {
   const { conversationId, created } = await createOrAppendConversation(
     userId,
     listingId,
-    initialMessage,
+    initialMessage ?? "",
     locale,
     intentKind,
     meta,

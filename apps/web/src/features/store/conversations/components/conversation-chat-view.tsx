@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Send, User } from "lucide-react";
@@ -19,14 +19,11 @@ import {
   conversationDetailQuery,
   markConversationReadMutationOptions,
   sendConversationMessageMutationOptions,
-  setConversationOutcomeMutationOptions,
   type ConversationMessageDto,
 } from "../conversations.queries";
 import { AgreementNudgeCard } from "./agreement-nudge-card";
 import { ChatHeader } from "./chat-header";
-import { OutcomeSheet } from "./outcome-sheet";
 
-const IDLE_MS = 24 * 60 * 60 * 1000;
 const THREAD_POLL_MS = 8_000;
 
 type BackRoute = "/$locale/messages" | "/$locale/sell/messages";
@@ -73,7 +70,6 @@ export function ConversationChatView(props: {
   const markRead = useMutation(
     markConversationReadMutationOptions(queryClient, locale, conversationId),
   );
-  const setOutcome = useMutation(setConversationOutcomeMutationOptions(queryClient, locale, conversationId));
   const [draft, setDraft] = useState("");
 
   const lastMessage = data?.messages[data.messages.length - 1];
@@ -86,23 +82,6 @@ export function ConversationChatView(props: {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [data?.messages.length]);
-
-  const showOutcome = useMemo(() => {
-    if (!data || data.role !== "buyer") return false;
-    if (data.conversation.outcome !== "open") return false;
-    if (typeof window !== "undefined") {
-      const dismissed = sessionStorage.getItem(`ys_outcome_${data.conversation.id}`);
-      if (dismissed) return false;
-    }
-    const lastAt = new Date(data.conversation.lastMessageAt).getTime();
-    return Date.now() - lastAt > IDLE_MS;
-  }, [data]);
-
-  const closeOutcomePrompt = () => {
-    if (data) {
-      sessionStorage.setItem(`ys_outcome_${data.conversation.id}`, "1");
-    }
-  };
 
   if (sessionPending) {
     return (
@@ -293,22 +272,6 @@ export function ConversationChatView(props: {
           </div>
         )}
       </div>
-
-      <OutcomeSheet
-        open={showOutcome}
-        onOpenChange={(open) => {
-          if (!open) closeOutcomePrompt();
-        }}
-        onYes={() => {
-          if (data) sessionStorage.setItem(`ys_outcome_${data.conversation.id}`, "1");
-          void setOutcome.mutateAsync("purchased");
-        }}
-        onNo={(reason) => {
-          if (data) sessionStorage.setItem(`ys_outcome_${data.conversation.id}`, "1");
-          void setOutcome.mutateAsync(reason);
-        }}
-        listingSlug={data.listing.slug}
-      />
     </main>
   );
 }

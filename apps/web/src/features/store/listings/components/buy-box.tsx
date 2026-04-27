@@ -16,14 +16,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/features/shared/star-rating";
 
-function buildMessageSellerInitialText(
-  listingName: string,
-  variantLabel: string | undefined,
-  quantity: number,
-) {
-  return `About "${listingName}"${variantLabel ? ` (${variantLabel})` : ""} — Qty: ${quantity}.\n\nHi — I have a question about this listing.`;
-}
-
 export interface ListingVariantOption {
   id: string;
   label: string;
@@ -116,7 +108,6 @@ export function BuyBox({
     createConversation.mutate(
       {
         listingId,
-        initialMessage: buildMessageSellerInitialText(name, v.label, quantity),
       },
       {
         onError: (err) => {

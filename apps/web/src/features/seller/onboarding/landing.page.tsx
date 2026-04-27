@@ -5,12 +5,13 @@ import { Store } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAuthDialog } from "@/features/shared/auth";
-import { BrandLogo } from "@/components/layout/brand-logo";
 import { Button } from "@/components/ui/button";
 import { assetUrl } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { myShopQuery } from "../shared/shop.queries";
+
+import { SellerMarketingHeader } from "./seller-marketing-header";
 
 /** Category mosaic (tall cells at 0 and 3). */
 const CATEGORY_MOSAIC_FILES = [
@@ -37,7 +38,14 @@ export function SellerLandingPage() {
   });
 
   if (sessionPending || (!!session?.user && shopQuery.isLoading)) {
-    return null;
+    return (
+      <div className="bg-background">
+        <SellerMarketingHeader />
+        <div className="mx-auto max-w-6xl px-4 py-12 text-sm text-muted-foreground md:px-6">
+          Loading…
+        </div>
+      </div>
+    );
   }
 
   if (shopQuery.data?.shop) {
@@ -66,26 +74,7 @@ export function SellerLandingPage() {
 
   return (
     <div className="bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 md:px-6">
-          <Link to="/$locale" params={{ locale }} className="flex shrink-0 items-center">
-            <BrandLogo className="text-primary" />
-          </Link>
-          <nav className="flex items-center gap-2 text-sm">
-            {!sessionPending && !session?.user && (
-              <Button
-                size="sm"
-                variant="ghost"
-                type="button"
-                className="rounded-full"
-                onClick={() => openAuth({ redirectToSellerPortal: true })}
-              >
-                Sign in
-              </Button>
-            )}
-          </nav>
-        </div>
-      </header>
+      <SellerMarketingHeader />
 
       <section className="relative overflow-hidden pb-16 md:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />

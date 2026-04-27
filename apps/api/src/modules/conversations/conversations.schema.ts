@@ -2,7 +2,8 @@ import { z } from "zod";
 
 export const createConversationBodySchema = z.object({
   listingId: z.string().min(1),
-  initialMessage: z.string().min(1).max(20_000),
+  /** When omitted or whitespace-only, the thread opens with no first message. */
+  initialMessage: z.string().max(20_000).optional(),
   intentKind: z.string().max(64).optional(),
   meta: z.record(z.string(), z.unknown()).optional(),
 });

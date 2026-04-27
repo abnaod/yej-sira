@@ -64,6 +64,7 @@ export function Header() {
         <Link
           to="/$locale"
           params={{ locale }}
+          activeOptions={{ exact: true }}
           className="flex shrink-0 items-center"
         >
           <BrandLogo className="text-primary" />
