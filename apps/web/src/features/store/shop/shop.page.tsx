@@ -1,16 +1,7 @@
 import type { Locale } from "@ys/intl";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
-import {
-  Clock,
-  ExternalLink,
-  Mail,
-  MapPin,
-  Package,
-  Percent,
-  Phone,
-  Share2,
-} from "lucide-react";
+import { Clock, MapPin, Package, Percent, Share2 } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -20,9 +11,8 @@ import { DataPagination } from "@/features/shared/data-pagination";
 import { addToCartMutationOptions } from "@/features/store/cart/cart.queries";
 import { assetUrl } from "@/lib/api";
 import { featureCartCheckout, featureConversations } from "@/lib/features";
-import { cn } from "@/lib/utils";
 
-import type { ShopSocialLinks } from "./shop.queries";
+import { SHOP_BANNER_PLACEHOLDER } from "./shop-assets";
 import { shopPublicQuery } from "./shop.queries";
 
 const routeApi = getRouteApi("/$locale/(store)/shops/$shopSlug");
@@ -52,52 +42,6 @@ function formatReplyText(minutes: number): string {
   return h === 1 ? "Usually replies within 1 hour" : `Usually replies within ${h} hours`;
 }
 
-function contactHrefPhone(phone: string) {
-  const digits = phone.replace(/[^\d+]/g, "");
-  return digits.startsWith("+") ? `tel:${digits}` : `tel:${digits}`;
-}
-
-type SocialKey = "telegram" | "whatsapp" | "instagram" | "facebook" | "tiktok" | "website";
-
-const SOCIAL_LABELS: Record<SocialKey, string> = {
-  telegram: "Telegram",
-  whatsapp: "WhatsApp",
-  instagram: "Instagram",
-  facebook: "Facebook",
-  tiktok: "TikTok",
-  website: "Website",
-};
-
-function SocialLinksRow({ links }: { links: ShopSocialLinks | null }) {
-  if (!links) return null;
-  const items = (Object.keys(SOCIAL_LABELS) as SocialKey[])
-    .map((k) => {
-      const url = links[k]?.trim();
-      if (!url) return null;
-      return { key: k, url, label: SOCIAL_LABELS[k] };
-    })
-    .filter((x): x is { key: SocialKey; url: string; label: string } => x != null);
-
-  if (items.length === 0) return null;
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map(({ key, url, label }) => (
-        <a
-          key={key}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2.5 py-1.5 text-xss font-medium text-foreground transition-colors hover:border-primary hover:bg-primary/5"
-        >
-          {label}
-          <ExternalLink className="size-3 opacity-70" />
-        </a>
-      ))}
-    </div>
-  );
-}
-
 export function ShopPage() {
   const { shopSlug, locale: localeParam } = routeApi.useParams();
   const { page } = routeApi.useSearch();
@@ -110,28 +54,40 @@ export function ShopPage() {
 
   const { shop, listings, total, totalPages } = data;
 
-  const accent = shop.accentColor?.trim() || null;
+  const bannerSrc = shop.bannerImageUrl?.trim() || SHOP_BANNER_PLACEHOLDER;
 
   const locationLine = [shop.subcity, shop.city].filter(Boolean).join(" · ") || null;
 
   const onShare = useCallback(async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    if (!url) return;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: shop.name, text: shop.name, url });
-        return;
+    if (typeof window === "undefined") return;
+    const shareUrl = new URL(
+      `/${locale}/shops/${encodeURIComponent(shopSlug)}`,
+      window.location.origin,
+    ).href;
+    const shareData: ShareData = { title: shop.name, text: shop.name, url: shareUrl };
+
+    if (typeof navigator.share === "function") {
+      const can =
+        typeof navigator.canShare !== "function" || navigator.canShare(shareData);
+      if (can) {
+        try {
+          await navigator.share(shareData);
+          return;
+        } catch (e) {
+          const isAbort =
+            (e instanceof DOMException || e instanceof Error) && e.name === "AbortError";
+          if (isAbort) return;
+        }
       }
-    } catch (e) {
-      if (e instanceof Error && e.name === "AbortError") return;
     }
+
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       toast.success("Link copied to clipboard");
     } catch {
       toast.error("Could not copy link");
     }
-  }, [shop.name]);
+  }, [locale, shop.name, shopSlug]);
 
   useEffect(() => {
     document.title = `${shop.name} · YEJSIRA`;
@@ -139,175 +95,107 @@ export function ShopPage() {
 
   return (
     <main className="pb-12">
-      <header className="overflow-hidden rounded-2xl border border-border bg-card text-card-foreground">
+      <header className="overflow-hidden rounded-lg border border-border">
         <div
-          className={cn(
-            "relative h-36 w-full sm:h-44",
-            !shop.bannerImageUrl && "bg-muted",
-          )}
-          style={
-            !shop.bannerImageUrl && accent
-              ? { background: `linear-gradient(135deg, ${accent}33 0%, var(--card) 100%)` }
-              : undefined
-          }
+          className="relative flex min-h-44 w-full flex-col justify-end sm:min-h-52"
         >
-          {shop.bannerImageUrl ? (
-            <img
-              src={assetUrl(shop.bannerImageUrl)}
-              alt=""
-              className="size-full object-cover"
-            />
-          ) : null}
+          <img
+            src={assetUrl(bannerSrc)}
+            alt=""
+            className="absolute inset-0 size-full object-cover"
+          />
           <div
-            className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/30 to-transparent"
+            className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/92 via-black/55 to-black/10"
             aria-hidden
           />
-        </div>
-
-        {/* Identity sits below the banner in the card body so label + name stay on a light, readable surface. Only the logo may overlap the banner. */}
-        <div className="relative border-t border-border/80 bg-card px-5 pb-6 pt-5 sm:px-8 sm:pt-6 sm:pb-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:gap-6">
-            <div className="flex shrink-0 justify-center sm:justify-start sm:-mt-10">
-              <div className="size-24 overflow-hidden rounded-2xl border-4 border-card bg-card shadow-sm sm:size-28">
+          <div className="relative z-10 flex flex-col gap-3 px-4 pt-4 pb-3 text-white sm:flex-row sm:items-start sm:justify-between sm:gap-5 sm:px-6 sm:pt-5 sm:pb-4">
+            <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+              <div className="shrink-0 rounded-lg border border-white/25 bg-black/35 p-2 shadow-sm backdrop-blur-sm sm:p-2.5">
                 {shop.imageUrl ? (
                   <img
                     src={assetUrl(shop.imageUrl)}
                     alt={`${shop.name} logo`}
-                    className="size-full object-cover"
+                    className="size-10 rounded-md object-cover sm:size-12"
                   />
                 ) : (
                   <div
-                    className="flex size-full items-center justify-center bg-muted/80 text-2xl font-medium text-muted-foreground"
+                    className="flex size-10 items-center justify-center rounded-md bg-white/15 text-xs font-semibold text-white/90 sm:size-12 sm:text-sm"
                     aria-label={`${shop.name} (no logo)`}
                   >
                     {shopInitials(shop.name)}
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="min-w-0 flex-1 space-y-3 sm:pt-0">
-              <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                Shop
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 space-y-1">
-                  <h1 className="font-serif text-2xl font-normal tracking-tight text-foreground md:text-3xl">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex flex-col gap-0.5">
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-white/60">
+                    Shop
+                  </p>
+                  <h1 className="font-serif text-2xl font-normal tracking-tight text-white md:text-3xl">
                     {shop.name}
                   </h1>
-                  {locationLine ? (
-                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <MapPin className="size-3.5 shrink-0" />
-                      {locationLine}
-                    </p>
-                  ) : null}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="shrink-0"
-                    onClick={() => void onShare()}
-                  >
-                    <Share2 className="size-3.5" />
-                    Share
-                  </Button>
-                </div>
-              </div>
-
-              <dl className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1.5">
-                  <Package className="size-3.5 shrink-0" />
-                  <dt className="sr-only">Listings</dt>
-                  <dd>
-                    <span className="font-medium text-foreground">{shop.listingCount}</span>{" "}
-                    {shop.listingCount === 1 ? "listing" : "listings"}
-                  </dd>
-                </div>
-                {totalPages > 1 ? (
-                  <div>
-                    <dt className="sr-only">Catalog page</dt>
-                    <dd>
-                      Page{" "}
-                      <span className="font-medium text-foreground">
-                        {page} of {totalPages}
-                      </span>
-                    </dd>
-                  </div>
+                {locationLine ? (
+                  <p className="flex items-center gap-1.5 text-sm text-white/80">
+                    <MapPin className="size-3.5 shrink-0 opacity-80" />
+                    {locationLine}
+                  </p>
                 ) : null}
-                {shop.responseRate != null ? (
+                <dl className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-white/75">
                   <div className="flex items-center gap-1.5">
-                    <Percent className="size-3.5 shrink-0" />
-                    <dt className="sr-only">Response rate</dt>
+                    <Package className="size-3 shrink-0 opacity-80" />
+                    <dt className="sr-only">Listings</dt>
                     <dd>
-                      <span className="font-medium text-foreground">
-                        {Math.round(shop.responseRate * 100)}%
-                      </span>{" "}
-                      response rate
+                      <span className="font-medium text-white">{shop.listingCount}</span>{" "}
+                      {shop.listingCount === 1 ? "listing" : "listings"}
                     </dd>
                   </div>
-                ) : null}
-                <div className="flex items-center gap-1.5">
-                  <Clock className="size-3.5 shrink-0" />
-                  <dt className="sr-only">Reply time</dt>
-                  <dd>{formatReplyText(shop.estimatedReplyMinutes)}</dd>
-                </div>
-                <div>
-                  <dt className="sr-only">On YEJSIRA since</dt>
-                  <dd>Member since {formatMemberSince(shop.createdAt, locale)}</dd>
-                </div>
-              </dl>
-            </div>
-          </div>
-
-          {shop.description ? (
-            <p className="mt-6 max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground sm:mt-8">
-              {shop.description}
-            </p>
-          ) : (
-            <p className="mt-6 text-sm italic text-muted-foreground sm:mt-8">
-              This seller has not added a description yet.
-            </p>
-          )}
-
-          {(shop.contactEmail ||
-            shop.contactPhone ||
-            (shop.socialLinks && Object.keys(shop.socialLinks).length > 0)) && (
-            <div className="mt-6 space-y-3 border-t border-border pt-6">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Contact
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                {shop.contactEmail ? (
-                  <a
-                    href={`mailto:${shop.contactEmail}`}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline-offset-4 hover:underline"
-                  >
-                    <Mail className="size-3.5 text-muted-foreground" />
-                    {shop.contactEmail}
-                  </a>
-                ) : null}
-                {shop.contactPhone ? (
-                  <a
-                    href={contactHrefPhone(shop.contactPhone)}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-foreground underline-offset-4 hover:underline"
-                  >
-                    <Phone className="size-3.5 text-muted-foreground" />
-                    {shop.contactPhone}
-                  </a>
-                ) : null}
+                  {totalPages > 1 ? (
+                    <div>
+                      <dt className="sr-only">Catalog page</dt>
+                      <dd>
+                        Page{" "}
+                        <span className="font-medium text-white">
+                          {page} of {totalPages}
+                        </span>
+                      </dd>
+                    </div>
+                  ) : null}
+                  {shop.responseRate != null ? (
+                    <div className="flex items-center gap-1.5">
+                      <Percent className="size-3 shrink-0 opacity-80" />
+                      <dt className="sr-only">Response rate</dt>
+                      <dd>
+                        <span className="font-medium text-white">
+                          {Math.round(shop.responseRate * 100)}%
+                        </span>{" "}
+                        response rate
+                      </dd>
+                    </div>
+                  ) : null}
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="size-3 shrink-0 opacity-80" />
+                    <dt className="sr-only">Reply time</dt>
+                    <dd>{formatReplyText(shop.estimatedReplyMinutes)}</dd>
+                  </div>
+                  <div>
+                    <dt className="sr-only">On YEJSIRA since</dt>
+                    <dd>Member since {formatMemberSince(shop.createdAt, locale)}</dd>
+                  </div>
+                </dl>
               </div>
-              <SocialLinksRow links={shop.socialLinks} />
             </div>
-          )}
-
-          {featureConversations ? (
-            <p className="mt-6 text-sm text-muted-foreground">
-              Open a product to message this seller in chat — that&apos;s how most orders start
-              here.
-            </p>
-          ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 self-start border-white/35 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white sm:self-auto"
+              onClick={() => void onShare()}
+            >
+              <Share2 className="size-3.5" />
+              Share
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -357,7 +245,7 @@ export function ShopPage() {
         </div>
 
         {listings.length === 0 ? (
-          <div className="mt-8 rounded-xl border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
+          <div className="mt-8 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
             <p className="font-medium text-foreground">No products listed yet</p>
             <p className="mt-2 text-sm text-muted-foreground">
               Check back soon or browse other shops from the home page.

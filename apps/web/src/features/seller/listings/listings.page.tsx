@@ -203,7 +203,7 @@ export function SellerListingsPage() {
       <div className="mx-auto max-w-3xl px-4">
         <p className="text-muted-foreground">You don&apos;t have a shop yet.</p>
         <Button className="mt-4" asChild>
-          <Link to="/$locale/sell/register" params={{ locale }}>
+          <Link to="/$locale/sell/onboarding" params={{ locale }}>
             Register your shop
           </Link>
         </Button>
@@ -225,6 +225,8 @@ export function SellerListingsPage() {
   const listingsLoading = listingsState.isLoading;
   const listingsMeta = listingsState.data;
   const stockCounts = listingsMeta?.stockCounts;
+  const listingCountForLimit = stockCounts?.all ?? 0;
+  const atListingLimit = listingCountForLimit >= shop.listingsLimit;
   const stockListingName =
     listings.find((l) => l.id === stockListingId)?.name ?? undefined;
 
@@ -238,7 +240,7 @@ export function SellerListingsPage() {
           <DialogHeader className="shrink-0 gap-1 border-b px-6 py-4 text-left">
             <DialogTitle>New listing</DialogTitle>
             <DialogDescription>
-              Add category, variants, images, and description for your listing.
+              Add category, price, stock, images, and description for your listing.
             </DialogDescription>
           </DialogHeader>
           <SellerListingNewDialogForm
@@ -298,7 +300,7 @@ export function SellerListingsPage() {
           />
           <span className="text-xs text-muted-foreground">
             {listingsMeta
-              ? `${listingsMeta.total} listing${listingsMeta.total === 1 ? "" : "s"}`
+              ? `${listingsMeta.total} listing${listingsMeta.total === 1 ? "" : "s"} · ${listingCountForLimit} / ${shop.listingsLimit} shop limit`
               : "…"}
           </span>
         </div>
@@ -334,7 +336,16 @@ export function SellerListingsPage() {
           showFilter={false}
           showPagination={false}
           toolbarEnd={
-            <Button type="button" onClick={openNewListingDialog}>
+            <Button
+              type="button"
+              onClick={openNewListingDialog}
+              disabled={atListingLimit}
+              title={
+                atListingLimit
+                  ? `You can have at most ${shop.listingsLimit} listings. Delete one to add another.`
+                  : undefined
+              }
+            >
               <Plus className="size-3.5 shrink-0" aria-hidden />
               New listing
             </Button>

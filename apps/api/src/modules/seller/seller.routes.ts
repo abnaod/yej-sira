@@ -582,6 +582,13 @@ sellerRouter.post("/seller/listings", async (c) => {
     throw new HTTPException(400, { message: "Slug already in use" });
   }
 
+  const listingCount = await prisma.listing.count({ where: { shopId: shop.id } });
+  if (listingCount >= shop.listingsLimit) {
+    throw new HTTPException(400, {
+      message: `Listing limit reached (${shop.listingsLimit}). Delete a listing or contact support to raise your limit.`,
+    });
+  }
+
   const validatedAttributes = await validateListingAttributeInputs(
     categoryId,
     data.attributes ?? [],

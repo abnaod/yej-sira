@@ -31,27 +31,22 @@ export function SellerLandingPage() {
   const { openAuth } = useAuthDialog();
   const { data: session, isPending: sessionPending } = authClient.useSession();
 
-  // Client-side shop check for hard-refresh scenarios.
-  // beforeLoad already handles client-side navigations, but during SSR it
-  // can't send session cookies so the fetch fails. After hydration,
-  // beforeLoad does NOT re-run, so the component must handle the redirect.
   const shopQuery = useQuery({
     ...myShopQuery(locale),
     enabled: !!session?.user,
   });
 
-  // While session or shop ownership is undetermined, render nothing.
   if (sessionPending || (!!session?.user && shopQuery.isLoading)) {
     return null;
   }
 
-  // User has a shop — redirect to dashboard (declarative, no useEffect).
   if (shopQuery.data?.shop) {
     return <Navigate to="/$locale/sell/dashboard" params={{ locale }} />;
   }
 
   const getStartedLabel = t("sellerGetStarted");
-  const primaryCta = !sessionPending &&
+  const primaryCta =
+    !sessionPending &&
     (session?.user ? (
       <Button size="lg" className={ctaButtonClass} asChild>
         <Link to="/$locale/sell/register" params={{ locale }}>

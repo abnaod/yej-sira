@@ -25,7 +25,6 @@ import {
 import { AgreementNudgeCard } from "./agreement-nudge-card";
 import { ChatHeader } from "./chat-header";
 import { OutcomeSheet } from "./outcome-sheet";
-import { QuickActionsBar } from "./quick-actions-bar";
 
 const IDLE_MS = 24 * 60 * 60 * 1000;
 const THREAD_POLL_MS = 8_000;
@@ -213,13 +212,19 @@ export function ConversationChatView(props: {
             <Fragment key={m.id}>
               {showDay ? (
                 <div className="flex items-center justify-center py-1">
-                  <span className="rounded-full border border-border/60 bg-white/90 px-3 py-0.5 text-[11px] font-medium text-muted-foreground shadow-sm">
+                  <span
+                    className={cn(
+                      "border border-border/60 bg-white/90 px-3 py-0.5 text-[11px] font-medium text-muted-foreground shadow-sm",
+                      isSplit ? "rounded-md" : "rounded-full",
+                    )}
+                  >
                     {dayDividerLabel(m.createdAt, locale, t)}
                   </span>
                 </div>
               ) : null}
               {m.kind === "agreement_nudge" ? (
                 <AgreementNudgeCard
+                  className={isSplit ? "rounded-lg" : undefined}
                   body={m.body}
                   meta={m.meta}
                   onSelect={(body, key) =>
@@ -246,27 +251,20 @@ export function ConversationChatView(props: {
       </div>
 
       <div className={cn("shrink-0", isSplit ? "border-t border-border/60 bg-background p-2 sm:p-3" : "")}>
-        <QuickActionsBar
-          role={data.role}
-          disabled={send.isPending}
-          onPick={(body, meta) => send.mutate({ kind: "quick_action", body, meta })}
-          className={isSplit ? "mt-0" : undefined}
-        />
-
         {isSplit ? (
-          <div className="mt-2 flex items-end gap-2 rounded-2xl border border-border/80 bg-white px-2 py-2 shadow-sm">
+          <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-white px-2 py-2 shadow-sm">
             <input
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), onSend())}
               placeholder={t("typeMessage")}
-              className="min-h-9 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
+              className="h-9 min-h-9 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/70"
             />
             <Button
               type="button"
-              size="icon"
-              className="shrink-0 rounded-xl"
+              size="icon-lg"
+              className="shrink-0"
               onClick={onSend}
               disabled={send.isPending || !draft.trim()}
             >
@@ -274,16 +272,22 @@ export function ConversationChatView(props: {
             </Button>
           </div>
         ) : (
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex items-center gap-2">
             <input
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), onSend())}
               placeholder={t("typeMessage")}
-              className="min-h-10 flex-1 rounded-md border border-border bg-white px-3 py-2 text-sm"
+              className="h-10 min-h-10 flex-1 rounded-md border border-border bg-white px-3 py-2 text-sm"
             />
-            <Button type="button" size="icon" onClick={onSend} disabled={send.isPending || !draft.trim()}>
+            <Button
+              type="button"
+              size="icon"
+              className="size-10 shrink-0"
+              onClick={onSend}
+              disabled={send.isPending || !draft.trim()}
+            >
               <Send className="size-4" />
             </Button>
           </div>
@@ -324,7 +328,8 @@ function MessageBubble(props: {
   const bubble = (
     <div
       className={cn(
-        "max-w-[min(85%,20rem)] rounded-2xl px-3.5 py-2 text-sm",
+        "max-w-[min(85%,20rem)] px-3.5 py-2 text-sm",
+        isSplit ? "rounded-lg" : "rounded-2xl",
         isSelf ? "bg-primary text-primary-foreground" : "bg-white text-foreground shadow-sm",
         m.kind === "quick_action" &&
           "border border-dashed border-primary/40 bg-primary/5 text-foreground shadow-none",

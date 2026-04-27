@@ -3,7 +3,7 @@ import * as React from "react";
 import { AuthDialog } from "./auth-dialog";
 
 export type OpenAuthOptions = {
-  /** After sign-in from `/sell`, send the user to the seller dashboard shell. */
+  /** After sign-in from seller CTAs, send the user to `/$locale/sell` (index routes to dashboard or onboarding). */
   redirectToSellerPortal?: boolean;
   /**
    * "checkout" renders the Etsy-style modal with "Continue as a guest" as the

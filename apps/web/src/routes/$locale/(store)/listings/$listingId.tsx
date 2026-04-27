@@ -5,6 +5,7 @@ import { ListingPage } from "@/features/store/listings";
 import {
   moreFromShopListingsQuery,
   listingDetailQuery,
+  listingReviewsQuery,
   relatedListingsQuery,
   type ListingDetailResponse,
 } from "@/features/store/listings/listings.queries";
@@ -17,6 +18,9 @@ export const Route = createFileRoute("/$locale/(store)/listings/$listingId")({
       context.queryClient.ensureQueryData(relatedListingsQuery(locale, params.listingId)),
       context.queryClient.ensureQueryData(
         moreFromShopListingsQuery(locale, params.listingId),
+      ),
+      context.queryClient.ensureQueryData(
+        listingReviewsQuery(locale, params.listingId),
       ),
     ]);
     return { detail: detail as ListingDetailResponse };

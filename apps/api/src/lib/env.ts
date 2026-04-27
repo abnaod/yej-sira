@@ -25,6 +25,18 @@ const rawEnvSchema = z.object({
   /** Google OAuth (optional). Enable when both are set. */
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  /** Facebook Login (optional). */
+  FACEBOOK_CLIENT_ID: z.string().optional(),
+  FACEBOOK_CLIENT_SECRET: z.string().optional(),
+  /**
+   * better-auth-telegram: bot token and username; OIDC client secret from BotFather Web Login.
+   * Redirect: `BETTER_AUTH_URL` + `/api/auth/callback/telegram-oidc` (e.g. register in @BotFather).
+   */
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  /** Bot @handle without the @ (e.g. my_shop_bot) */
+  TELEGRAM_BOT_USERNAME: z.string().optional(),
+  /** OIDC client secret from BotFather Web Login — not the bot token */
+  TELEGRAM_OIDC_CLIENT_SECRET: z.string().optional(),
   /** Chapa payment gateway */
   CHAPA_SECRET_KEY: z.string().min(1),
   CHAPA_WEBHOOK_SECRET: z.string().optional(),

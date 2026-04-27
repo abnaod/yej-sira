@@ -1,13 +1,7 @@
 import type { Locale } from "@ys/intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import {
-  ExternalLink,
-  ImagePlus,
-  Loader2,
-  Trash2,
-  Upload,
-} from "lucide-react";
+import { ExternalLink, Loader2, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -28,6 +22,7 @@ import { apiFetchJson, assetUrl, uploadImage } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 
+import { SHOP_BANNER_PLACEHOLDER } from "@/features/store/shop/shop-assets";
 import { myShopQuery, type MyShop, type ShopSocialLinks, type UpdateShopBody } from "../shared/shop.queries";
 
 /**
@@ -217,7 +212,7 @@ export function SellerStorefrontPage() {
       <div className="mx-auto max-w-3xl px-4">
         <p className="text-muted-foreground">You don&apos;t have a shop yet.</p>
         <Button className="mt-4" asChild>
-          <Link to="/$locale/sell/register" params={{ locale }}>
+          <Link to="/$locale/sell/onboarding" params={{ locale }}>
             Register your shop
           </Link>
         </Button>
@@ -318,7 +313,6 @@ export function SellerStorefrontPage() {
             onPick={() => bannerInputRef.current?.click()}
             onClear={() => updateField("bannerImageUrl", null)}
             onFile={(file) => void handleBannerFile(file)}
-            accentColor={form.accentColor}
             logoUrl={form.imageUrl}
             shopName={form.name}
           />
@@ -529,12 +523,10 @@ function BannerEditor(props: {
   onPick: () => void;
   onClear: () => void;
   onFile: (file: File) => void;
-  accentColor: string;
   logoUrl: string | null;
   shopName: string;
 }) {
-  const { previewUrl, uploading, inputRef, onPick, onClear, onFile, accentColor, logoUrl, shopName } =
-    props;
+  const { previewUrl, uploading, inputRef, onPick, onClear, onFile, logoUrl, shopName } = props;
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -545,19 +537,12 @@ function BannerEditor(props: {
         className={cn(
           "relative aspect-4/1 w-full overflow-hidden rounded-lg border border-border bg-muted",
         )}
-        style={{ backgroundColor: previewUrl ? undefined : `${accentColor}1f` }}
       >
-        {previewUrl ? (
-          <img
-            src={assetUrl(previewUrl)}
-            alt="Storefront banner preview"
-            className="size-full object-cover"
-          />
-        ) : (
-          <div className="flex size-full items-center justify-center text-sm text-muted-foreground">
-            <ImagePlus className="mr-2 size-4" /> No banner yet
-          </div>
-        )}
+        <img
+          src={assetUrl(previewUrl || SHOP_BANNER_PLACEHOLDER)}
+          alt="Storefront banner preview"
+          className="size-full object-cover"
+        />
         {logoUrl ? (
           <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-md bg-background/80 px-2 py-1 backdrop-blur-sm">
             <img

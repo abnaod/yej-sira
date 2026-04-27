@@ -63,7 +63,7 @@ export function SellerMessagesLayout() {
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-1 overflow-hidden rounded-xl border border-border/80 bg-card shadow-sm",
+        "flex h-full min-h-0 flex-1 overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm",
         "max-lg:min-h-[min(100dvh,52rem)] lg:min-h-[calc(100dvh-7.5rem)]",
       )}
     >
@@ -148,7 +148,7 @@ function InboxItem(props: {
         to={detailTo}
         params={{ locale, conversationId: c.id }}
         className={cn(
-          "flex gap-2.5 rounded-xl px-2.5 py-2.5 transition-colors",
+          "flex gap-2.5 rounded-md px-2.5 py-2.5 transition-colors",
           active
             ? "bg-primary/10 ring-1 ring-primary/20"
             : "hover:bg-muted/60",

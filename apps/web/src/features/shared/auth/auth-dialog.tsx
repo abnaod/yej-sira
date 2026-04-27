@@ -52,7 +52,7 @@ function getDefaultCallbackUrl() {
 
 function getSellerPortalCallbackUrl(locale: Locale) {
   if (typeof window === "undefined") return "/";
-  return `${window.location.origin}/${locale}/sell/dashboard`;
+  return `${window.location.origin}/${locale}/sell`;
 }
 
 function formatAuthError(err: unknown): string {
@@ -77,7 +77,7 @@ export type AuthDialogProps = {
    */
   mode?: "default" | "checkout";
   onContinueAsGuest?: () => void;
-  /** Invoked after a successful email or Google sign-in. */
+  /** Invoked after a successful sign-in (email or Google). */
   onSignInSuccess?: () => void;
 };
 
@@ -132,7 +132,7 @@ export function AuthDialog({
         return;
       }
       if (redirectToSellerPortal) {
-        void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
+        void navigate({ to: "/$locale/sell", params: { locale } });
       }
       onSignInSuccess?.();
       onOpenChange(false);
@@ -141,6 +141,10 @@ export function AuthDialog({
     }
   };
 
+  const oauthCallbackUrl = redirectToSellerPortal
+    ? getSellerPortalCallbackUrl(locale)
+    : getDefaultCallbackUrl();
+
   const handleGoogle = async () => {
     setError(null);
     setOauthError(null);
@@ -148,9 +152,7 @@ export function AuthDialog({
     try {
       const { error: err } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: redirectToSellerPortal
-          ? getSellerPortalCallbackUrl(locale)
-          : getDefaultCallbackUrl(),
+        callbackURL: oauthCallbackUrl,
       });
       if (err) {
         setOauthError(formatAuthError(err));
@@ -179,7 +181,7 @@ export function AuthDialog({
         return;
       }
       if (redirectToSellerPortal) {
-        void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
+        void navigate({ to: "/$locale/sell", params: { locale } });
       }
       onSignInSuccess?.();
       onOpenChange(false);
@@ -241,6 +243,31 @@ export function AuthDialog({
                 <p className="text-base font-semibold">Sign in or register</p>
               </>
             )}
+            <div className="flex flex-col gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full text-sm text-foreground hover:text-foreground"
+                disabled={pending}
+                onClick={() => void handleGoogle()}
+              >
+                <GoogleIcon className="size-4 shrink-0" />
+                {tab === "login" ? "Sign in with Google" : "Sign up with Google"}
+              </Button>
+              {oauthError && (
+                <p className="text-sm text-destructive" role="alert">
+                  {oauthError}
+                </p>
+              )}
+              <div className="mt-3 flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="whitespace-nowrap text-sm text-muted-foreground">
+                  Or with email
+                </span>
+                <Separator className="flex-1" />
+              </div>
+            </div>
             <div>
               {tab === "login" ? (
                 <form onSubmit={handleLogin} className="flex flex-col gap-5">
@@ -343,30 +370,7 @@ export function AuthDialog({
               )}
             </div>
 
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center gap-3">
-                <Separator className="flex-1" />
-                <span className="whitespace-nowrap text-sm text-muted-foreground">
-                  Or continue with
-                </span>
-                <Separator className="flex-1" />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="w-full text-sm"
-                disabled={pending}
-                onClick={() => void handleGoogle()}
-              >
-                <GoogleIcon className="size-4 shrink-0" />
-                {tab === "login" ? "Sign in with Google" : "Sign up with Google"}
-              </Button>
-              {oauthError && (
-                <p className="text-sm text-destructive" role="alert">
-                  {oauthError}
-                </p>
-              )}
+            <div>
               {tab === "login" ? (
                 <p className="text-center text-sm text-muted-foreground">
                   New to YEJSIRA?{" "}

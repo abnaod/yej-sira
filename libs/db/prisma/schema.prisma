@@ -174,7 +174,11 @@ model Shop {
   accentColor              String?        @map("accent_color")
   ownerUserId              String?        @map("owner_user_id")
   owner                    User?          @relation(fields: [ownerUserId], references: [id], onDelete: Restrict)
-  status                   ShopStatus     @default(pending)
+  status                   ShopStatus     @default(active)
+  /**
+   * Max listings this shop may create (enforced in seller listing create). Platform shops may use a higher value in seed.
+   */
+  listingsLimit            Int            @default(20) @map("listings_limit")
   contactEmail             String?        @map("contact_email")
   contactPhone             String?        @map("contact_phone")
   socialLinks              Json?          @map("social_links")
@@ -190,7 +194,7 @@ model Shop {
   businessHouseNumber      String?        @map("business_house_number")
   businessSpecificLocation String?        @map("business_specific_location")
   /**
-   * Onboarding — Etsy-style checklist. Shop auto-activates when all required fields are set.
+   * Onboarding — Etsy-style checklist. New shops default to active; pending shops can still be activated here when onboarding completes.
    */
   acceptedSellerPolicyAt   DateTime?      @map("accepted_seller_policy_at")
   payoutMethod             String?        @map("payout_method")

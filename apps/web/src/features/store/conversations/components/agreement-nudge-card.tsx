@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const ACTIONS = [
   { key: "pick_cod", labelKey: "payCod" as const },
@@ -14,11 +15,14 @@ export function AgreementNudgeCard(props: {
   body: string;
   meta: unknown;
   onSelect: (body: string, key: string) => void;
+  className?: string;
 }) {
-  const { body, onSelect } = props;
+  const { body, onSelect, className } = props;
   const { t } = useTranslation("common");
   return (
-    <div className="mx-auto w-full max-w-md rounded-xl border border-primary/30 bg-primary/5 p-4">
+    <div
+      className={cn("mx-auto w-full max-w-md rounded-xl border border-primary/30 bg-primary/5 p-4", className)}
+    >
       <p className="text-sm font-semibold text-foreground">{t("agreementReadyTitle")}</p>
       <p className="mt-1 text-sm text-muted-foreground">{body}</p>
       <div className="mt-3 flex flex-wrap gap-2">

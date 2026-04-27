@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=../../.env src/index.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2022 --outfile=dist/index.js --sourcemap --external:dotenv --external:@prisma/client --external:@prisma/adapter-pg --external:pg --external:@hono/node-server --external:hono --external:better-auth --external:zod --external:@sentry/node",
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=es2022 --outfile=dist/index.js --sourcemap --external:dotenv --external:@prisma/client --external:@prisma/adapter-pg --external:pg --external:@hono/node-server --external:hono --external:better-auth --external:better-auth-telegram --external:zod --external:@sentry/node",
     "start": "node --env-file=../../.env dist/index.js",
     "lint": "tsc --noEmit -p tsconfig.json",
     "test": "node --import tsx --test src/**/*.test.ts",
@@ -19,6 +19,7 @@
     "@ys/db": "workspace:*",
     "@ys/intl": "workspace:*",
     "better-auth": "catalog:",
+    "better-auth-telegram": "^1.5.0",
     "hono": "catalog:",
     "zod": "catalog:"
   },

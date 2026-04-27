@@ -1,18 +1,28 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, Minus, Plus } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import type { Locale } from "@ys/intl";
 
 import type { AddToCartInput } from "@/features/store/cart/cart.queries";
 import { useAuthDialog } from "@/features/shared/auth";
-import { IntentSheet } from "@/features/store/conversations/components/intent-sheet";
+import { createConversationMutationOptions } from "@/features/store/conversations/conversations.queries";
 import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "@/features/shared/star-rating";
+
+function buildMessageSellerInitialText(
+  listingName: string,
+  variantLabel: string | undefined,
+  quantity: number,
+) {
+  return `About "${listingName}"${variantLabel ? ` (${variantLabel})` : ""} — Qty: ${quantity}.\n\nHi — I have a question about this listing.`;
+}
 
 export interface ListingVariantOption {
   id: string;
@@ -71,13 +81,20 @@ export function BuyBox({
 }: BuyBoxProps) {
   const { t } = useTranslation("common");
   const locale = useLocale() as Locale;
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { data: session } = authClient.useSession();
   const { openAuth } = useAuthDialog();
   const showMessage = featureConversations;
   const showCommerce = featureCartCheckout;
   const [selected, setSelected] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [intentOpen, setIntentOpen] = useState(false);
+
+  const createConversation = useMutation(
+    createConversationMutationOptions(queryClient, locale, (conversationId) => {
+      void navigate({ to: "/$locale/messages/$conversationId", params: { locale, conversationId } });
+    }),
+  );
 
   const v = variants[selected];
   const price = v?.price ?? 0;
@@ -95,16 +112,26 @@ export function BuyBox({
   const ownListingHint =
     messageSellerDisabled && (messageSellerDisabledReason ?? t("cannotMessageOwnListing"));
 
+  const startConversation = () => {
+    createConversation.mutate(
+      {
+        listingId,
+        initialMessage: buildMessageSellerInitialText(name, v.label, quantity),
+      },
+      {
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : t("errorGeneric"));
+        },
+      },
+    );
+  };
+
   const openMessageFlow = () => {
     if (!session?.user) {
-      openAuth({
-        onSignInSuccess: () => {
-          setIntentOpen(true);
-        },
-      });
+      openAuth({ onSignInSuccess: startConversation });
       return;
     }
-    setIntentOpen(true);
+    startConversation();
   };
 
   return (
@@ -259,10 +286,10 @@ export function BuyBox({
         <Button
           size="lg"
           className="w-full"
-          disabled={stock < 1 || purchaseDisabled || messageSellerDisabled}
+          disabled={stock < 1 || purchaseDisabled || messageSellerDisabled || createConversation.isPending}
           onClick={openMessageFlow}
         >
-          {t("messageSellerAboutItem")}
+          {createConversation.isPending ? t("loading") : t("messageSellerAboutItem")}
         </Button>
       )}
 
@@ -290,17 +317,6 @@ export function BuyBox({
         </div>
       )}
 
-      {showMessage && !messageSellerDisabled && (
-        <IntentSheet
-          open={intentOpen}
-          onOpenChange={setIntentOpen}
-          listingId={listingId}
-          listingName={name}
-          variantLabel={v.label}
-          quantity={quantity}
-          locale={locale}
-        />
-      )}
     </div>
   );
 }

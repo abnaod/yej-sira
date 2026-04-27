@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, MoreHorizontal, Phone, Video } from "lucide-react";
+import { ArrowLeft, MoreHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ export function ChatHeader(props: {
           </Button>
         ) : null}
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-border/60 bg-muted">
+          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-border/60 bg-muted">
             {imageUrl ? <img src={imageUrl} alt="" className="h-full w-full object-cover" /> : null}
           </div>
           <div className="min-w-0 flex-1">
@@ -57,12 +57,6 @@ export function ChatHeader(props: {
           </div>
         </div>
         <div className="hidden shrink-0 items-center gap-0.5 sm:flex">
-          <Button type="button" size="icon" variant="ghost" className="text-muted-foreground" aria-label="Call">
-            <Phone className="size-4" />
-          </Button>
-          <Button type="button" size="icon" variant="ghost" className="text-muted-foreground" aria-label="Video">
-            <Video className="size-4" />
-          </Button>
           <Button type="button" size="icon" variant="ghost" className="text-muted-foreground" aria-label="More">
             <MoreHorizontal className="size-4" />
           </Button>

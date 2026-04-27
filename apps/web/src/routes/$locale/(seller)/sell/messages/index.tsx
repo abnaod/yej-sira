@@ -10,7 +10,7 @@ function SellerMessagesIndex() {
   const { t } = useTranslation("common");
   return (
     <div className="flex h-full min-h-[16rem] flex-1 flex-col items-center justify-center gap-2 px-6 text-center max-lg:min-h-[20rem]">
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+      <div className="flex size-14 items-center justify-center rounded-lg bg-primary/10 text-primary">
         <MessageSquare className="size-7" />
       </div>
       <h2 className="text-lg font-semibold tracking-tight text-foreground">{t("selectConversation")}</h2>

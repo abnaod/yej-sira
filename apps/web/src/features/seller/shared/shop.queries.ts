@@ -38,6 +38,7 @@ export type MyShop = {
   businessKebele: string | null;
   businessHouseNumber: string | null;
   businessSpecificLocation: string | null;
+  listingsLimit: number;
   payoutMethod: PayoutMethod | null;
   payoutAccountName: string | null;
   payoutAccountNumber: string | null;

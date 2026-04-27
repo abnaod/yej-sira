@@ -28,11 +28,11 @@ export function SellerAppShell() {
   useEffect(() => {
     if (sessionPending) return;
     if (!session?.user) {
-      void navigate({ to: "/$locale/sell", params: { locale } });
+      void navigate({ to: "/$locale/sell/onboarding", params: { locale } });
       return;
     }
     if (!shopQuery.isLoading && !shopQuery.data?.shop) {
-      void navigate({ to: "/$locale/sell", params: { locale } });
+      void navigate({ to: "/$locale/sell/onboarding", params: { locale } });
     }
   }, [sessionPending, session?.user, shopQuery.isLoading, shopQuery.data, navigate, locale]);
 

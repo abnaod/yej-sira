@@ -60,7 +60,7 @@ export function SellerDashboardPage() {
       <div className="mx-auto max-w-3xl px-4">
         <p className="text-muted-foreground">You don&apos;t have a shop yet.</p>
         <Button className="mt-4" asChild>
-          <Link to="/$locale/sell/register" params={{ locale }}>
+          <Link to="/$locale/sell/onboarding" params={{ locale }}>
             Register your shop
           </Link>
         </Button>
