@@ -6,10 +6,10 @@ export const Route = createFileRoute("/$locale/(store)/legal/terms")({
   component: TermsPage,
   head: () => ({
     meta: [
-      { title: "Terms of Service — Yej-sira" },
+      { title: "Terms of Service — Yejsira" },
       {
         name: "description",
-        content: "The terms governing use of the Yej-sira marketplace.",
+        content: "The terms governing use of the Yejsira marketplace.",
       },
     ],
   }),
@@ -22,7 +22,7 @@ function TermsPage() {
       updatedAt="April 21, 2026"
       intro={
         <p>
-          These Terms of Service govern your use of the Yej-sira marketplace.
+          These Terms of Service govern your use of the Yejsira marketplace.
           By accessing or using the service you agree to be bound by these
           terms.
         </p>
@@ -43,7 +43,7 @@ function TermsPage() {
           heading: "2. Buying",
           body: (
             <p>
-              Orders are fulfilled by independent sellers. Yej-sira facilitates
+              Orders are fulfilled by independent sellers. Yejsira facilitates
               payments via Chapa (card and Telebirr). Once your order is paid
               for it cannot be cancelled except as described in the Returns
               policy.
@@ -75,7 +75,7 @@ function TermsPage() {
           body: (
             <p>
               The service is provided &quot;as-is&quot; without warranty of any
-              kind. To the maximum extent permitted by law, Yej-sira disclaims
+              kind. To the maximum extent permitted by law, Yejsira disclaims
               all warranties and is not liable for indirect, incidental, or
               consequential damages.
             </p>
@@ -96,7 +96,7 @@ function TermsPage() {
           body: (
             <p>
               Questions about these terms? Email{" "}
-              <a href="mailto:support@yej-sira.com">support@yej-sira.com</a>.
+              <a href="mailto:support@yejsira.com">support@yejsira.com</a>.
             </p>
           ),
         },

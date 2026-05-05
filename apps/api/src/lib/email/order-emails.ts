@@ -65,12 +65,12 @@ export async function sendOrderConfirmedEmail(orderId: string) {
     trackLine,
     ...footerLines,
     "",
-    "— Yej-sira",
+    "— Yejsira",
   ].join("\n");
 
   await sendEmail({
     to,
-    subject: `Your Yej-sira order is confirmed`,
+    subject: `Your Yejsira order is confirmed`,
     text,
   });
 }
@@ -118,7 +118,7 @@ export async function sendSellerNewOrderEmail(orderId: string) {
       "",
       "Log in to your seller dashboard to start fulfillment.",
       "",
-      "— Yej-sira",
+      "— Yejsira",
     ].join("\n");
 
     await sendEmail({

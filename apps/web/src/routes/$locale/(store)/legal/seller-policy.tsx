@@ -6,10 +6,10 @@ export const Route = createFileRoute("/$locale/(store)/legal/seller-policy")({
   component: SellerPolicyPage,
   head: () => ({
     meta: [
-      { title: "Seller Policy — Yej-sira" },
+      { title: "Seller Policy — Yejsira" },
       {
         name: "description",
-        content: "Rules and expectations for sellers on the Yej-sira marketplace.",
+        content: "Rules and expectations for sellers on the Yejsira marketplace.",
       },
     ],
   }),
@@ -22,7 +22,7 @@ function SellerPolicyPage() {
       updatedAt="April 21, 2026"
       intro={
         <p>
-          This policy applies to every seller on Yej-sira. It supplements the
+          This policy applies to every seller on Yejsira. It supplements the
           Terms of Service. Failure to comply may result in suspension or
           removal of your shop.
         </p>
@@ -87,10 +87,10 @@ function SellerPolicyPage() {
           heading: "Suspension and appeals",
           body: (
             <p>
-              Yej-sira may suspend shops that violate this policy, harm buyers,
+              Yejsira may suspend shops that violate this policy, harm buyers,
               or pose a legal risk. You can appeal a suspension by emailing
               {" "}
-              <a href="mailto:sellers@yej-sira.com">sellers@yej-sira.com</a>.
+              <a href="mailto:sellers@yejsira.com">sellers@yejsira.com</a>.
             </p>
           ),
         },

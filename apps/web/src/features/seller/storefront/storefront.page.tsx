@@ -20,9 +20,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { authClient } from "@/lib/auth-client";
 import { apiFetchJson, assetUrl, uploadImage } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
-import { cn } from "@/lib/utils";
-
-import { ShopHeroFallbackSurface } from "@/features/store/shop/shop-hero-fallback";
 import { myShopQuery, type MyShop, type ShopSocialLinks, type UpdateShopBody } from "../shared/shop.queries";
 
 /**
@@ -34,7 +31,6 @@ type FormState = {
   name: string;
   description: string;
   imageUrl: string | null;
-  bannerImageUrl: string | null;
   accentColor: string;
   contactEmail: string;
   contactPhone: string;
@@ -48,7 +44,6 @@ function shopToForm(shop: MyShop): FormState {
     name: shop.name,
     description: shop.description ?? "",
     imageUrl: shop.imageUrl,
-    bannerImageUrl: shop.bannerImageUrl,
     accentColor: shop.accentColor ?? DEFAULT_ACCENT,
     contactEmail: shop.contactEmail ?? "",
     contactPhone: shop.contactPhone ?? "",
@@ -65,7 +60,6 @@ function isDirty(current: FormState, original: FormState): boolean {
     "name",
     "description",
     "imageUrl",
-    "bannerImageUrl",
     "accentColor",
     "contactEmail",
     "contactPhone",
@@ -104,9 +98,6 @@ function buildPatch(current: FormState, original: FormState): UpdateShopBody {
 
   if (current.imageUrl !== original.imageUrl) {
     patch.imageUrl = current.imageUrl ?? undefined;
-  }
-  if (current.bannerImageUrl !== original.bannerImageUrl) {
-    patch.bannerImageUrl = current.bannerImageUrl;
   }
   if (current.accentColor !== original.accentColor) {
     patch.accentColor = current.accentColor === DEFAULT_ACCENT ? null : current.accentColor;
@@ -153,9 +144,7 @@ export function SellerStorefrontPage() {
   const [form, setForm] = useState<FormState | null>(null);
   const [original, setOriginal] = useState<FormState | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
-  const [bannerUploading, setBannerUploading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
-  const bannerInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (shop && !form) {
@@ -249,18 +238,6 @@ export function SellerStorefrontPage() {
     }
   }
 
-  async function handleBannerFile(file: File) {
-    setBannerUploading(true);
-    try {
-      const url = await uploadImage(file, "shops", locale);
-      updateField("bannerImageUrl", url);
-    } catch (e) {
-      toast.error((e as Error).message || "Banner upload failed");
-    } finally {
-      setBannerUploading(false);
-    }
-  }
-
   function handleSubmit() {
     if (!form || !original) return;
     const patch = buildPatch(form, original);
@@ -302,20 +279,11 @@ export function SellerStorefrontPage() {
         <CardHeader>
           <CardTitle>Branding</CardTitle>
           <CardDescription>
-            Banner, logo, and accent color shown across your shop page.
+            Logo, name, and accent color shown across your shop page.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <BannerEditor
-            previewUrl={form.bannerImageUrl}
-            uploading={bannerUploading}
-            inputRef={bannerInputRef}
-            onPick={() => bannerInputRef.current?.click()}
-            onClear={() => updateField("bannerImageUrl", null)}
-            onFile={(file) => void handleBannerFile(file)}
-            logoUrl={form.imageUrl}
-            shopName={form.name}
-          />
+          <StorefrontPreview logoUrl={form.imageUrl} shopName={form.name} />
 
           <Separator />
 
@@ -516,86 +484,36 @@ export function SellerStorefrontPage() {
   );
 }
 
-function BannerEditor(props: {
-  previewUrl: string | null;
-  uploading: boolean;
-  inputRef: React.RefObject<HTMLInputElement | null>;
-  onPick: () => void;
-  onClear: () => void;
-  onFile: (file: File) => void;
-  logoUrl: string | null;
-  shopName: string;
-}) {
-  const { previewUrl, uploading, inputRef, onPick, onClear, onFile, logoUrl, shopName } = props;
-  const customBanner = previewUrl?.trim() ?? "";
-  const [customBannerFailed, setCustomBannerFailed] = useState(false);
-  useEffect(() => {
-    setCustomBannerFailed(false);
-  }, [customBanner]);
-  const showBannerPhoto = Boolean(customBanner && !customBannerFailed);
+function shopInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
+  return name.slice(0, 2).toUpperCase() || "?";
+}
+
+function StorefrontPreview(props: { logoUrl: string | null; shopName: string }) {
+  const { logoUrl, shopName } = props;
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Label>Banner image</Label>
-        <span className="text-xs text-muted-foreground">Recommended 1600 × 400</span>
-      </div>
-      <div
-        className={cn(
-          "relative aspect-4/1 w-full overflow-hidden rounded-lg border border-border bg-muted",
-        )}
-      >
-        {showBannerPhoto ? (
-          <img
-            src={assetUrl(customBanner)}
-            alt="Storefront banner preview"
-            className="size-full object-cover"
-            onError={() => {
-              if (customBanner) setCustomBannerFailed(true);
-            }}
-          />
-        ) : (
-          <ShopHeroFallbackSurface />
-        )}
-        {logoUrl ? (
-          <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-md bg-background/80 px-2 py-1 backdrop-blur-sm">
+    <div className="flex flex-col gap-2">
+      <Label>Storefront preview</Label>
+      <div className="flex items-center gap-3 py-2">
+        <div
+          className={`flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-sm sm:size-16${logoUrl ? "" : " bg-muted"}`}
+        >
+          {logoUrl ? (
             <img
               src={assetUrl(logoUrl)}
               alt=""
-              className="size-6 rounded-sm object-cover"
+              className="size-full object-cover"
             />
-            <span className="text-xs font-medium text-foreground">{shopName}</span>
-          </div>
-        ) : null}
-      </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp,image/gif"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onFile(file);
-          e.target.value = "";
-        }}
-      />
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={onPick}>
-          {uploading ? (
-            <>
-              <Loader2 className="size-3.5 animate-spin" /> Uploading…
-            </>
           ) : (
-            <>
-              <Upload className="size-3.5" />
-              {previewUrl ? "Replace banner" : "Upload banner"}
-            </>
+            <span className="text-xs font-semibold text-muted-foreground sm:text-sm">{shopInitials(shopName)}</span>
           )}
-        </Button>
-        {previewUrl && !uploading ? (
-          <Button type="button" variant="ghost" size="sm" onClick={onClear}>
-            <Trash2 className="size-3.5" /> Remove
-          </Button>
-        ) : null}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-serif text-lg font-normal tracking-tight text-foreground sm:text-xl">
+            {shopName || "Your shop name"}
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -614,7 +532,7 @@ function LogoEditor(props: {
     <div className="flex flex-col gap-3">
       <Label>Shop logo</Label>
       <div className="flex items-center gap-4 rounded-lg border border-dashed border-border p-4">
-        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
+        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-muted">
           {previewUrl ? (
             <img
               src={assetUrl(previewUrl)}

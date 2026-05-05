@@ -22,15 +22,23 @@ type SortValue = (typeof sortOptions)[number]["value"];
 export function SearchSortToolbar({
   sort,
   onSortChange,
+  className,
 }: {
   sort: SortValue;
   onSortChange: (sort: CategorySort) => void;
+  /** Merged onto the outer wrapper (e.g. `py-0` when nested in a toolbar row). */
+  className?: string;
 }) {
   const sortLabel =
     sortOptions.find((o) => o.value === sort)?.label ?? "Relevancy";
 
   return (
-    <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
+    <div
+      className={cn(
+        "flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-end sm:gap-4",
+        className,
+      )}
+    >
       <div className="w-fit max-w-full sm:ml-auto">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

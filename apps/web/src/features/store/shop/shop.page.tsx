@@ -1,19 +1,18 @@
 import type { Locale } from "@ys/intl";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
-import { Clock, MapPin, Package, Percent, Share2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { Clock, MapPin, Package, Percent, Star } from "lucide-react";
+import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ListingCard } from "@/features/store/listings/components/listing-card";
 import { DataPagination } from "@/features/shared/data-pagination";
+import type { CategorySort } from "@/features/store/category";
+import { SearchSortToolbar } from "@/features/store/search/components/search-sort-toolbar";
 import { addToCartMutationOptions } from "@/features/store/cart/cart.queries";
 import { assetUrl } from "@/lib/api";
 import { featureCartCheckout, featureConversations } from "@/lib/features";
-import { cn } from "@/lib/utils";
 
-import { ShopHeroFallbackSurface } from "./shop-hero-fallback";
 import { shopPublicQuery, type ShopPublicResponse } from "./shop.queries";
 
 type ShopPublic = ShopPublicResponse["shop"];
@@ -24,10 +23,10 @@ function shopInitials(name: string) {
   return name.slice(0, 2).toUpperCase() || "?";
 }
 
-function formatMemberSince(iso: string, locale: Locale) {
+function formatMemberSinceCompact(iso: string, locale: Locale) {
   try {
     return new Intl.DateTimeFormat(locale === "am" ? "am-ET" : "en-GB", {
-      month: "long",
+      month: "short",
       year: "numeric",
     }).format(new Date(iso));
   } catch {
@@ -35,232 +34,154 @@ function formatMemberSince(iso: string, locale: Locale) {
   }
 }
 
-function formatReplyText(minutes: number): string {
+function ShopReplyTimeLine({ minutes }: { minutes: number }) {
   if (minutes < 60) {
-    return `Usually replies within ${minutes} min`;
+    return (
+      <>
+        Replies in{" "}
+        <span className="font-semibold text-foreground">
+          {minutes} min
+        </span>
+      </>
+    );
   }
   const h = Math.max(1, Math.round(minutes / 60));
-  return h === 1 ? "Usually replies within 1 hour" : `Usually replies within ${h} hours`;
+  if (h === 1) {
+    return (
+      <>
+        Replies in{" "}
+        <span className="font-semibold text-foreground">1 hr</span>
+      </>
+    );
+  }
+  return (
+    <>
+      Replies in{" "}
+      <span className="font-semibold text-foreground">{h} hrs</span>
+    </>
+  );
+}
+
+function formatCompactReviewCount(n: number): string {
+  if (n >= 1_000_000) {
+    const v = n / 1_000_000;
+    return `${v >= 10 ? Math.round(v) : Math.round(v * 10) / 10}m`;
+  }
+  if (n >= 1_000) {
+    const v = n / 1_000;
+    return `${v >= 10 ? Math.round(v) : Math.round(v * 10) / 10}k`;
+  }
+  return String(n);
 }
 
 function ShopCatalogHero({
   locale,
-  shopSlug,
   shop,
   page,
   totalPages,
 }: {
   locale: Locale;
-  shopSlug: string;
   shop: ShopPublic;
   page: number;
   totalPages: number;
 }) {
-  const customBanner = shop.bannerImageUrl?.trim() ?? "";
-  const [customBannerFailed, setCustomBannerFailed] = useState(false);
-  useEffect(() => {
-    setCustomBannerFailed(false);
-  }, [customBanner]);
-  const showBannerPhoto = Boolean(customBanner && !customBannerFailed);
   const locationLine = [shop.subcity, shop.city].filter(Boolean).join(" · ") || null;
 
-  const onShare = useCallback(async () => {
-    if (typeof window === "undefined") return;
-    const shareUrl = new URL(
-      `/${locale}/shops/${encodeURIComponent(shopSlug)}`,
-      window.location.origin,
-    ).href;
-    const shareData: ShareData = { title: shop.name, text: shop.name, url: shareUrl };
-
-    if (typeof navigator.share === "function") {
-      const can =
-        typeof navigator.canShare !== "function" || navigator.canShare(shareData);
-      if (can) {
-        try {
-          await navigator.share(shareData);
-          return;
-        } catch (e) {
-          const isAbort =
-            (e instanceof DOMException || e instanceof Error) && e.name === "AbortError";
-          if (isAbort) return;
-        }
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("Link copied to clipboard");
-    } catch {
-      toast.error("Could not copy link");
-    }
-  }, [locale, shop.name, shopSlug]);
-
   return (
-    <header className="overflow-hidden rounded-lg border border-border">
-      <div className="relative flex min-h-44 w-full flex-col justify-end sm:min-h-52">
-        {showBannerPhoto ? (
-          <img
-            src={assetUrl(customBanner)}
-            alt=""
-            className="absolute inset-0 size-full object-cover"
-            onError={() => {
-              setCustomBannerFailed(true);
-            }}
-          />
-        ) : (
-          <ShopHeroFallbackSurface />
-        )}
-        {showBannerPhoto ? (
-          <div
-            className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/92 via-black/55 to-black/10"
-            aria-hidden
-          />
-        ) : null}
+    <header className="w-full">
+      <div className="flex min-w-0 items-start gap-4 sm:gap-5">
         <div
-          className={cn(
-            "relative z-10 flex flex-col gap-3 px-4 pt-4 pb-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5 sm:px-6 sm:pt-5 sm:pb-4",
-            showBannerPhoto ? "text-white" : "text-foreground",
-          )}
+          className={`size-16 shrink-0 overflow-hidden rounded-sm sm:size-20 md:size-24${shop.imageUrl ? "" : " bg-muted"}`}
         >
-          <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+          {shop.imageUrl ? (
+            <img
+              src={assetUrl(shop.imageUrl)}
+              alt={`${shop.name} logo`}
+              className="size-full object-cover"
+            />
+          ) : (
             <div
-              className={cn(
-                "shrink-0 rounded-lg border p-2 shadow-sm backdrop-blur-sm sm:p-2.5",
-                showBannerPhoto
-                  ? "border-white/25 bg-black/35"
-                  : "border-border bg-card/95",
-              )}
+              className="flex size-full items-center justify-center text-sm font-semibold text-muted-foreground sm:text-base"
+              aria-label={`${shop.name} (no logo)`}
             >
-              {shop.imageUrl ? (
-                <img
-                  src={assetUrl(shop.imageUrl)}
-                  alt={`${shop.name} logo`}
-                  className="size-10 rounded-md object-cover sm:size-12"
+              {shopInitials(shop.name)}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 space-y-1.5 text-foreground">
+          <h1 className="font-serif text-2xl font-normal tracking-tight text-foreground md:text-3xl">
+            {shop.name}
+          </h1>
+          {locationLine ? (
+            <p className="flex items-center gap-1.5 text-base text-muted-foreground">
+              <MapPin className="size-4 shrink-0 opacity-80" />
+              <span className="font-semibold text-foreground">{locationLine}</span>
+            </p>
+          ) : null}
+          <dl className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
+            {shop.overallRating != null && shop.reviewCount > 0 ? (
+              <div className="flex items-center gap-1.5">
+                <Star
+                  className="size-4 shrink-0 fill-amber-400 text-amber-400"
+                  aria-hidden
                 />
-              ) : (
-                <div
-                  className={cn(
-                    "flex size-10 items-center justify-center rounded-md text-xs font-semibold sm:size-12 sm:text-sm",
-                    showBannerPhoto
-                      ? "bg-white/15 text-white/90"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                  aria-label={`${shop.name} (no logo)`}
-                >
-                  {shopInitials(shop.name)}
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <div className="flex flex-col gap-0.5">
-                <p
-                  className={cn(
-                    "text-[10px] font-medium uppercase tracking-widest",
-                    showBannerPhoto ? "text-white/60" : "text-muted-foreground",
-                  )}
-                >
-                  Shop
-                </p>
-                <h1
-                  className={cn(
-                    "font-serif text-2xl font-normal tracking-tight md:text-3xl",
-                    showBannerPhoto ? "text-white" : "text-foreground",
-                  )}
-                >
-                  {shop.name}
-                </h1>
+                <dt className="sr-only">Overall rating</dt>
+                <dd>
+                  <span className="font-semibold text-foreground">
+                    {shop.overallRating.toFixed(1)}
+                  </span>
+                  <span>
+                    {" "}
+                    ({formatCompactReviewCount(shop.reviewCount)})
+                  </span>
+                </dd>
               </div>
-              {locationLine ? (
-                <p
-                  className={cn(
-                    "flex items-center gap-1.5 text-sm",
-                    showBannerPhoto ? "text-white/80" : "text-muted-foreground",
-                  )}
-                >
-                  <MapPin className="size-3.5 shrink-0 opacity-80" />
-                  {locationLine}
-                </p>
-              ) : null}
-              <dl
-                className={cn(
-                  "flex flex-wrap gap-x-4 gap-y-1.5 text-xs",
-                  showBannerPhoto ? "text-white/75" : "text-muted-foreground",
-                )}
-              >
-                <div className="flex items-center gap-1.5">
-                  <Package className="size-3 shrink-0 opacity-80" />
-                  <dt className="sr-only">Listings</dt>
-                  <dd>
-                    <span
-                      className={cn(
-                        "font-medium",
-                        showBannerPhoto ? "text-white" : "text-foreground",
-                      )}
-                    >
-                      {shop.listingCount}
-                    </span>{" "}
-                    {shop.listingCount === 1 ? "listing" : "listings"}
-                  </dd>
-                </div>
-                {totalPages > 1 ? (
-                  <div>
-                    <dt className="sr-only">Catalog page</dt>
-                    <dd>
-                      Page{" "}
-                      <span
-                        className={cn(
-                          "font-medium",
-                          showBannerPhoto ? "text-white" : "text-foreground",
-                        )}
-                      >
-                        {page} of {totalPages}
-                      </span>
-                    </dd>
-                  </div>
-                ) : null}
-                {shop.responseRate != null ? (
-                  <div className="flex items-center gap-1.5">
-                    <Percent className="size-3 shrink-0 opacity-80" />
-                    <dt className="sr-only">Response rate</dt>
-                    <dd>
-                      <span
-                        className={cn(
-                          "font-medium",
-                          showBannerPhoto ? "text-white" : "text-foreground",
-                        )}
-                      >
-                        {Math.round(shop.responseRate * 100)}%
-                      </span>{" "}
-                      response rate
-                    </dd>
-                  </div>
-                ) : null}
-                <div className="flex items-center gap-1.5">
-                  <Clock className="size-3 shrink-0 opacity-80" />
-                  <dt className="sr-only">Reply time</dt>
-                  <dd>{formatReplyText(shop.estimatedReplyMinutes)}</dd>
-                </div>
-                <div>
-                  <dt className="sr-only">On YEJSIRA since</dt>
-                  <dd>Member since {formatMemberSince(shop.createdAt, locale)}</dd>
-                </div>
-              </dl>
+            ) : null}
+            <div className="flex items-center gap-1.5">
+              <Package className="size-3.5 shrink-0 opacity-80" />
+              <dt className="sr-only">Listings</dt>
+              <dd>
+                <span className="font-semibold text-foreground">{shop.listingCount}</span>
+              </dd>
             </div>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={cn(
-              "shrink-0 self-start sm:self-auto",
-              showBannerPhoto &&
-                "border-white/35 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white",
-            )}
-            onClick={() => void onShare()}
-          >
-            <Share2 className="size-3.5" />
-            Share
-          </Button>
+            {totalPages > 1 ? (
+              <div>
+              <dt className="sr-only">Catalog page, current of total</dt>
+                <dd>
+                  <span className="font-semibold text-foreground">
+                    {page}/{totalPages}
+                  </span>
+                </dd>
+              </div>
+            ) : null}
+            {shop.responseRate != null ? (
+              <div className="flex items-center gap-1.5">
+                <Percent className="size-3.5 shrink-0 opacity-80" />
+                <dt className="sr-only">Response rate</dt>
+                <dd>
+                  <span className="font-semibold text-foreground">
+                    {Math.round(shop.responseRate * 100)}%
+                  </span>
+                </dd>
+              </div>
+            ) : null}
+            <div className="flex items-center gap-1.5">
+              <Clock className="size-3.5 shrink-0 opacity-80" />
+              <dt className="sr-only">Reply time</dt>
+              <dd>
+                <ShopReplyTimeLine minutes={shop.estimatedReplyMinutes} />
+              </dd>
+            </div>
+            <div>
+              <dt className="sr-only">On YEJSIRA since</dt>
+              <dd>
+                Since{" "}
+                <span className="font-semibold text-foreground">
+                  {formatMemberSinceCompact(shop.createdAt, locale)}
+                </span>
+              </dd>
+            </div>
+          </dl>
         </div>
       </div>
     </header>
@@ -271,7 +192,7 @@ const routeApi = getRouteApi("/$locale/(store)/shops/$shopSlug");
 
 export function ShopPage() {
   const { shopSlug, locale: localeParam } = routeApi.useParams();
-  const { page } = routeApi.useSearch();
+  const { page, sort } = routeApi.useSearch();
   const locale = localeParam as Locale;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -280,11 +201,19 @@ export function ShopPage() {
       locale={locale}
       shopSlug={shopSlug}
       page={page}
+      sort={sort}
       onPageChange={(next) =>
         navigate({
           to: "/$locale/shops/$shopSlug",
           params: { locale, shopSlug },
-          search: { page: next },
+          search: { page: next, sort },
+        })
+      }
+      onSortChange={(next) =>
+        navigate({
+          to: "/$locale/shops/$shopSlug",
+          params: { locale, shopSlug },
+          search: { page: 1, sort: next },
         })
       }
       queryClient={queryClient}
@@ -296,16 +225,20 @@ export function ShopCatalogPage({
   locale,
   shopSlug,
   page,
+  sort,
   onPageChange,
+  onSortChange,
   queryClient,
   showShopHero = true,
 }: {
   locale: Locale;
   shopSlug: string;
   page: number;
+  sort?: CategorySort;
   onPageChange?: (page: number) => void;
+  onSortChange?: (sort: CategorySort) => void;
   queryClient?: ReturnType<typeof useQueryClient>;
-  /** Banner + shop details block above the grid. Hidden on subdomain storefront home (already in ShopHeader). */
+  /** Logo + shop details block above the grid. Hidden on subdomain storefront home (already in ShopHeader). */
   showShopHero?: boolean;
 }) {
   const localQueryClient = useQueryClient();
@@ -313,9 +246,11 @@ export function ShopCatalogPage({
     addToCartMutationOptions(queryClient ?? localQueryClient, locale),
   );
 
-  const { data } = useSuspenseQuery(shopPublicQuery(locale, shopSlug, page));
+  const sortValue = sort ?? "relevancy";
 
-  const { shop, listings, total, totalPages } = data;
+  const { data } = useSuspenseQuery(shopPublicQuery(locale, shopSlug, page, 24, sortValue));
+
+  const { shop, listings, totalPages } = data;
 
   useEffect(() => {
     document.title = `${shop.name} · YEJSIRA`;
@@ -326,7 +261,6 @@ export function ShopCatalogPage({
       {showShopHero ? (
         <ShopCatalogHero
           locale={locale}
-          shopSlug={shopSlug}
           shop={shop}
           page={page}
           totalPages={totalPages}
@@ -335,25 +269,19 @@ export function ShopCatalogPage({
 
       <section
         className={showShopHero ? "mt-10" : undefined}
-        aria-labelledby="shop-products-heading"
+        aria-labelledby="shop-featured-heading"
       >
-        <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 id="shop-products-heading" className="text-base font-semibold tracking-tight md:text-lg">
-              Products
-            </h2>
-            <p className="text-xs text-muted-foreground md:text-sm">
-              {total === 0
-                ? "No listings yet"
-                : `${total} ${total === 1 ? "listing" : "listings"}`}
-              {totalPages > 1 ? (
-                <>
-                  {" · "}
-                  Page {page} of {totalPages}
-                </>
-              ) : null}
-            </p>
-          </div>
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <h2 id="shop-featured-heading" className="text-xl font-semibold tracking-tight md:text-2xl">
+            Featured items
+          </h2>
+          {onSortChange ? (
+            <SearchSortToolbar
+              sort={sortValue}
+              onSortChange={onSortChange}
+              className="py-0 sm:justify-end"
+            />
+          ) : null}
         </div>
 
         <div className="grid grid-cols-2 gap-x-5 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
@@ -389,7 +317,7 @@ export function ShopCatalogPage({
 
         {listings.length === 0 ? (
           <div className="mt-8 rounded-lg border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
-            <p className="font-medium text-foreground">No products listed yet</p>
+            <p className="font-medium text-foreground">No featured items yet</p>
             <p className="mt-2 text-sm text-muted-foreground">
               Check back soon or browse other shops from the home page.
             </p>

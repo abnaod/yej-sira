@@ -1,4 +1,4 @@
-# yej-sira
+# Yejsira
 
 pnpm + Turborepo monorepo: **TanStack Start** (`apps/web`), **Hono** API (`apps/api`), **Prisma** (`libs/db`), shared **TypeScript** presets (`libs/tsconfig`).
 

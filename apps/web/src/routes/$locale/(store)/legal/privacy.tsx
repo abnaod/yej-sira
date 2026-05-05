@@ -6,10 +6,10 @@ export const Route = createFileRoute("/$locale/(store)/legal/privacy")({
   component: PrivacyPage,
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Yej-sira" },
+      { title: "Privacy Policy — Yejsira" },
       {
         name: "description",
-        content: "How Yej-sira collects, uses and protects your personal data.",
+        content: "How Yejsira collects, uses and protects your personal data.",
       },
     ],
   }),
@@ -78,7 +78,7 @@ function PrivacyPage() {
             <p>
               You can view and update your profile from the Account page. To
               delete your account or request a copy of your data, email{" "}
-              <a href="mailto:privacy@yej-sira.com">privacy@yej-sira.com</a>.
+              <a href="mailto:privacy@yejsira.com">privacy@yejsira.com</a>.
             </p>
           ),
         },

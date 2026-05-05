@@ -718,19 +718,19 @@ async function main() {
 
   const platformShop = await prisma.shop.create({
     data: {
-      slug: "yej-sira",
-      name: "Yej Sira",
+      slug: "yejsira",
+      name: "Yejsira",
       description: "Curated marketplace catalog",
       status: "active",
       ownerUserId: null,
-      imageUrl: "/static/shops/yej-sira.jpg",
+      imageUrl: "/static/shops/yejsira.jpg",
     },
   });
 
   await prisma.pickupLocation.createMany({
     data: [
       {
-        name: "Yej Sira — Bole",
+        name: "Yejsira — Bole",
         line1: "Bole Road, near Edna Mall",
         line2: null,
         city: "Addis Ababa",
@@ -741,7 +741,7 @@ async function main() {
         sortOrder: 0,
       },
       {
-        name: "Yej Sira — Merkato",
+        name: "Yejsira — Merkato",
         line1: "Merkato, Megenagna area",
         line2: null,
         city: "Addis Ababa",
@@ -752,7 +752,7 @@ async function main() {
         sortOrder: 1,
       },
       {
-        name: "Yej Sira — Hawassa",
+        name: "Yejsira — Hawassa",
         line1: "Tabor Subcity, main road",
         line2: null,
         city: "Hawassa",
@@ -763,7 +763,7 @@ async function main() {
         sortOrder: 2,
       },
       {
-        name: "Yej Sira — Bahir Dar",
+        name: "Yejsira — Bahir Dar",
         line1: "Kebele 03, near Lake Tana",
         line2: null,
         city: "Bahir Dar",
@@ -847,7 +847,7 @@ async function main() {
     data: {
       id: "seed-admin-1",
       name: "Seed Admin",
-      email: "admin@yej-sira.test",
+      email: "admin@yejsira.test",
       emailVerified: true,
       role: "admin",
       createdAt: now,

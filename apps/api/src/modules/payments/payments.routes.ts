@@ -157,7 +157,7 @@ paymentsRouter.post("/payments/chapa/initialize", async (c) => {
     return_url: returnUrl,
     customization: {
       // Chapa: customization.title max 16 characters
-      title: "Yej-sira",
+      title: "Yejsira",
       description: `Order ${orderId}`,
     },
     meta: {

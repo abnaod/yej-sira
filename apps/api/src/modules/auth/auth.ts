@@ -65,7 +65,7 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
-        subject: "Reset your Yej-sira password",
+        subject: "Reset your Yejsira password",
         text: `Reset your password using this link: ${url}`,
       });
     },
@@ -74,7 +74,7 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user, url }) => {
       await sendEmail({
         to: user.email,
-        subject: "Verify your Yej-sira email",
+        subject: "Verify your Yejsira email",
         text: `Verify your email using this link: ${url}`,
       });
     },

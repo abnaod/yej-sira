@@ -39,13 +39,13 @@ export function CategoryCard({
         alt={name}
         width={600}
         height={900}
-        sizes="(min-width: 1024px) 16vw, (min-width: 640px) 33vw, 50vw"
+        sizes="(min-width: 1024px) 16vw, (min-width: 640px) 33vw, 30vw"
         loading="lazy"
         decoding="async"
         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-black/10" />
-      <h3 className="absolute left-4 top-4 text-base font-bold text-white drop-shadow-md">
+      <h3 className="absolute left-4 top-4 text-sm font-bold text-white drop-shadow-md">
         {name}
       </h3>
     </Link>

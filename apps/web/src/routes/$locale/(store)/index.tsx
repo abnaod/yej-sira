@@ -9,6 +9,9 @@ import {
 import { ShopCatalogPage } from "@/features/store/shop/shop.page";
 import { promotionsListQuery } from "@/features/store/promotions/promotions.queries";
 import { useActiveStorefrontShop } from "@/lib/storefront-context";
+import { useState } from "react";
+
+import type { CategorySort } from "@/features/store/category";
 
 export const Route = createFileRoute("/$locale/(store)/")({
   loader: ({ context, params }) => {
@@ -33,13 +36,16 @@ export const Route = createFileRoute("/$locale/(store)/")({
 function StoreIndexPage() {
   const { locale } = Route.useParams();
   const shop = useActiveStorefrontShop();
+  const [sort, setSort] = useState<CategorySort>("relevancy");
   if (shop) {
     return (
       <ShopCatalogPage
         locale={locale as Locale}
         shopSlug={shop.slug}
         page={1}
+        sort={sort}
         showShopHero={false}
+        onSortChange={setSort}
       />
     );
   }

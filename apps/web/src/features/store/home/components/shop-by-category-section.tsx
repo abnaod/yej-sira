@@ -21,7 +21,7 @@ export function ShopByCategorySection() {
           {t("shopByCategorySubtitle")}
         </p>
       </div>
-      <div className="mt-8 grid w-full grid-cols-[repeat(3,minmax(0,9rem))] justify-center gap-x-5 gap-y-6 sm:mt-10 sm:grid-cols-[repeat(6,minmax(0,9rem))]">
+      <div className="mt-8 grid w-full grid-cols-[repeat(3,minmax(0,6.75rem))] justify-center gap-x-3 gap-y-4 sm:mt-10 sm:grid-cols-[repeat(6,minmax(0,9rem))] sm:gap-x-5 sm:gap-y-6">
         {data.categories.map((category) => (
           <CategoryCard
             key={category.slug}

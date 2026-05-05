@@ -6,10 +6,10 @@ export const Route = createFileRoute("/$locale/(store)/legal/returns")({
   component: ReturnsPage,
   head: () => ({
     meta: [
-      { title: "Returns Policy — Yej-sira" },
+      { title: "Returns Policy — Yejsira" },
       {
         name: "description",
-        content: "How returns, refunds and exchanges work on Yej-sira.",
+        content: "How returns, refunds and exchanges work on Yejsira.",
       },
     ],
   }),
@@ -61,7 +61,7 @@ function ReturnsPage() {
           heading: "Damaged or missing items",
           body: (
             <p>
-              Contact <a href="mailto:support@yej-sira.com">support@yej-sira.com</a>
+              Contact <a href="mailto:support@yejsira.com">support@yejsira.com</a>
               {" "}within 48 hours of delivery. We&apos;ll investigate and refund
               you if appropriate.
             </p>

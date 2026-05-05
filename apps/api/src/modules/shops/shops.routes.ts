@@ -8,7 +8,7 @@ import { prisma, publicListingVisibilityWhere } from "../../lib/db";
 import { requireUserId } from "../../lib/auth";
 import { toNumber } from "../../lib/money";
 import { getOwnedShop } from "./shops.authz";
-import { getListingCardInclude, mapListingCard } from "../catalog/catalog.mappers";
+import { getListingCardInclude, mapListingCard, minVariantPrice } from "../catalog/catalog.mappers";
 import {
   createShopBodySchema,
   publicShopListingsQuerySchema,
@@ -181,11 +181,12 @@ shopsRouter.get("/shops/:slug", async (c) => {
   const q = publicShopListingsQuerySchema.safeParse({
     page: c.req.query("page"),
     pageSize: c.req.query("pageSize"),
+    sort: c.req.query("sort"),
   });
   if (!q.success) {
     throw new HTTPException(400, { message: "Invalid query" });
   }
-  const { page, pageSize } = q.data;
+  const { page, pageSize, sort } = q.data;
 
   const shop = await prisma.shop.findFirst({
     where: { slug, status: "active" },
@@ -200,16 +201,51 @@ shopsRouter.get("/shops/:slug", async (c) => {
     ...publicListingVisibilityWhere,
   };
 
-  const [total, listings] = await prisma.$transaction([
-    prisma.listing.count({ where }),
-    prisma.listing.findMany({
-      where,
-      include: getListingCardInclude(now, locale),
-      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    }),
-  ]);
+  const allListings = await prisma.listing.findMany({
+    where,
+    include: getListingCardInclude(now, locale),
+  });
+
+  let reviewCountTotal = 0;
+  let weightedRating = 0;
+  for (const row of allListings) {
+    const n = row.reviewCount;
+    if (n > 0) {
+      reviewCountTotal += n;
+      weightedRating += toNumber(row.rating) * n;
+    }
+  }
+  const overallRating =
+    reviewCountTotal > 0
+      ? Math.round((weightedRating / reviewCountTotal) * 10) / 10
+      : null;
+
+  const withPrice = allListings.map((p) => ({
+    listing: p,
+    minPrice: minVariantPrice(p.variants),
+  }));
+
+  if (sort === "price-asc") {
+    withPrice.sort((a, b) => a.minPrice - b.minPrice);
+  } else if (sort === "price-desc") {
+    withPrice.sort((a, b) => b.minPrice - a.minPrice);
+  } else if (sort === "newest") {
+    withPrice.sort(
+      (a, b) => b.listing.createdAt.getTime() - a.listing.createdAt.getTime(),
+    );
+  } else {
+    withPrice.sort((a, b) => {
+      const feat = Number(b.listing.featured) - Number(a.listing.featured);
+      if (feat !== 0) return feat;
+      const r = toNumber(b.listing.rating) - toNumber(a.listing.rating);
+      if (r !== 0) return r;
+      return b.listing.createdAt.getTime() - a.listing.createdAt.getTime();
+    });
+  }
+
+  const total = withPrice.length;
+  const slice = withPrice.slice((page - 1) * pageSize, page * pageSize);
+  const listings = slice.map((x) => mapListingCard(x.listing, locale));
 
   /**
    * Estimated reply window for the public storefront (mirrors conversation
@@ -238,8 +274,11 @@ shopsRouter.get("/shops/:slug", async (c) => {
       responseRate: shop.responseRate != null ? toNumber(shop.responseRate) : null,
       estimatedReplyMinutes,
       listingCount: total,
+      /** Weighted by review count across published listings in this shop. */
+      overallRating,
+      reviewCount: reviewCountTotal,
     },
-    listings: listings.map((p) => mapListingCard(p, locale)),
+    listings,
     page,
     pageSize,
     total,

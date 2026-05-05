@@ -75,7 +75,9 @@ function shopInitials(name: string) {
 
 function ShopLogo({ shop }: { shop: PublicShop }) {
   return (
-    <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted text-sm font-semibold">
+    <div
+      className={`flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-sm text-sm font-semibold${shop.imageUrl ? "" : " bg-muted"}`}
+    >
       {shop.imageUrl ? (
         <img
           src={assetUrl(shop.imageUrl)}

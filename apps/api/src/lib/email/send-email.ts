@@ -9,7 +9,7 @@ type SendEmailInput = {
 
 export async function sendEmail(input: SendEmailInput) {
   const env = getEnv();
-  const fromName = env.EMAIL_FROM_NAME ?? "Yej-sira";
+  const fromName = env.EMAIL_FROM_NAME ?? "Yejsira";
   const fromEmail = env.EMAIL_FROM ?? "noreply@example.com";
 
   if (!env.RESEND_API_KEY) {

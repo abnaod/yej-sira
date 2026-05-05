@@ -49,7 +49,7 @@ image):
 
 **Shops** — `public/shops/`
 
-- `yej-sira.jpg`
+- `yejsira.jpg`
 
 **Promotions** — `public/promotions/`
 

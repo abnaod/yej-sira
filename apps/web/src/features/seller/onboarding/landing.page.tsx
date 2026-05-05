@@ -82,7 +82,7 @@ export function SellerLandingPage() {
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
               <Store className="size-3.5 text-primary" aria-hidden />
-              Open your Yej Sira shop
+              Open your Yejsira shop
             </div>
             <h1 className="font-serif text-4xl font-normal leading-tight tracking-tight text-foreground md:text-5xl lg:text-6xl">
               Thousands of shoppers can&apos;t wait to see what you have in store.

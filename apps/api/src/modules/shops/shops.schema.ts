@@ -97,4 +97,5 @@ export const updateShopBodySchema = z.object({
 export const publicShopListingsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(48).default(24),
+  sort: z.enum(["relevancy", "price-asc", "price-desc", "newest"]).default("relevancy"),
 });
