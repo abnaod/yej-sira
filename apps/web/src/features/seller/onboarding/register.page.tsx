@@ -166,6 +166,7 @@ export function SellerRegisterPage() {
       ...(form.businessSpecificLocation?.trim()
         ? { businessSpecificLocation: form.businessSpecificLocation.trim() }
         : {}),
+      acceptedSellerPolicy: agreedToTerms,
     };
 
     await createShop.mutateAsync(body);

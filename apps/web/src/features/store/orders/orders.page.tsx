@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Calendar, ChevronRight, Package, Store, Truck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuthDialog } from "@/features/shared/auth";
+import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/lib/locale-path";
 
@@ -173,12 +176,51 @@ function filterOrders(orders: OrderRow[], tab: TabValue): OrderRow[] {
   return orders.filter((o) => o.status === tab);
 }
 
-export function OrderHistoryPage() {
+function OrdersGuestPlaceholder() {
   const locale = useLocale();
-  const { data } = useSuspenseQuery(ordersListQuery(locale));
+  const { openAuth } = useAuthDialog();
 
-  const { orders } = data;
+  return (
+    <main className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Orders</h1>
+        <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">
+          Sign in to see every order on one page. If you checked out as a guest, the{" "}
+          <span className="font-medium text-foreground">View your order</span> link in your
+          confirmation email opens the receipt without a password. To see those guest
+          orders in this list, set a password using{" "}
+          <span className="font-medium text-foreground">Forgot password</span> with the
+          same email.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <Button type="button" onClick={() => openAuth()}>
+          Sign in
+        </Button>
+        <Button variant="outline" asChild>
+          <Link to="/$locale/auth/forgot-password" params={{ locale }}>
+            Claim your guest account
+          </Link>
+        </Button>
+        <Button variant="ghost" asChild>
+          <Link to="/$locale" params={{ locale }}>
+            Continue shopping
+          </Link>
+        </Button>
+      </div>
+    </main>
+  );
+}
 
+function OrdersLoading() {
+  return <main className="p-8 text-muted-foreground">Loading…</main>;
+}
+
+function OrdersError({ message }: { message: string }) {
+  return <main className="p-8 text-destructive">{message}</main>;
+}
+
+function OrdersList({ orders, locale }: { orders: OrderRow[]; locale: string }) {
   const [tab, setTab] = useState<TabValue>("all");
 
   return (
@@ -241,4 +283,33 @@ export function OrderHistoryPage() {
       )}
     </main>
   );
+}
+
+export function OrderHistoryPage() {
+  const locale = useLocale();
+  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const isSignedIn = !!session?.user;
+
+  const ordersState = useQuery({
+    ...ordersListQuery(locale),
+    enabled: isSignedIn,
+  });
+
+  if (sessionPending) return <OrdersLoading />;
+  if (!isSignedIn) return <OrdersGuestPlaceholder />;
+  if (ordersState.isLoading) return <OrdersLoading />;
+  if (ordersState.error) {
+    return (
+      <OrdersError
+        message={
+          ordersState.error instanceof Error
+            ? ordersState.error.message
+            : "Could not load orders"
+        }
+      />
+    );
+  }
+  if (!ordersState.data) return <OrdersLoading />;
+
+  return <OrdersList orders={ordersState.data.orders} locale={locale} />;
 }

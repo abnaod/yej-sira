@@ -75,3 +75,17 @@ export const orderDetailQuery = (locale: Locale, orderId: string) =>
         { locale },
       ),
   });
+
+/**
+ * Fetch an order using the guest access token. Used from `/orders/by-token/$token`,
+ * which is the landing page for guest checkouts and the "View your order" email link.
+ */
+export const orderByTokenQuery = (locale: Locale, token: string) =>
+  queryOptions({
+    queryKey: ["orders", "by-token", locale, token] as const,
+    queryFn: () =>
+      apiFetchJson<OrderDetailResponse>(
+        `/api/orders/by-token/${encodeURIComponent(token)}`,
+        { locale },
+      ),
+  });

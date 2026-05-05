@@ -3,6 +3,7 @@ import { Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { assetUrl } from "@/lib/api";
+import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,10 @@ export interface ListingCardProps {
   onAddToCart?: (variantId: string) => void;
   /** Compact layout for carousels / horizontal rows. */
   variant?: "default" | "compact";
+  /** Hide the “Sold by …” row (e.g. on the shop’s own page). */
+  hideShopLine?: boolean;
+  /** Show a direct link to the listing to message the seller (conversation-first). */
+  messageSellerCta?: boolean;
   className?: string;
 }
 
@@ -42,6 +47,8 @@ export function ListingCard({
   promotion,
   onAddToCart,
   variant = "default",
+  hideShopLine = false,
+  messageSellerCta = false,
   className,
 }: ListingCardProps) {
   const { t } = useTranslation("common");
@@ -71,6 +78,15 @@ export function ListingCard({
         <img
           src={assetUrl(imageUrl)}
           alt={name}
+          width={800}
+          height={600}
+          sizes={
+            compact
+              ? "11rem"
+              : "(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+          }
+          loading="lazy"
+          decoding="async"
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {(promotion || onSale) && (
@@ -190,7 +206,7 @@ export function ListingCard({
           </p>
         )}
 
-        {shop && (
+        {shop && !hideShopLine && (
           <p
             className={cn(
               "truncate text-muted-foreground",
@@ -217,20 +233,44 @@ export function ListingCard({
           className={compact ? "mt-0.5" : "mt-1"}
         />
 
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!defaultVariantId}
-          className={cn(
-            "w-fit border-border bg-transparent text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground",
-            compact
-              ? "mt-1.5 h-7 px-2 text-[11px]"
-              : "mt-2",
-          )}
-          onClick={() => defaultVariantId && onAddToCart?.(defaultVariantId)}
-        >
-          {t("addToCart")}
-        </Button>
+        {featureConversations && messageSellerCta ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn(
+              "w-fit border-border text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground",
+              compact
+                ? "mt-1.5 h-7 px-2 text-[11px]"
+                : "mt-2",
+            )}
+            asChild
+          >
+            <Link
+              to="/$locale/listings/$listingId"
+              params={{ locale, listingId: slug }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {t("messageSeller")}
+            </Link>
+          </Button>
+        ) : null}
+
+        {featureCartCheckout && onAddToCart ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!defaultVariantId}
+            className={cn(
+              "w-fit border-border bg-transparent text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground",
+              compact
+                ? "mt-1.5 h-7 px-2 text-[11px]"
+                : "mt-2",
+            )}
+            onClick={() => defaultVariantId && onAddToCart(defaultVariantId)}
+          >
+            {t("addToCart")}
+          </Button>
+        ) : null}
       </div>
     </div>
   );

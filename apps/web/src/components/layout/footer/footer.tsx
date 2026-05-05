@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { featureCartCheckout } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 
 /** Slugs align with catalog seed */
@@ -21,20 +22,12 @@ const aboutKeys = [
   "footerAbout3",
 ] as const;
 
-const serviceLinks: { labelKey: "footerService1" | "footerService2" | "footerService3"; to?: "/$locale/sell" }[] = [
+const serviceLinks: { labelKey: "footerService1" | "footerService3"; to?: "/$locale/sell" }[] = [
   { labelKey: "footerService1" },
-  { labelKey: "footerService2" },
   { labelKey: "footerService3", to: "/$locale/sell" },
 ];
 
-const helpKeys = [
-  "footerHelp1",
-  "footerHelp2",
-  "footerHelp3",
-  "footerHelp4",
-  "footerHelp5",
-  "footerHelp6",
-] as const;
+const helpKeys = ["footerHelp3", "footerHelp4"] as const;
 
 function FooterLink({ children }: { children: React.ReactNode }) {
   return (
@@ -152,7 +145,9 @@ export function Footer() {
             />
             <FooterColumn
               title={t("footerHelp")}
-              links={[...helpKeys]}
+              links={
+                featureCartCheckout ? [...helpKeys] : helpKeys.filter((k) => k !== "footerHelp3")
+              }
               locale={locale}
               t={t}
             />
@@ -161,10 +156,40 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/20">
-        <div className="mx-auto max-w-6xl px-4 py-6 text-center">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-6 text-center md:flex-row md:justify-between md:text-left">
           <p className="text-xs text-white/70">
             {t("footerCopyright", { year })}
           </p>
+          <nav className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/70">
+            <Link
+              to="/$locale/legal/terms"
+              params={{ locale }}
+              className="hover:text-white"
+            >
+              Terms
+            </Link>
+            <Link
+              to="/$locale/legal/privacy"
+              params={{ locale }}
+              className="hover:text-white"
+            >
+              Privacy
+            </Link>
+            <Link
+              to="/$locale/legal/returns"
+              params={{ locale }}
+              className="hover:text-white"
+            >
+              Returns
+            </Link>
+            <Link
+              to="/$locale/legal/seller-policy"
+              params={{ locale }}
+              className="hover:text-white"
+            >
+              Seller Policy
+            </Link>
+          </nav>
         </div>
       </div>
     </footer>

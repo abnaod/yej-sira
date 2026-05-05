@@ -1,17 +1,24 @@
 import type { Locale } from "@ys/intl";
+import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { generatedStorefrontUrl } from "@/lib/storefront";
+import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { sellerDashboardQuery } from "./dashboard.queries";
 import { SellerDashboardSectionCards } from "./dashboard-section-cards";
+import { SellerMessageMetricsCards } from "./message-metrics-cards";
 import { SellerDashboardRecentOrders } from "./recent-orders-card";
-import { SellerOrdersChart } from "./orders-chart";
 import { sellerOrdersQuery } from "../orders/orders.queries";
 import { myShopQuery } from "../shared/shop.queries";
+
+const SellerOrdersChart = React.lazy(() =>
+  import("./orders-chart").then((m) => ({ default: m.SellerOrdersChart })),
+);
 
 export function SellerDashboardPage() {
   const locale = useLocale() as Locale;
@@ -20,13 +27,17 @@ export function SellerDashboardPage() {
     ...myShopQuery(locale),
     enabled: !!session?.user,
   });
+  const shopStatus = shopState.data?.shop?.status;
+  const sellerCanUsePortal =
+    shopStatus === "active" || shopStatus === "pending";
+
   const dashboardState = useQuery({
     ...sellerDashboardQuery(locale),
-    enabled: !!session?.user && shopState.data?.shop?.status === "active",
+    enabled: !!session?.user && sellerCanUsePortal,
   });
   const recentOrdersState = useQuery({
     ...sellerOrdersQuery(locale, { page: 1, pageSize: 8 }),
-    enabled: !!session?.user && shopState.data?.shop?.status === "active",
+    enabled: !!session?.user && sellerCanUsePortal,
   });
   if (!session?.user) {
     return (
@@ -50,7 +61,7 @@ export function SellerDashboardPage() {
       <div className="mx-auto max-w-3xl px-4">
         <p className="text-muted-foreground">You don&apos;t have a shop yet.</p>
         <Button className="mt-4" asChild>
-          <Link to="/$locale/sell/register" params={{ locale }}>
+          <Link to="/$locale/sell/onboarding" params={{ locale }}>
             Register your shop
           </Link>
         </Button>
@@ -58,19 +69,12 @@ export function SellerDashboardPage() {
     );
   }
 
-  if (shop.status !== "active") {
-    const storefrontUrl = generatedStorefrontUrl(shop.slug, locale);
+  if (shop.status === "rejected" || shop.status === "suspended") {
     return (
       <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4">
         <p className="text-muted-foreground">
-          Your shop is {shop.status}. You can list listings once it&apos;s active.
+          Your shop is {shop.status}. Contact support if you believe this is an error.
         </p>
-        <div className="rounded-md border border-border bg-muted/30 p-4">
-          <p className="text-sm font-medium text-foreground">Storefront URL</p>
-          <p className="mt-1 break-all text-sm text-muted-foreground">
-            {storefrontUrl} · unavailable until active
-          </p>
-        </div>
       </div>
     );
   }
@@ -81,6 +85,8 @@ export function SellerDashboardPage() {
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-4">
+      {featureConversations && !featureCartCheckout ? <SellerMessageMetricsCards /> : null}
+
       <div className="flex flex-col gap-3 rounded-md border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground">Storefront</p>
@@ -107,7 +113,17 @@ export function SellerDashboardPage() {
         isLoading={dashboardLoading}
       />
 
-      <SellerOrdersChart data={stats?.ordersByDay ?? []} isLoading={dashboardLoading} />
+      <React.Suspense
+        fallback={
+          <div className="rounded-lg border bg-card p-6">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="mt-2 h-4 w-64" />
+            <Skeleton className="mt-6 h-[250px] w-full" />
+          </div>
+        }
+      >
+        <SellerOrdersChart data={stats?.ordersByDay ?? []} isLoading={dashboardLoading} />
+      </React.Suspense>
 
       <SellerDashboardRecentOrders
         orders={recentOrdersState.data?.orders ?? []}

@@ -5,12 +5,13 @@ import { Store } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { useAuthDialog } from "@/features/shared/auth";
-import { BrandLogo } from "@/components/layout/brand-logo";
 import { Button } from "@/components/ui/button";
 import { assetUrl } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { myShopQuery } from "../shared/shop.queries";
+
+import { SellerMarketingHeader } from "./seller-marketing-header";
 
 /** Category mosaic (tall cells at 0 and 3). */
 const CATEGORY_MOSAIC_FILES = [
@@ -31,27 +32,29 @@ export function SellerLandingPage() {
   const { openAuth } = useAuthDialog();
   const { data: session, isPending: sessionPending } = authClient.useSession();
 
-  // Client-side shop check for hard-refresh scenarios.
-  // beforeLoad already handles client-side navigations, but during SSR it
-  // can't send session cookies so the fetch fails. After hydration,
-  // beforeLoad does NOT re-run, so the component must handle the redirect.
   const shopQuery = useQuery({
     ...myShopQuery(locale),
     enabled: !!session?.user,
   });
 
-  // While session or shop ownership is undetermined, render nothing.
   if (sessionPending || (!!session?.user && shopQuery.isLoading)) {
-    return null;
+    return (
+      <div className="bg-background">
+        <SellerMarketingHeader />
+        <div className="mx-auto max-w-6xl px-4 py-12 text-sm text-muted-foreground md:px-6">
+          Loading…
+        </div>
+      </div>
+    );
   }
 
-  // User has a shop — redirect to dashboard (declarative, no useEffect).
   if (shopQuery.data?.shop) {
     return <Navigate to="/$locale/sell/dashboard" params={{ locale }} />;
   }
 
   const getStartedLabel = t("sellerGetStarted");
-  const primaryCta = !sessionPending &&
+  const primaryCta =
+    !sessionPending &&
     (session?.user ? (
       <Button size="lg" className={ctaButtonClass} asChild>
         <Link to="/$locale/sell/register" params={{ locale }}>
@@ -71,26 +74,7 @@ export function SellerLandingPage() {
 
   return (
     <div className="bg-background">
-      <header className="border-b border-border/60">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 md:px-6">
-          <Link to="/$locale" params={{ locale }} className="flex shrink-0 items-center">
-            <BrandLogo className="text-primary" />
-          </Link>
-          <nav className="flex items-center gap-2 text-sm">
-            {!sessionPending && !session?.user && (
-              <Button
-                size="sm"
-                variant="ghost"
-                type="button"
-                className="rounded-full"
-                onClick={() => openAuth({ redirectToSellerPortal: true })}
-              >
-                Sign in
-              </Button>
-            )}
-          </nav>
-        </div>
-      </header>
+      <SellerMarketingHeader />
 
       <section className="relative overflow-hidden pb-16 md:pb-24">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />

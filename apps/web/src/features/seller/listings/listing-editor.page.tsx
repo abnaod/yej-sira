@@ -48,6 +48,9 @@ type ImageSlot = {
 
 const emptyVariant = (): VariantForm => ({ label: "", price: "", stock: "0" });
 
+/** Single-option listings send one variant; label is not shown in the seller form. */
+const DEFAULT_LISTING_OPTION_LABEL = "Default";
+
 let imageSlotCounter = 0;
 const makeImageSlot = (url: string | null = null): ImageSlot => {
   imageSlotCounter += 1;
@@ -172,7 +175,11 @@ function SellerListingEditor({
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [imageSlots, setImageSlots] = useState<ImageSlot[]>(() => [makeImageSlot()]);
-  const [variants, setVariants] = useState<VariantForm[]>([emptyVariant()]);
+  /** Simple price/stock: new listings and single-variant edits. */
+  const [simplePrice, setSimplePrice] = useState("");
+  const [simpleStock, setSimpleStock] = useState("1");
+  /** Multi-variant: only when editing a listing with more than one variant. */
+  const [multiVariants, setMultiVariants] = useState<VariantForm[]>([]);
   const [publish, setPublish] = useState(false);
 
   /** Apply server listing into form state once per open listing — not on every detail refetch,
@@ -197,13 +204,25 @@ function SellerListingEditor({
     setImageSlots(
       p.images.length > 0 ? p.images.map((u) => makeImageSlot(u)) : [makeImageSlot()],
     );
-    setVariants(
-      p.variants.map((v) => ({
-        label: v.label,
-        price: String(v.price),
-        stock: String(v.stock),
-      })),
-    );
+    if (p.variants.length > 1) {
+      setMultiVariants(
+        p.variants.map((v) => ({
+          label: v.label,
+          price: String(v.price),
+          stock: String(v.stock),
+        })),
+      );
+    } else {
+      setMultiVariants([]);
+      const v0 = p.variants[0];
+      if (v0) {
+        setSimplePrice(String(v0.price));
+        setSimpleStock(String(v0.stock));
+      } else {
+        setSimplePrice("");
+        setSimpleStock("1");
+      }
+    }
     setPublish(p.isPublished);
     if (p.attributes?.length) {
       const m: Record<string, string> = {};
@@ -219,6 +238,9 @@ function SellerListingEditor({
     }
   }, [mode, detailQuery.data, listingId]);
 
+  const multiVariantMode =
+    mode === "edit" && (detailQuery.data?.listing.variants.length ?? 0) > 1;
+
   const buildBody = (): CreateSellerListingBody => {
     if (imageSlots.some((s) => s.uploading)) {
       throw new Error("Wait for image uploads to finish");
@@ -229,14 +251,28 @@ function SellerListingEditor({
     if (images.length === 0) {
       throw new Error("Attach at least one image");
     }
-    const variantRows = variants.map((v) => ({
-      label: v.label.trim(),
-      price: Number(v.price),
-      stock: Number.parseInt(v.stock, 10) || 0,
-    }));
     if (!categorySlug) throw new Error("Choose a category");
-    if (variantRows.some((v) => !v.label || Number.isNaN(v.price))) {
-      throw new Error("Each variant needs a label and valid price");
+
+    let variantRows: { label: string; price: number; stock: number }[];
+    if (multiVariantMode) {
+      if (multiVariants.length === 0) {
+        throw new Error("Add at least one option");
+      }
+      variantRows = multiVariants.map((v) => ({
+        label: v.label.trim(),
+        price: Number(v.price),
+        stock: Number.parseInt(v.stock, 10) || 0,
+      }));
+      if (variantRows.some((v) => !v.label || Number.isNaN(v.price) || v.price <= 0)) {
+        throw new Error("Each option needs a label and a valid price");
+      }
+    } else {
+      const price = Number(simplePrice);
+      const stock = Number.parseInt(simpleStock, 10) || 0;
+      if (Number.isNaN(price) || price <= 0) {
+        throw new Error("Enter a valid price");
+      }
+      variantRows = [{ label: DEFAULT_LISTING_OPTION_LABEL, price, stock }];
     }
     const attrsPayload = buildAttributesPayload(attrsQuery.data?.definitions ?? [], attrValues);
     return {
@@ -491,71 +527,110 @@ function SellerListingEditor({
           Add image
         </Button>
       </div>
-      <div className="space-y-3">
-        <Label>Variants</Label>
+      {multiVariantMode ? (
         <div className="space-y-3">
-          {variants.map((v, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-border bg-muted/20 p-4"
-            >
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-2 sm:min-w-0">
-                  <Label htmlFor={`variant-${i}-label`}>Variant</Label>
-                  <Input
-                    id={`variant-${i}-label`}
-                    placeholder="e.g. Size M, Red"
-                    value={v.label}
-                    onChange={(e) => {
-                      const next = [...variants];
-                      next[i] = { ...v, label: e.target.value };
-                      setVariants(next);
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`variant-${i}-price`}>Price</Label>
-                  <Input
-                    id={`variant-${i}-price`}
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={v.price}
-                    onChange={(e) => {
-                      const next = [...variants];
-                      next[i] = { ...v, price: e.target.value };
-                      setVariants(next);
-                    }}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor={`variant-${i}-stock`}>Stock</Label>
-                  <Input
-                    id={`variant-${i}-stock`}
-                    type="number"
-                    min={0}
-                    inputMode="numeric"
-                    value={v.stock}
-                    onChange={(e) => {
-                      const next = [...variants];
-                      next[i] = { ...v, stock: e.target.value };
-                      setVariants(next);
-                    }}
-                  />
+          <p className="text-sm text-muted-foreground">
+            This listing has several price options. Edit each option below, or remove options you no
+            longer need before saving.
+          </p>
+          <Label>Options</Label>
+          <div className="space-y-3">
+            {multiVariants.map((v, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-border bg-muted/20 p-4"
+              >
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2 sm:min-w-0">
+                    <Label htmlFor={`variant-${i}-label`}>Label</Label>
+                    <Input
+                      id={`variant-${i}-label`}
+                      placeholder="e.g. Size M, Red"
+                      value={v.label}
+                      onChange={(e) => {
+                        const next = [...multiVariants];
+                        next[i] = { ...v, label: e.target.value };
+                        setMultiVariants(next);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`variant-${i}-price`}>Price</Label>
+                    <Input
+                      id={`variant-${i}-price`}
+                      type="number"
+                      step="0.01"
+                      inputMode="decimal"
+                      value={v.price}
+                      onChange={(e) => {
+                        const next = [...multiVariants];
+                        next[i] = { ...v, price: e.target.value };
+                        setMultiVariants(next);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`variant-${i}-stock`}>Stock</Label>
+                    <Input
+                      id={`variant-${i}-stock`}
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      value={v.stock}
+                      onChange={(e) => {
+                        const next = [...multiVariants];
+                        next[i] = { ...v, stock: e.target.value };
+                        setMultiVariants(next);
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setMultiVariants([...multiVariants, emptyVariant()])}
+          >
+            Add option
+          </Button>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setVariants([...variants, emptyVariant()])}
-        >
-          Add variant
-        </Button>
-      </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Set the price and how many you have in stock. Most handmade listings use quantity 1.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="simple-price">Price</Label>
+              <Input
+                id="simple-price"
+                type="number"
+                step="0.01"
+                min="0.01"
+                inputMode="decimal"
+                value={simplePrice}
+                onChange={(e) => setSimplePrice(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="simple-stock">Stock</Label>
+              <Input
+                id="simple-stock"
+                type="number"
+                min={0}
+                inputMode="numeric"
+                value={simpleStock}
+                onChange={(e) => setSimpleStock(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+        </div>
+      )}
       {(createMut.isError || updateMut.isError) && (
         <p className="text-sm text-destructive">
           {((createMut.error ?? updateMut.error) as Error)?.message}
@@ -608,8 +683,8 @@ function SellerListingEditor({
       </h1>
       <p className="mt-2 text-xss text-muted-foreground">
         {mode === "new"
-          ? "Add category, variants, images, and description for your listing."
-          : "Update this listing's details, stock, and images."}
+          ? "Add category, price, stock, images, and description for your listing."
+          : "Update this listing's details, price, stock, and images."}
       </p>
       {form}
     </main>

@@ -170,6 +170,8 @@ export function createSellerListingMutationOptions(queryClient: QueryClient, loc
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["seller", "listings", locale] });
       void queryClient.invalidateQueries({ queryKey: ["seller", "dashboard", locale] });
+      void queryClient.invalidateQueries({ queryKey: ["shops", "me", locale] });
+      void queryClient.invalidateQueries({ queryKey: ["shops", "me", "onboarding", locale] });
     },
   });
 }

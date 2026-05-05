@@ -1,6 +1,6 @@
 # public/
 
-Static image assets served by the Hono API at `http://localhost:3001/static/*`.
+Static image assets served by the Hono API at `http://localhost:5001/static/*`.
 
 Anything you drop in this folder is reachable at the same relative path, e.g.
 `public/categories/pottery.jpg` is served at `/static/categories/pottery.jpg`.
@@ -11,7 +11,7 @@ Anything you drop in this folder is reachable at the same relative path, e.g.
 | ----------------------- | --------------------------------------- | ----------------------------------------------------- |
 | `categories/`           | `<category-slug>.jpg`                   | `Category.imageUrl` (seeded from `libs/db/prisma/seed.ts`) |
 | `listings/`             | `<listing-slug>-<n>.jpg` (n = 1..N)     | `Listing.images[*].url`                               |
-| `shops/`                | `<shop-slug>.jpg`                       | `Shop.imageUrl`                                       |
+| `shops/`                | `<shop-slug>.jpg`, `banner-placeholder.jpg` | Shop logo / default banner when `bannerImageUrl` is null |
 | `promotions/`           | `<promotion-slug>.jpg`                  | `Promotion.heroImageUrl`                              |
 | `storefront/`           | `hero-seller.jpg`, `hero-fallback.jpg`  | Storefront hero section fallbacks                     |
 | `uploads/<folder>/`     | `<uuid>.<ext>` (written by API)         | Seller-uploaded logos/listing images (via `POST /api/uploads`) |
@@ -50,6 +50,7 @@ image):
 **Shops** — `public/shops/`
 
 - `yej-sira.jpg`
+- `banner-placeholder.jpg` (default wide banner; Unsplash, gift/shopping—replace with your own if needed)
 
 **Promotions** — `public/promotions/`
 

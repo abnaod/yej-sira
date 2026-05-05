@@ -46,10 +46,15 @@ type InitializePaymentResponse = {
 async function initializePayment(
   orderId: string,
   locale: string,
+  orderAccessToken?: string | null,
 ): Promise<InitializePaymentResponse> {
   return apiFetchJson<InitializePaymentResponse>("/api/payments/chapa/initialize", {
     method: "POST",
-    body: JSON.stringify({ orderId, locale }),
+    body: JSON.stringify({
+      orderId,
+      locale,
+      ...(orderAccessToken ? { orderAccessToken } : {}),
+    }),
   });
 }
 
@@ -131,29 +136,56 @@ export function CheckoutPage() {
   const updateQty = useMutation(updateCartItemMutationOptions(queryClient, locale));
 
   const initializePaymentMutation = useMutation({
-    mutationFn: (orderId: string) => initializePayment(orderId, locale),
+    mutationFn: (args: { orderId: string; orderAccessToken?: string | null }) =>
+      initializePayment(args.orderId, locale, args.orderAccessToken),
     onSuccess: (data) => {
       setAwaitingChapaRedirect(true);
       window.location.assign(data.checkoutUrl);
     },
-    onError: (err) => {
-      void queryClient.invalidateQueries({ queryKey: ["cart", locale] });
-      setSubmitError(err instanceof Error ? err.message : "Payment initialization failed");
+    onError: (err, variables) => {
+      // The order was placed successfully; only the payment redirect failed.
+      // Send the user to their order page so they can retry payment rather
+      // than leaving them on /checkout with an emptied cart.
+      setSubmitError(
+        err instanceof Error ? err.message : "Payment initialization failed",
+      );
+      if (variables.orderAccessToken && !session?.user) {
+        void router.navigate({
+          to: "/$locale/orders/by-token/$token",
+          params: { locale, token: variables.orderAccessToken },
+        });
+        return;
+      }
+      void router.navigate({
+        to: "/$locale/orders/$orderId",
+        params: { locale, orderId: variables.orderId },
+      });
     },
   });
 
   const checkout = useMutation({
     ...checkoutMutationOptions(queryClient, locale, {
       onSuccess: (data, variables) => {
+        const guestToken = data.orderAccessToken ?? null;
         if (variables.paymentMethod === "cod") {
           void queryClient.invalidateQueries({ queryKey: ["cart", locale] });
+          if (guestToken && !session?.user) {
+            void router.navigate({
+              to: "/$locale/orders/by-token/$token",
+              params: { locale, token: guestToken },
+            });
+            return;
+          }
           void router.navigate({
             to: "/$locale/orders/$orderId",
             params: { locale, orderId: data.order.id },
           });
           return;
         }
-        initializePaymentMutation.mutate(data.order.id);
+        initializePaymentMutation.mutate({
+          orderId: data.order.id,
+          orderAccessToken: guestToken,
+        });
       },
       onError: (err) => {
         setSubmitError(err instanceof Error ? err.message : "Checkout failed");

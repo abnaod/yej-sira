@@ -1,14 +1,19 @@
 import type { Payment as PaymentRow, Prisma } from "@prisma/client";
 
-type PaymentWithOrder = Prisma.PaymentGetPayload<{ include: { order: true } }>;
+type PaymentWithOrder = Prisma.PaymentGetPayload<{
+  include: { order: { include: { user: { select: { email: true } } } } };
+}>;
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { createHmac, timingSafeEqual } from "crypto";
 
 import { prisma } from "../../lib/db";
-import { getEnv, getMarketplaceHost, getShopSubdomainBaseDomain } from "../../lib/env";
+import { getEnv, getShopSubdomainBaseDomain } from "../../lib/env";
 import { auth } from "../auth/auth";
+import { logger } from "../../lib/logger";
+import { sendOrderConfirmedEmail, sendSellerNewOrderEmail } from "../../lib/email/order-emails";
+import { verifyOrderAccess } from "../../lib/order-access";
 import {
   formatPhoneForChapa,
   initializeTransaction,
@@ -22,6 +27,11 @@ const initializeBodySchema = z.object({
   orderId: z.string(),
   /** Used for return_url path; defaults to `en`. */
   locale: z.string().min(1).max(16).optional(),
+  /**
+   * Guest order access token issued at checkout. When the user has no session
+   * (guest checkout), this authorizes initializing payment for their order.
+   */
+  orderAccessToken: z.string().optional(),
 });
 
 const chapaPaymentMethodMap: Record<string, "card" | "telebirr"> = {
@@ -48,10 +58,10 @@ function storefrontReturnOrigin(order: {
   const env = getEnv();
   if (order.originShop) {
     const protocol = env.NODE_ENV === "production" ? "https" : "http";
-    const port = env.NODE_ENV === "production" ? "" : ":3000";
+    const port = env.NODE_ENV === "production" ? "" : ":5000";
     return `${protocol}://${order.originShop.slug}.${getShopSubdomainBaseDomain()}${port}`;
   }
-  return env.CORS_ORIGIN || `https://${getMarketplaceHost()}`;
+  return env.PUBLIC_WEB_URL.replace(/\/$/, "");
 }
 
 async function chapaCustomerFromUser(userId: string) {
@@ -73,23 +83,42 @@ async function chapaCustomerFromUser(userId: string) {
 
 paymentsRouter.post("/payments/chapa/initialize", async (c) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session?.user) {
-    throw new HTTPException(401, { message: "Sign in required" });
-  }
 
   const body = await c.req.json().catch(() => null);
   const parsed = initializeBodySchema.safeParse(body);
   if (!parsed.success) {
     throw new HTTPException(400, { message: "orderId is required" });
   }
-  const { orderId, locale: localeFromBody } = parsed.data;
+  const { orderId, locale: localeFromBody, orderAccessToken } = parsed.data;
 
+  if (!session?.user && !orderAccessToken) {
+    throw new HTTPException(401, { message: "Sign in required" });
+  }
+
+  const where = session?.user
+    ? { id: orderId, userId: session.user.id }
+    : { id: orderId };
   const order = await prisma.order.findFirst({
-    where: { id: orderId, userId: session.user.id },
-    include: { payment: true, originShop: { select: { slug: true } } },
+    where,
+    include: {
+      payment: true,
+      user: { select: { email: true } },
+      originShop: { select: { slug: true } },
+    },
   });
   if (!order) {
     throw new HTTPException(404, { message: "Order not found" });
+  }
+
+  if (!session?.user) {
+    const verified = orderAccessToken ? verifyOrderAccess(orderAccessToken) : null;
+    if (
+      !verified ||
+      verified.orderId !== order.id ||
+      verified.email !== order.user?.email?.toLowerCase()
+    ) {
+      throw new HTTPException(404, { message: "Order not found" });
+    }
   }
 
   if (order.status === "paid" || order.status === "fulfilled") {
@@ -112,9 +141,13 @@ paymentsRouter.post("/payments/chapa/initialize", async (c) => {
   const returnOrigin = storefrontReturnOrigin(order);
   const localeSeg =
     localeFromBody && /^[a-z0-9-]{2,16}$/i.test(localeFromBody) ? localeFromBody : "en";
-  const returnUrl = `${returnOrigin}/${localeSeg}/payments/success?orderId=${encodeURIComponent(order.id)}`;
+  const tokenQuery =
+    !session?.user && orderAccessToken
+      ? `&token=${encodeURIComponent(orderAccessToken)}`
+      : "";
+  const returnUrl = `${returnOrigin}/${localeSeg}/payments/success?orderId=${encodeURIComponent(order.id)}${tokenQuery}`;
 
-  const customer = await chapaCustomerFromUser(session.user.id);
+  const customer = await chapaCustomerFromUser(order.userId);
 
   const initPayload = {
     amount: toNumber(order.total),
@@ -199,11 +232,14 @@ paymentsRouter.post("/payments/chapa/initialize", async (c) => {
 
 paymentsRouter.post("/payments/chapa/verify", async (c) => {
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session?.user) {
-    throw new HTTPException(401, { message: "Sign in required" });
-  }
 
   const body = await c.req.json().catch(() => null);
+  const orderAccessToken =
+    typeof body?.orderAccessToken === "string"
+      ? body.orderAccessToken
+      : typeof body?.token === "string"
+        ? body.token
+        : undefined;
   const orderIdParam =
     typeof body?.orderId === "string"
       ? body.orderId
@@ -217,27 +253,46 @@ paymentsRouter.post("/payments/chapa/verify", async (c) => {
         ? c.req.query("tx_ref")
         : undefined;
 
+  function assertCanAccessPayment(p: PaymentWithOrder) {
+    if (session?.user && p.order.userId === session.user.id) {
+      return;
+    }
+    const verified = orderAccessToken ? verifyOrderAccess(orderAccessToken) : null;
+    if (
+      verified &&
+      verified.orderId === p.order.id &&
+      verified.email === p.order.user?.email?.toLowerCase()
+    ) {
+      return;
+    }
+    if (session?.user) {
+      throw new HTTPException(orderIdParam ? 404 : 403, {
+        message: orderIdParam ? "Payment not found" : "Forbidden",
+      });
+    }
+    throw new HTTPException(401, { message: "Sign in required" });
+  }
+
   let payment: PaymentWithOrder;
   if (orderIdParam) {
     const p = await prisma.payment.findUnique({
       where: { orderId: orderIdParam },
-      include: { order: true },
-    });
-    if (!p || p.order.userId !== session.user.id) {
-      throw new HTTPException(404, { message: "Payment not found" });
-    }
-    payment = p;
-  } else if (txRefParam) {
-    const p = await prisma.payment.findUnique({
-      where: { txRef: txRefParam },
-      include: { order: true },
+      include: { order: { include: { user: { select: { email: true } } } } },
     });
     if (!p) {
       throw new HTTPException(404, { message: "Payment not found" });
     }
-    if (p.order.userId !== session.user.id) {
-      throw new HTTPException(403, { message: "Forbidden" });
+    assertCanAccessPayment(p);
+    payment = p;
+  } else if (txRefParam) {
+    const p = await prisma.payment.findUnique({
+      where: { txRef: txRefParam },
+      include: { order: { include: { user: { select: { email: true } } } } },
+    });
+    if (!p) {
+      throw new HTTPException(404, { message: "Payment not found" });
     }
+    assertCanAccessPayment(p);
     payment = p;
   } else {
     throw new HTTPException(400, { message: "tx_ref or orderId is required" });
@@ -269,6 +324,16 @@ paymentsRouter.post("/payments/chapa/verify", async (c) => {
         data: { status: "paid" },
       });
     });
+
+    try {
+      await sendOrderConfirmedEmail(payment.order.id);
+      await sendSellerNewOrderEmail(payment.order.id);
+    } catch (err) {
+      logger.error("order_email.send_failed", {
+        orderId: payment.order.id,
+        err: err instanceof Error ? err.message : String(err),
+      });
+    }
 
     return c.json({
       status: "completed" as const,
@@ -314,7 +379,11 @@ paymentsRouter.post("/payments/chapa/webhook", async (c) => {
   const body = await c.req.text();
   const chapaSignature = c.req.header("x-chapa-signature") ?? c.req.header("chapa-signature");
 
-  if (webhookSecret && chapaSignature) {
+  if (webhookSecret) {
+    if (!chapaSignature) {
+      logger.warn("chapa.webhook.missing_signature");
+      return c.json({ error: "Missing signature" }, 400);
+    }
     const expected = createHmac("sha256", webhookSecret).update(body).digest("hex");
     const signatureBuffer = Buffer.from(chapaSignature);
     const expectedBuffer = Buffer.from(expected);
@@ -322,8 +391,12 @@ paymentsRouter.post("/payments/chapa/webhook", async (c) => {
       signatureBuffer.length !== expectedBuffer.length ||
       !timingSafeEqual(signatureBuffer, expectedBuffer)
     ) {
+      logger.warn("chapa.webhook.invalid_signature");
       return c.json({ error: "Invalid signature" }, 400);
     }
+  } else if (env.NODE_ENV === "production") {
+    logger.error("chapa.webhook.refused_no_secret");
+    return c.json({ error: "Webhook not configured" }, 500);
   }
 
   let event: Record<string, unknown>;
@@ -333,7 +406,7 @@ paymentsRouter.post("/payments/chapa/webhook", async (c) => {
     return c.json({ error: "Invalid JSON" }, 400);
   }
 
-  console.log("[chapa webhook] payload", JSON.stringify(event, null, 2));
+  logger.info("chapa.webhook.received", { event: event.event, txRef: event.tx_ref });
 
   const eventType = event.event as string | undefined;
   if (eventType !== "charge.success") {
@@ -377,6 +450,16 @@ paymentsRouter.post("/payments/chapa/webhook", async (c) => {
           data: { status: "paid" },
         });
       });
+
+      try {
+        await sendOrderConfirmedEmail(payment.orderId);
+        await sendSellerNewOrderEmail(payment.orderId);
+      } catch (err) {
+        logger.error("order_email.send_failed", {
+          orderId: payment.orderId,
+          err: err instanceof Error ? err.message : String(err),
+        });
+      }
     } else {
       await prisma.payment.update({
         where: { id: payment.id },

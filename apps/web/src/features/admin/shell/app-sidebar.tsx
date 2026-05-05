@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Package,
+  Percent,
   Shield,
   ShoppingBag,
   Sparkles,
@@ -138,6 +139,17 @@ export function AdminAppSidebar() {
                   <Link to="/$locale/admin/promotions" params={{ locale }}>
                     <Sparkles />
                     <span>Promotions</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={matchesAdminPath(pathname, locale, "/promo-codes")}
+                >
+                  <Link to="/$locale/admin/promo-codes" params={{ locale }}>
+                    <Percent />
+                    <span>Promo codes</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -78,3 +78,35 @@ export const createPromotionSchema = z.object({
 });
 
 export const patchPromotionSchema = createPromotionSchema.partial();
+
+const promoCodeRegex = /^[A-Z0-9][A-Z0-9_-]{1,39}$/;
+
+const promoCodeFieldsSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .transform((v) => v.toUpperCase())
+    .pipe(z.string().regex(promoCodeRegex, "Use uppercase letters, digits, dash or underscore")),
+  description: z.string().max(500).optional(),
+  discountPercent: z.coerce.number().int().min(1).max(100).optional(),
+  discountAmount: z.coerce.number().min(0).optional(),
+  minSubtotal: z.coerce.number().min(0).optional(),
+  maxRedemptions: z.coerce.number().int().min(1).optional(),
+  perUserLimit: z.coerce.number().int().min(1).optional(),
+  validFrom: z.string().datetime().optional(),
+  validUntil: z.string().datetime().optional(),
+  active: z.coerce.boolean().default(true),
+});
+
+export const createPromoCodeSchema = promoCodeFieldsSchema.refine(
+  (d) => d.discountPercent != null || d.discountAmount != null,
+  { message: "discountPercent or discountAmount is required", path: ["discountPercent"] },
+);
+
+export const patchPromoCodeSchema = promoCodeFieldsSchema.partial().refine(
+  (d) =>
+    d.discountPercent != null ||
+    d.discountAmount != null ||
+    Object.keys(d).length > 0,
+  { message: "Nothing to update" },
+);

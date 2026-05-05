@@ -1,18 +1,13 @@
-import type { Locale } from "@ys/intl";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-import { OrderHistoryPage, ordersListQuery } from "@/features/store/orders";
+import { OrderHistoryPage } from "@/features/store/orders";
+import { featureCartCheckout } from "@/lib/features";
 
 export const Route = createFileRoute("/$locale/(store)/orders/")({
-  loader: ({ context, params }) =>
-    context.queryClient.ensureQueryData(ordersListQuery(params.locale as Locale)),
-  pendingComponent: () => (
-    <main className="p-8 text-muted-foreground">Loading…</main>
-  ),
-  errorComponent: ({ error }) => (
-    <main className="p-8 text-destructive">
-      {error instanceof Error ? error.message : "Could not load orders"}
-    </main>
-  ),
+  beforeLoad: ({ params }) => {
+    if (!featureCartCheckout) {
+      throw redirect({ to: "/$locale", params: { locale: params.locale } });
+    }
+  },
   component: OrderHistoryPage,
 });

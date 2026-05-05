@@ -17,6 +17,12 @@ export type CheckoutResponse = {
     deliveryMethod: DeliveryMethod;
   };
   txRef: string;
+  /**
+   * HMAC-signed token returned for guest checkouts so the buyer can view
+   * their order (and reuse the link from the confirmation email) without
+   * signing in. Null for authenticated buyers.
+   */
+  orderAccessToken?: string | null;
 };
 
 export type CheckoutBody =

@@ -1,11 +1,13 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 import { requireUserId } from "../../lib/auth";
+import { logger } from "../../lib/logger";
+import { getPublicUploadsDir } from "../../lib/paths";
+import { getS3Config, putObject } from "../../lib/storage/s3";
 
 export const uploadsRouter = new Hono();
 
@@ -21,12 +23,9 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
  *  encouraging oversized originals to be served directly from `/static/*`. */
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
-const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const uploadsDir = path.resolve(moduleDir, "../../../../../public/uploads");
-
-/** Allowed folder namespaces under `public/uploads/` — requests specifying a
- *  `folder` form field are validated against this list so the server only ever
- *  writes into known, reviewable locations. */
+/** Allowed folder namespaces — requests specifying a `folder` form field are
+ *  validated against this list so the server only ever writes into known,
+ *  reviewable locations. */
 const ALLOWED_FOLDERS = new Set(["shops", "listings", "categories", "misc"]);
 
 uploadsRouter.post("/uploads", async (c) => {
@@ -54,10 +53,25 @@ uploadsRouter.post("/uploads", async (c) => {
   const folder = ALLOWED_FOLDERS.has(folderInput) ? folderInput : "misc";
 
   const filename = `${randomUUID()}.${ext}`;
-  const targetDir = path.join(uploadsDir, folder);
-  await mkdir(targetDir, { recursive: true });
+  const key = `uploads/${folder}/${filename}`;
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(targetDir, filename), buffer);
 
+  const s3 = getS3Config();
+  if (s3) {
+    try {
+      const url = await putObject(s3, key, buffer, file.type);
+      return c.json({ url });
+    } catch (err) {
+      logger.error("uploads.s3_failed", {
+        err: err instanceof Error ? err.message : String(err),
+      });
+      throw new HTTPException(502, { message: "Upload failed" });
+    }
+  }
+
+  // Local disk fallback (development / single-host deploys only).
+  const targetDir = path.join(getPublicUploadsDir(), folder);
+  await mkdir(targetDir, { recursive: true });
+  await writeFile(path.join(targetDir, filename), buffer);
   return c.json({ url: `/static/uploads/${folder}/${filename}` });
 });

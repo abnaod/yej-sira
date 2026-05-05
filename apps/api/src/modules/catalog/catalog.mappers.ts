@@ -76,7 +76,7 @@ export function getListingDetailInclude(now: Date, locale: Locale) {
         };
 
   return {
-    shop: { select: { slug: true, name: true, imageUrl: true } },
+    shop: { select: { slug: true, name: true, imageUrl: true, ownerUserId: true } },
     category: tr ? { include: { translations: tr } } : true,
     images: { orderBy: { sortOrder: "asc" as const } },
     variants: tr

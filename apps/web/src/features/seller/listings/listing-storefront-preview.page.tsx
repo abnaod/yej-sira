@@ -91,6 +91,8 @@ export function SellerListingStorefrontPreviewPage() {
         <ListingGallery images={listing.images} listingName={listing.name} />
 
         <BuyBox
+          listingId={listing.id}
+          messageSellerDisabled
           name={listing.name}
           shop={listing.shop}
           monthlyPrice={99.99}
@@ -142,7 +144,7 @@ export function SellerListingStorefrontPreviewPage() {
           </dl>
         )}
         {listing.description.trim() ? (
-          <p className="max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-foreground md:text-base">
+          <p className="max-w-3xl whitespace-pre-wrap text-sm leading-relaxed text-foreground">
             {listing.description}
           </p>
         ) : (

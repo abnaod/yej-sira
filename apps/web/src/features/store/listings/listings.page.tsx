@@ -9,7 +9,7 @@ import { useListingFavoriteRow } from "@/features/store/favorites/hooks/use-list
 import { listingDetailQuery, relatedListingsQuery } from "./listings.queries";
 
 import { BuyBox } from "./components/buy-box";
-import { ListingDetailTabs } from "./components/listings-detail-tabs";
+import { ListingDetailSections } from "./components/listing-detail-sections";
 import { ListingGallery } from "./components/listings-gallery";
 
 const routeApi = getRouteApi("/$locale/(store)/listings/$listingId");
@@ -52,6 +52,8 @@ export function ListingPage() {
         <ListingGallery images={listing.images} listingName={listing.name} />
 
         <BuyBox
+          listingId={listing.id}
+          messageSellerDisabled={listing.isViewerShopOwner}
           name={listing.name}
           shop={listing.shop}
           monthlyPrice={99.99}
@@ -77,12 +79,12 @@ export function ListingPage() {
         />
       </div>
 
-      <ListingDetailTabs
+      <ListingDetailSections
         locale={locale}
         listingSlug={listingId}
         description={listing.description}
-        shopName={listing.shop.name}
         attributes={listing.attributes}
+        onAddToCart={(input) => addToCart.mutate(input)}
       />
 
       <section className="mt-10">

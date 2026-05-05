@@ -1,6 +1,6 @@
 import type { Locale } from "@ys/intl";
 
-import { getApiOrigin } from "./origin";
+import { getApiOrigin, getPublicApiOrigin } from "./origin";
 import { getBrowserStorefrontContext, resolveStorefrontHost } from "@/lib/storefront";
 
 const CART_TOKEN_KEY = "ys_cart_token";
@@ -36,7 +36,7 @@ export function assetUrl(path: string | null | undefined): string {
   if (!path) return "";
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   if (path.startsWith("data:") || path.startsWith("blob:")) return path;
-  return `${getApiOrigin()}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${getPublicApiOrigin()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export async function apiFetch(path: string, init?: ApiFetchInit) {
@@ -143,4 +143,4 @@ export async function apiFetchJson<T>(path: string, init?: ApiFetchInit): Promis
   return data as T;
 }
 
-export { getApiOrigin } from "./origin";
+export { getApiOrigin, getPublicApiOrigin } from "./origin";

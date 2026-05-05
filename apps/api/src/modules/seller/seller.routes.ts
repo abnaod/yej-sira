@@ -10,6 +10,7 @@ import {
   assertShopActiveForPublish,
   getOwnedShop,
 } from "../shops/shops.authz";
+import { tryActivateShopIfOnboardingComplete } from "../shops/shops.onboarding";
 import {
   getListingDetailInclude,
   minVariantPrice,
@@ -22,6 +23,7 @@ import {
 } from "../catalog/catalog.localize";
 import { pickPromotionForListing } from "../promotions/promotions.utils";
 import { toNumber } from "../../lib/money";
+import { getSellerMessageMetrics } from "../conversations/conversations.service";
 import {
   mapListingAttributeValuesForDetail,
   serializeListingAttributeValuesForSeller,
@@ -205,6 +207,18 @@ sellerRouter.get("/seller/dashboard", async (c) => {
     orders30d,
     ordersByDay,
   });
+});
+
+/** Conversation-first metrics: leads, reply rate, avg first-response time. */
+sellerRouter.get("/seller/messages/metrics", async (c) => {
+  const userId = await requireUserId(c);
+  const shop = await getOwnedShop(userId);
+  if (!shop) {
+    throw new HTTPException(404, { message: "No shop" });
+  }
+  assertSellerCanManageShop(shop, userId);
+  const metrics = await getSellerMessageMetrics(shop.id);
+  return c.json(metrics);
 });
 
 function sellerOrderLineListingLabel(listingName: string, variantLabel: string | null): string {
@@ -568,6 +582,13 @@ sellerRouter.post("/seller/listings", async (c) => {
     throw new HTTPException(400, { message: "Slug already in use" });
   }
 
+  const listingCount = await prisma.listing.count({ where: { shopId: shop.id } });
+  if (listingCount >= shop.listingsLimit) {
+    throw new HTTPException(400, {
+      message: `Listing limit reached (${shop.listingsLimit}). Delete a listing or contact support to raise your limit.`,
+    });
+  }
+
   const validatedAttributes = await validateListingAttributeInputs(
     categoryId,
     data.attributes ?? [],
@@ -653,6 +674,8 @@ sellerRouter.post("/seller/listings", async (c) => {
 
     return created;
   });
+
+  await tryActivateShopIfOnboardingComplete(shop.id);
 
   return c.json({ listing: { id: listing.id, slug: listing.slug } });
 });

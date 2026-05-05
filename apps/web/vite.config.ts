@@ -13,18 +13,31 @@ const monorepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 
 export default defineConfig({
   envDir: monorepoRoot,
+  build: {
+    rollupOptions: {
+      external: [/^@sentry\//],
+    },
+  },
   server: {
     /** Listen on all interfaces so both `localhost` and `127.0.0.1` work in dev. */
     host: true,
-    port: 3000,
+    port: 5000,
     strictPort: true,
     proxy: {
-      "/api": { target: "http://127.0.0.1:3001", changeOrigin: true },
-      "/static": { target: "http://127.0.0.1:3001", changeOrigin: true },
+      "/api": { target: "http://127.0.0.1:5001", changeOrigin: true },
+      "/static": { target: "http://127.0.0.1:5001", changeOrigin: true },
     },
   },
   plugins: [
-    nitro({ rollupConfig: { external: [/^@sentry\//] } }),
+    nitro({
+      rollupConfig: { external: [/^@sentry\//] },
+      /** Hashed Vite assets are safe to cache forever; improves repeat visits (Lighthouse “cache lifetimes”). */
+      routeRules: {
+        "/assets/**": {
+          headers: { "cache-control": "public, max-age=31536000, immutable" },
+        },
+      },
+    }),
     tsconfigPaths({ projects: ["./tsconfig.json"] }),
     tailwindcss(),
     tanstackStart(),

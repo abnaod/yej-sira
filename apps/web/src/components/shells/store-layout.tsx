@@ -3,6 +3,7 @@ import { Heart, Package, ShoppingCart, Store, User } from "lucide-react";
 
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ContentContainer } from "@/components/layout/content-container";
+import { CookieBanner } from "@/components/layout/cookie-banner";
 import { Footer } from "@/components/layout/footer/footer";
 import { Header } from "@/components/layout/header/header";
 import { HeaderFilter } from "@/components/layout/header/header-filter";
@@ -58,6 +59,7 @@ export function StoreLayout() {
           <Outlet />
         </ContentContainer>
         <Footer />
+        <CookieBanner />
       </div>
       <BottomNav variant="marketplace" />
     </StorefrontTenantProvider>

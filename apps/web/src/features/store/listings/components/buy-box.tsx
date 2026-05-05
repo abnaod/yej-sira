@@ -1,9 +1,16 @@
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart, Minus, Plus } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import type { Locale } from "@ys/intl";
 
 import type { AddToCartInput } from "@/features/store/cart/cart.queries";
+import { useAuthDialog } from "@/features/shared/auth";
+import { createConversationMutationOptions } from "@/features/store/conversations/conversations.queries";
+import { featureCartCheckout, featureConversations } from "@/lib/features";
+import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -18,6 +25,8 @@ export interface ListingVariantOption {
 }
 
 interface BuyBoxProps {
+  /** Listing cuid (for conversation API). */
+  listingId: string;
   name: string;
   description?: string;
   shop?: { slug: string; name: string; imageUrl: string | null };
@@ -33,12 +42,16 @@ interface BuyBoxProps {
   /** When set, purchase CTAs are disabled (e.g. draft storefront preview). */
   purchaseDisabled?: boolean;
   purchaseDisabledReason?: string;
+  /** Shop owner / preview: open conversation is not allowed. */
+  messageSellerDisabled?: boolean;
+  messageSellerDisabledReason?: string;
   isFavorite?: boolean;
   onToggleFavorite?: () => void;
   favoritePending?: boolean;
 }
 
 export function BuyBox({
+  listingId,
   name,
   description,
   shop,
@@ -51,15 +64,29 @@ export function BuyBox({
   onAddToCart,
   purchaseDisabled,
   purchaseDisabledReason,
+  messageSellerDisabled,
+  messageSellerDisabledReason,
   isFavorite,
   onToggleFavorite,
   favoritePending,
   promotion,
 }: BuyBoxProps) {
   const { t } = useTranslation("common");
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { data: session } = authClient.useSession();
+  const { openAuth } = useAuthDialog();
+  const showMessage = featureConversations;
+  const showCommerce = featureCartCheckout;
   const [selected, setSelected] = useState(0);
   const [quantity, setQuantity] = useState(1);
+
+  const createConversation = useMutation(
+    createConversationMutationOptions(queryClient, locale, (conversationId) => {
+      void navigate({ to: "/$locale/messages/$conversationId", params: { locale, conversationId } });
+    }),
+  );
 
   const v = variants[selected];
   const price = v?.price ?? 0;
@@ -73,6 +100,30 @@ export function BuyBox({
   if (!v) {
     return null;
   }
+
+  const ownListingHint =
+    messageSellerDisabled && (messageSellerDisabledReason ?? t("cannotMessageOwnListing"));
+
+  const startConversation = () => {
+    createConversation.mutate(
+      {
+        listingId,
+      },
+      {
+        onError: (err) => {
+          toast.error(err instanceof Error ? err.message : t("errorGeneric"));
+        },
+      },
+    );
+  };
+
+  const openMessageFlow = () => {
+    if (!session?.user) {
+      openAuth({ onSignInSuccess: startConversation });
+      return;
+    }
+    startConversation();
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -219,27 +270,44 @@ export function BuyBox({
       {purchaseDisabled && purchaseDisabledReason ? (
         <p className="text-sm text-muted-foreground">{purchaseDisabledReason}</p>
       ) : null}
-      <div className="flex gap-3">
+      {ownListingHint ? (
+        <p className="text-sm text-muted-foreground">{ownListingHint}</p>
+      ) : null}
+      {showMessage && (
         <Button
           size="lg"
-          className="flex-1"
-          disabled={stock < 1 || purchaseDisabled}
-          onClick={() => onBuyNow?.({ variantId: v.id, quantity, listingName: name })}
+          className="w-full"
+          disabled={stock < 1 || purchaseDisabled || messageSellerDisabled || createConversation.isPending}
+          onClick={openMessageFlow}
         >
-          Buy Now
+          {createConversation.isPending ? t("loading") : t("messageSellerAboutItem")}
         </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          className="flex-1"
-          disabled={stock < 1 || purchaseDisabled}
-          onClick={() =>
-            onAddToCart?.({ variantId: v.id, quantity, listingName: name })
-          }
-        >
-          Add to Cart
-        </Button>
-      </div>
+      )}
+
+      {showCommerce && (
+        <div className="flex gap-3">
+          <Button
+            size="lg"
+            className="flex-1"
+            disabled={stock < 1 || purchaseDisabled}
+            onClick={() => onBuyNow?.({ variantId: v.id, quantity, listingName: name })}
+          >
+            {t("buyNow")}
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="flex-1"
+            disabled={stock < 1 || purchaseDisabled}
+            onClick={() =>
+              onAddToCart?.({ variantId: v.id, quantity, listingName: name })
+            }
+          >
+            {t("addToCart")}
+          </Button>
+        </div>
+      )}
+
     </div>
   );
 }

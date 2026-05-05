@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -52,7 +52,7 @@ function getDefaultCallbackUrl() {
 
 function getSellerPortalCallbackUrl(locale: Locale) {
   if (typeof window === "undefined") return "/";
-  return `${window.location.origin}/${locale}/sell/dashboard`;
+  return `${window.location.origin}/${locale}/sell`;
 }
 
 function formatAuthError(err: unknown): string {
@@ -71,12 +71,23 @@ export type AuthDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   redirectToSellerPortal?: boolean;
+  /**
+   * "checkout" renders the Etsy-style layout with "Continue as a guest" as the
+   * primary CTA above the sign-in/register form.
+   */
+  mode?: "default" | "checkout";
+  onContinueAsGuest?: () => void;
+  /** Invoked after a successful sign-in (email or Google). */
+  onSignInSuccess?: () => void;
 };
 
 export function AuthDialog({
   open,
   onOpenChange,
   redirectToSellerPortal = false,
+  mode = "default",
+  onContinueAsGuest,
+  onSignInSuccess,
 }: AuthDialogProps) {
   const locale = useLocale() as Locale;
   const navigate = useNavigate();
@@ -121,13 +132,18 @@ export function AuthDialog({
         return;
       }
       if (redirectToSellerPortal) {
-        void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
+        void navigate({ to: "/$locale/sell", params: { locale } });
       }
+      onSignInSuccess?.();
       onOpenChange(false);
     } finally {
       setPending(false);
     }
   };
+
+  const oauthCallbackUrl = redirectToSellerPortal
+    ? getSellerPortalCallbackUrl(locale)
+    : getDefaultCallbackUrl();
 
   const handleGoogle = async () => {
     setError(null);
@@ -136,9 +152,7 @@ export function AuthDialog({
     try {
       const { error: err } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: redirectToSellerPortal
-          ? getSellerPortalCallbackUrl(locale)
-          : getDefaultCallbackUrl(),
+        callbackURL: oauthCallbackUrl,
       });
       if (err) {
         setOauthError(formatAuthError(err));
@@ -167,8 +181,9 @@ export function AuthDialog({
         return;
       }
       if (redirectToSellerPortal) {
-        void navigate({ to: "/$locale/sell/dashboard", params: { locale } });
+        void navigate({ to: "/$locale/sell", params: { locale } });
       }
+      onSignInSuccess?.();
       onOpenChange(false);
     } finally {
       setPending(false);
@@ -181,22 +196,78 @@ export function AuthDialog({
     setOauthError(null);
   };
 
+  const isCheckout = mode === "checkout";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md gap-6 p-8 pb-6">
         <DialogHeader className="gap-1.5">
           <DialogTitle>
-            {tab === "login"
-              ? "Sign in to your account"
-              : "Create your YEJSIRA account"}
+            {isCheckout
+              ? "Go to checkout"
+              : tab === "login"
+                ? "Sign in to your account"
+                : "Create your YEJSIRA account"}
           </DialogTitle>
-          <DialogDescription>
-            Sign in or create an account to shop and track orders.
-          </DialogDescription>
+          {!isCheckout && (
+            <DialogDescription>
+              Sign in or create an account to shop and track orders.
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         <DialogBody className="flex-none max-h-[85dvh] py-2">
           <div className="flex flex-col gap-6">
+            {isCheckout && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="w-full text-sm"
+                  disabled={pending}
+                  onClick={() => {
+                    onContinueAsGuest?.();
+                    onOpenChange(false);
+                  }}
+                >
+                  Continue as a guest
+                </Button>
+                <div className="flex items-center gap-3">
+                  <Separator className="flex-1" />
+                  <span className="whitespace-nowrap text-sm text-muted-foreground">
+                    OR
+                  </span>
+                  <Separator className="flex-1" />
+                </div>
+                <p className="text-base font-semibold">Sign in or register</p>
+              </>
+            )}
+            <div className="flex flex-col gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full text-sm text-foreground hover:text-foreground"
+                disabled={pending}
+                onClick={() => void handleGoogle()}
+              >
+                <GoogleIcon className="size-4 shrink-0" />
+                {tab === "login" ? "Sign in with Google" : "Sign up with Google"}
+              </Button>
+              {oauthError && (
+                <p className="text-sm text-destructive" role="alert">
+                  {oauthError}
+                </p>
+              )}
+              <div className="mt-3 flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="whitespace-nowrap text-sm text-muted-foreground">
+                  Or with email
+                </span>
+                <Separator className="flex-1" />
+              </div>
+            </div>
             <div>
               {tab === "login" ? (
                 <form onSubmit={handleLogin} className="flex flex-col gap-5">
@@ -212,7 +283,17 @@ export function AuthDialog({
                     />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="auth-login-password">Password</Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor="auth-login-password">Password</Label>
+                      <Link
+                        to="/$locale/auth/forgot-password"
+                        params={{ locale }}
+                        className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        onClick={() => onOpenChange(false)}
+                      >
+                        Forgot your password?
+                      </Link>
+                    </div>
                     <Input
                       id="auth-login-password"
                       type="password"
@@ -289,30 +370,7 @@ export function AuthDialog({
               )}
             </div>
 
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center gap-3">
-                <Separator className="flex-1" />
-                <span className="whitespace-nowrap text-sm text-muted-foreground">
-                  Or continue with
-                </span>
-                <Separator className="flex-1" />
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="w-full text-sm"
-                disabled={pending}
-                onClick={() => void handleGoogle()}
-              >
-                <GoogleIcon className="size-4 shrink-0" />
-                {tab === "login" ? "Sign in with Google" : "Sign up with Google"}
-              </Button>
-              {oauthError && (
-                <p className="text-sm text-destructive" role="alert">
-                  {oauthError}
-                </p>
-              )}
+            <div>
               {tab === "login" ? (
                 <p className="text-center text-sm text-muted-foreground">
                   New to YEJSIRA?{" "}

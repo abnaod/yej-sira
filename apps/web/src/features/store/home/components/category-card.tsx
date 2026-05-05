@@ -37,6 +37,11 @@ export function CategoryCard({
       <img
         src={assetUrl(imageUrl)}
         alt={name}
+        width={600}
+        height={900}
+        sizes="(min-width: 1024px) 16vw, (min-width: 640px) 33vw, 50vw"
+        loading="lazy"
+        decoding="async"
         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-black/10" />

@@ -718,6 +718,11 @@ catalogRouter.get("/listings/:slug", async (c) => {
   };
   const categoryTr = category.translations ?? [];
 
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  const isViewerShopOwner = Boolean(
+    session?.user?.id && session.user.id === listing.shop.ownerUserId,
+  );
+
   return c.json({
     listing: {
       id: listing.id,
@@ -781,6 +786,7 @@ catalogRouter.get("/listings/:slug", async (c) => {
           }
         : undefined,
       attributes,
+      isViewerShopOwner,
     },
   });
 });
