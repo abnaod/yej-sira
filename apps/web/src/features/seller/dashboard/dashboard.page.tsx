@@ -5,6 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
+import { generatedStorefrontUrl } from "@/lib/storefront";
 import { sellerDashboardQuery } from "./dashboard.queries";
 import { SellerDashboardSectionCards } from "./dashboard-section-cards";
 import { SellerDashboardRecentOrders } from "./recent-orders-card";
@@ -58,20 +59,40 @@ export function SellerDashboardPage() {
   }
 
   if (shop.status !== "active") {
+    const storefrontUrl = generatedStorefrontUrl(shop.slug, locale);
     return (
-      <div className="mx-auto max-w-3xl px-4">
+      <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4">
         <p className="text-muted-foreground">
           Your shop is {shop.status}. You can list listings once it&apos;s active.
         </p>
+        <div className="rounded-md border border-border bg-muted/30 p-4">
+          <p className="text-sm font-medium text-foreground">Storefront URL</p>
+          <p className="mt-1 break-all text-sm text-muted-foreground">
+            {storefrontUrl} · unavailable until active
+          </p>
+        </div>
       </div>
     );
   }
 
   const stats = dashboardState.data;
   const dashboardLoading = dashboardState.isLoading;
+  const storefrontUrl = generatedStorefrontUrl(shop.slug, locale);
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-4">
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">Storefront</p>
+          <p className="mt-1 break-all text-sm text-muted-foreground">{storefrontUrl}</p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <a href={storefrontUrl} target="_blank" rel="noreferrer">
+            Open storefront
+          </a>
+        </Button>
+      </div>
+
       <SellerDashboardSectionCards
         stats={
           stats

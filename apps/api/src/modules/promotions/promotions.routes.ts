@@ -16,6 +16,7 @@ export const promotionsRouter = new Hono();
 
 promotionsRouter.get("/promotions", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const now = new Date();
   const tr =
     locale === "en"
@@ -25,7 +26,21 @@ promotionsRouter.get("/promotions", async (c) => {
         } as const);
 
   const rows = await prisma.promotion.findMany({
-    where: { ...activePromotionWhere(now) },
+    where: {
+      ...activePromotionWhere(now),
+      ...(storefrontShop
+        ? {
+            listings: {
+              some: {
+                listing: {
+                  shopId: storefrontShop.id,
+                  ...publicListingVisibilityWhere,
+                },
+              },
+            },
+          }
+        : {}),
+    },
     orderBy: [{ sortOrder: "asc" }, { endsAt: "asc" }],
     ...(tr ? { include: { translations: tr } } : {}),
   });
@@ -56,6 +71,7 @@ promotionsRouter.get("/promotions", async (c) => {
 
 promotionsRouter.get("/promotions/:slug", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const slug = c.req.param("slug");
   const query = promotionDetailQuerySchema.safeParse({
     page: c.req.query("page"),
@@ -88,7 +104,10 @@ promotionsRouter.get("/promotions/:slug", async (c) => {
   const enrollment = await prisma.promotionListing.findMany({
     where: {
       promotionId: promotion.id,
-      listing: publicListingVisibilityWhere,
+      listing: {
+        ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
+        ...publicListingVisibilityWhere,
+      },
     },
     include: {
       listing: {
@@ -104,6 +123,9 @@ promotionsRouter.get("/promotions/:slug", async (c) => {
   }));
 
   const total = withPrice.length;
+  if (storefrontShop && total === 0) {
+    throw new HTTPException(404, { message: "Promotion not found" });
+  }
   const slice = withPrice.slice((page - 1) * pageSize, page * pageSize);
 
   const promoCopy = pickPromotionCopy(

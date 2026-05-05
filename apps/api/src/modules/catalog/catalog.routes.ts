@@ -64,10 +64,14 @@ function listingListWhere(args: {
   promotionSlug?: string;
   attributeDefinitionKey?: string;
   allowedValueKey?: string;
+  shopId?: string;
   now: Date;
   locale: Locale;
 }): Prisma.ListingWhereInput {
   const clauses: Prisma.ListingWhereInput[] = [publicListingVisibilityWhere];
+  if (args.shopId) {
+    clauses.push({ shopId: args.shopId });
+  }
   if (args.categorySlug) {
     clauses.push({ category: { slug: args.categorySlug } });
   }
@@ -128,6 +132,7 @@ catalogRouter.get("/categories/:slug/attributes", async (c) => {
 
 catalogRouter.get("/categories", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const tr =
     locale === "en"
       ? null
@@ -136,6 +141,16 @@ catalogRouter.get("/categories", async (c) => {
         } as const);
 
   const rows = await prisma.category.findMany({
+    where: storefrontShop
+      ? {
+          listings: {
+            some: {
+              shopId: storefrontShop.id,
+              ...publicListingVisibilityWhere,
+            },
+          },
+        }
+      : undefined,
     orderBy: { sortOrder: "asc" },
     include: tr ? { translations: tr } : undefined,
   });
@@ -158,6 +173,7 @@ catalogRouter.get("/categories", async (c) => {
 
 catalogRouter.get("/categories/:slug", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const slug = c.req.param("slug");
   const tr =
     locale === "en"
@@ -172,7 +188,10 @@ catalogRouter.get("/categories/:slug", async (c) => {
       _count: {
         select: {
           listings: {
-            where: publicListingVisibilityWhere,
+            where: {
+              ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
+              ...publicListingVisibilityWhere,
+            },
           },
         },
       },
@@ -202,6 +221,7 @@ catalogRouter.get("/categories/:slug", async (c) => {
 
 catalogRouter.get("/tags", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const tr =
     locale === "en"
       ? null
@@ -210,6 +230,18 @@ catalogRouter.get("/tags", async (c) => {
         } as const);
 
   const rows = await prisma.tag.findMany({
+    where: storefrontShop
+      ? {
+          listingTags: {
+            some: {
+              listing: {
+                shopId: storefrontShop.id,
+                ...publicListingVisibilityWhere,
+              },
+            },
+          },
+        }
+      : undefined,
     orderBy: { name: "asc" },
     select: {
       slug: true,
@@ -230,6 +262,7 @@ catalogRouter.get("/tags", async (c) => {
 
 catalogRouter.get("/listings/featured", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const query = featuredQuerySchema.safeParse({
     limit: c.req.query("limit"),
   });
@@ -240,7 +273,13 @@ catalogRouter.get("/listings/featured", async (c) => {
   const now = new Date();
 
   const listings = await prisma.listing.findMany({
-    where: { AND: [publicListingVisibilityWhere, { featured: true }] },
+    where: {
+      AND: [
+        publicListingVisibilityWhere,
+        { featured: true },
+        ...(storefrontShop ? [{ shopId: storefrontShop.id }] : []),
+      ],
+    },
     include: getListingCardInclude(now, locale),
     orderBy: [{ rating: "desc" }, { createdAt: "desc" }],
     take: limit,
@@ -253,6 +292,7 @@ catalogRouter.get("/listings/featured", async (c) => {
 
 catalogRouter.get("/listings", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const tagSlugsList = c.req.queries("tagSlugs") ?? [];
   const tagSlugsParam =
     tagSlugsList.length > 1
@@ -296,6 +336,7 @@ catalogRouter.get("/listings", async (c) => {
     promotionSlug,
     attributeDefinitionKey,
     allowedValueKey,
+    shopId: storefrontShop?.id,
     now,
     locale,
   });
@@ -342,6 +383,7 @@ catalogRouter.get("/listings", async (c) => {
 
 catalogRouter.get("/listings/search", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const query = listingSearchQuerySchema.safeParse({
     q: c.req.query("q"),
     limit: c.req.query("limit"),
@@ -355,7 +397,11 @@ catalogRouter.get("/listings/search", async (c) => {
 
   const listings = await prisma.listing.findMany({
     where: {
-      AND: [publicListingVisibilityWhere, listingSearchWhere(q, locale)],
+      AND: [
+        publicListingVisibilityWhere,
+        listingSearchWhere(q, locale),
+        ...(storefrontShop ? [{ shopId: storefrontShop.id }] : []),
+      ],
     },
     include: getListingCardInclude(now, locale),
     orderBy: [{ rating: "desc" }, { createdAt: "desc" }],
@@ -369,9 +415,14 @@ catalogRouter.get("/listings/search", async (c) => {
 
 catalogRouter.get("/listings/:slug/related", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const slug = c.req.param("slug");
   const listing = await prisma.listing.findFirst({
-    where: { slug, ...publicListingVisibilityWhere },
+    where: {
+      slug,
+      ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
+      ...publicListingVisibilityWhere,
+    },
     select: { id: true, categoryId: true },
   });
   if (!listing) {
@@ -385,6 +436,7 @@ catalogRouter.get("/listings/:slug/related", async (c) => {
         publicListingVisibilityWhere,
         { categoryId: listing.categoryId },
         { id: { not: listing.id } },
+        ...(storefrontShop ? [{ shopId: storefrontShop.id }] : []),
       ],
     },
     include: getListingCardInclude(now, locale),
@@ -399,9 +451,14 @@ catalogRouter.get("/listings/:slug/related", async (c) => {
 
 catalogRouter.get("/listings/:slug/more-from-shop", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const slug = c.req.param("slug");
   const listing = await prisma.listing.findFirst({
-    where: { slug, ...publicListingVisibilityWhere },
+    where: {
+      slug,
+      ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
+      ...publicListingVisibilityWhere,
+    },
     select: { id: true, shopId: true },
   });
   if (!listing) {
@@ -428,9 +485,14 @@ catalogRouter.get("/listings/:slug/more-from-shop", async (c) => {
 });
 
 catalogRouter.get("/listings/:slug/reviews", async (c) => {
+  const storefrontShop = c.get("storefrontShop");
   const slug = c.req.param("slug");
   const listing = await prisma.listing.findFirst({
-    where: { slug, ...publicListingVisibilityWhere },
+    where: {
+      slug,
+      ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
+      ...publicListingVisibilityWhere,
+    },
     select: { id: true, rating: true, reviewCount: true },
   });
   if (!listing) {
@@ -520,6 +582,7 @@ catalogRouter.get("/listings/:slug/reviews", async (c) => {
 });
 
 catalogRouter.post("/listings/:slug/reviews", async (c) => {
+  const storefrontShop = c.get("storefrontShop");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Unauthorized" });
@@ -527,7 +590,11 @@ catalogRouter.post("/listings/:slug/reviews", async (c) => {
 
   const slug = c.req.param("slug");
   const listing = await prisma.listing.findFirst({
-    where: { slug, ...publicListingVisibilityWhere },
+    where: {
+      slug,
+      ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
+      ...publicListingVisibilityWhere,
+    },
     select: { id: true },
   });
   if (!listing) {
@@ -578,6 +645,7 @@ catalogRouter.post("/listings/:slug/reviews", async (c) => {
 });
 
 catalogRouter.delete("/listings/:slug/reviews", async (c) => {
+  const storefrontShop = c.get("storefrontShop");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Unauthorized" });
@@ -585,7 +653,11 @@ catalogRouter.delete("/listings/:slug/reviews", async (c) => {
 
   const slug = c.req.param("slug");
   const listing = await prisma.listing.findFirst({
-    where: { slug, ...publicListingVisibilityWhere },
+    where: {
+      slug,
+      ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
+      ...publicListingVisibilityWhere,
+    },
     select: { id: true },
   });
   if (!listing) {
@@ -609,11 +681,13 @@ catalogRouter.delete("/listings/:slug/reviews", async (c) => {
 
 catalogRouter.get("/listings/:slug", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const slug = c.req.param("slug");
   const now = new Date();
   const listing = await prisma.listing.findFirst({
     where: {
       slug,
+      ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
       ...publicListingVisibilityWhere,
     },
     include: getListingDetailInclude(now, locale),

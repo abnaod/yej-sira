@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 
-import { getBrowserOrigins, getEnv } from "../../lib/env";
+import { getBetterAuthTrustedOrigins, getEnv, getShopSubdomainBaseDomain } from "../../lib/env";
 import { prisma } from "../../lib/db";
 
 const env = getEnv();
@@ -44,7 +44,18 @@ export const auth = betterAuth({
   ...(googleOAuth ? { socialProviders: googleOAuth } : {}),
   secret: env.BETTER_AUTH_SECRET,
   baseURL,
-  trustedOrigins: getBrowserOrigins(),
+  trustedOrigins: getBetterAuthTrustedOrigins(),
+  advanced: {
+    useSecureCookies: env.NODE_ENV === "production",
+    ...(env.NODE_ENV === "production"
+      ? {
+          crossSubDomainCookies: {
+            enabled: true,
+            domain: env.SHOP_COOKIE_DOMAIN ?? getShopSubdomainBaseDomain(),
+          },
+        }
+      : {}),
+  },
   experimental: {
     joins: true,
   },

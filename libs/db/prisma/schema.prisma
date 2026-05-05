@@ -178,6 +178,7 @@ model Shop {
   businessHouseNumber     String?    @map("business_house_number")
   businessSpecificLocation String?   @map("business_specific_location")
   listings             Listing[]
+  originatedOrders     Order[]    @relation("OrderOriginShop")
   createdAt            DateTime   @default(now()) @map("created_at")
   updatedAt            DateTime   @updatedAt @map("updated_at")
 
@@ -527,6 +528,8 @@ model Order {
   deliveryMethod           DeliveryMethod  @default(standard) @map("delivery_method")
   pickupLocationId         String?         @map("pickup_location_id")
   pickupLocation           PickupLocation? @relation(fields: [pickupLocationId], references: [id], onDelete: Restrict)
+  originShopId             String?         @map("origin_shop_id")
+  originShop               Shop?           @relation("OrderOriginShop", fields: [originShopId], references: [id], onDelete: SetNull)
   shippingCity             String          @map("shipping_city")
   shippingSubcity          String          @map("shipping_subcity")
   shippingWoreda           String          @map("shipping_woreda")
@@ -538,6 +541,7 @@ model Order {
   updatedAt                DateTime        @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@index([originShopId])
   @@map("orders")
 }
 

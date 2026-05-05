@@ -1,6 +1,7 @@
 import type { Locale } from "@ys/intl";
 
 import { getApiOrigin } from "./origin";
+import { getBrowserStorefrontContext, resolveStorefrontHost } from "@/lib/storefront";
 
 const CART_TOKEN_KEY = "ys_cart_token";
 
@@ -46,24 +47,44 @@ export async function apiFetch(path: string, init?: ApiFetchInit) {
   if (locale) {
     headers.set("X-Locale", locale);
   }
-  if (import.meta.env.SSR && !headers.has("cookie")) {
-    const { getServerRequestCookie } = await import("./ssr-cookies");
-    const cookie = await getServerRequestCookie();
-    if (cookie) headers.set("cookie", cookie);
+  if (import.meta.env.SSR) {
+    const { getServerRequestCookie, getServerRequestHost, getServerRequestShopParam } =
+      await import("./ssr-cookies");
+    const [cookie, serverHost, shopParam] = await Promise.all([
+      getServerRequestCookie(),
+      getServerRequestHost(),
+      getServerRequestShopParam(),
+    ]);
+    if (cookie && !headers.has("cookie")) headers.set("cookie", cookie);
+    const storefront = resolveStorefrontHost(serverHost);
+    const shopSlug = storefront.shopSlug ?? shopParam;
+    const storefrontHost = storefront.host ?? serverHost;
+    if ((storefront.isStorefront || shopParam) && shopSlug && storefrontHost) {
+      headers.set("X-Shop-Slug", shopSlug);
+      headers.set("X-Storefront-Host", storefrontHost);
+    }
+  } else if (!import.meta.env.SSR) {
+    const storefront = getBrowserStorefrontContext();
+    if (storefront.isStorefront && storefront.shopSlug && storefront.host) {
+      headers.set("X-Shop-Slug", storefront.shopSlug);
+      headers.set("X-Storefront-Host", storefront.host);
+    }
   }
   /**
    * Only default `Content-Type` to JSON for string bodies — FormData needs the
    * browser-generated `multipart/form-data; boundary=…` header intact.
    */
   const isStringBody = typeof rest.body === "string";
+  if (isStringBody && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (cartToken && !headers.has("X-Cart-Token")) {
+    headers.set("X-Cart-Token", cartToken);
+  }
   return fetch(url, {
     ...rest,
     credentials: "include",
-    headers: {
-      ...(isStringBody ? { "Content-Type": "application/json" } : {}),
-      ...(cartToken ? { "X-Cart-Token": cartToken } : {}),
-      ...headers,
-    },
+    headers,
   });
 }
 

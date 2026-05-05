@@ -6,7 +6,9 @@ import {
   categoriesQuery,
   featuredListingsQuery,
 } from "@/features/store/home";
+import { ShopCatalogPage } from "@/features/store/shop/shop.page";
 import { promotionsListQuery } from "@/features/store/promotions/promotions.queries";
+import { useActiveStorefrontShop } from "@/lib/storefront-context";
 
 export const Route = createFileRoute("/$locale/(store)/")({
   loader: ({ context, params }) => {
@@ -25,5 +27,16 @@ export const Route = createFileRoute("/$locale/(store)/")({
       {error instanceof Error ? error.message : "Something went wrong"}
     </main>
   ),
-  component: HomePage,
+  component: StoreIndexPage,
 });
+
+function StoreIndexPage() {
+  const { locale } = Route.useParams();
+  const shop = useActiveStorefrontShop();
+  if (shop) {
+    return (
+      <ShopCatalogPage locale={locale as Locale} shopSlug={shop.slug} page={1} />
+    );
+  }
+  return <HomePage />;
+}

@@ -7,7 +7,7 @@ import { z } from "zod";
 import { createHmac, timingSafeEqual } from "crypto";
 
 import { prisma } from "../../lib/db";
-import { getEnv } from "../../lib/env";
+import { getEnv, getMarketplaceHost, getShopSubdomainBaseDomain } from "../../lib/env";
 import { auth } from "../auth/auth";
 import {
   formatPhoneForChapa,
@@ -42,6 +42,18 @@ function dbPaymentMethodFromChapaResponse(
   return "chapa" as NonNullable<PaymentRow["paymentMethod"]>;
 }
 
+function storefrontReturnOrigin(order: {
+  originShop?: { slug: string } | null;
+}) {
+  const env = getEnv();
+  if (order.originShop) {
+    const protocol = env.NODE_ENV === "production" ? "https" : "http";
+    const port = env.NODE_ENV === "production" ? "" : ":3000";
+    return `${protocol}://${order.originShop.slug}.${getShopSubdomainBaseDomain()}${port}`;
+  }
+  return env.CORS_ORIGIN || `https://${getMarketplaceHost()}`;
+}
+
 async function chapaCustomerFromUser(userId: string) {
   const u = await prisma.user.findUnique({
     where: { id: userId },
@@ -74,7 +86,7 @@ paymentsRouter.post("/payments/chapa/initialize", async (c) => {
 
   const order = await prisma.order.findFirst({
     where: { id: orderId, userId: session.user.id },
-    include: { payment: true },
+    include: { payment: true, originShop: { select: { slug: true } } },
   });
   if (!order) {
     throw new HTTPException(404, { message: "Order not found" });
@@ -97,7 +109,7 @@ paymentsRouter.post("/payments/chapa/initialize", async (c) => {
   const env = getEnv();
   let effectiveTxRef = order.payment?.txRef ?? `yejsira-${orderId}-${Date.now()}`;
   const callbackUrl = `${env.BETTER_AUTH_URL}/api/payments/chapa/webhook`;
-  const returnOrigin = env.BETTER_AUTH_URL.replace(/:\d+$/, ":3000");
+  const returnOrigin = storefrontReturnOrigin(order);
   const localeSeg =
     localeFromBody && /^[a-z0-9-]{2,16}$/i.test(localeFromBody) ? localeFromBody : "en";
   const returnUrl = `${returnOrigin}/${localeSeg}/payments/success?orderId=${encodeURIComponent(order.id)}`;

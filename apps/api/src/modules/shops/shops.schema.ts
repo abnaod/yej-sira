@@ -1,10 +1,13 @@
 import { z } from "zod";
 
+import { isReservedShopSlug } from "../../lib/env";
+
 const slugSchema = z
   .string()
   .min(2)
   .max(80)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase kebab-case");
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase kebab-case")
+  .refine((slug) => !isReservedShopSlug(slug), "Slug is reserved");
 
 /** Accept absolute URLs or local `/static/*` paths served by the API. */
 const imageRefSchema = z.union([

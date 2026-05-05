@@ -1,4 +1,4 @@
-import type { ContentLocale } from "@prisma/client";
+import type { ContentLocale, Prisma } from "@prisma/client";
 import type { Locale } from "@ys/intl";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -37,6 +37,10 @@ function orderLineInclude(locale: Locale) {
 
 export const ordersRouter = new Hono();
 
+function cartItemsForStorefrontWhere(shopId: string | undefined): Prisma.CartItemWhereInput {
+  return shopId ? { variant: { listing: { shopId } } } : {};
+}
+
 ordersRouter.get("/pickup-locations", async (c) => {
   const list = await prisma.pickupLocation.findMany({
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -70,6 +74,7 @@ ordersRouter.get("/pickup-locations", async (c) => {
 
 ordersRouter.post("/checkout", async (c) => {
   const locale = c.get("locale");
+  const storefrontShop = c.get("storefrontShop");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Sign in required to checkout" });
@@ -124,7 +129,7 @@ ordersRouter.post("/checkout", async (c) => {
   const { cart } = await getOrCreateCart(c);
 
   const itemsPreview = await prisma.cartItem.findMany({
-    where: { cartId: cart.id },
+    where: { cartId: cart.id, ...cartItemsForStorefrontWhere(storefrontShop?.id) },
     orderBy: { id: "asc" },
     include: orderLineInclude(locale),
   });
@@ -158,7 +163,7 @@ ordersRouter.post("/checkout", async (c) => {
 
   const result = await prisma.$transaction(async (tx) => {
     const items = await tx.cartItem.findMany({
-      where: { cartId: cart.id },
+      where: { cartId: cart.id, ...cartItemsForStorefrontWhere(storefrontShop?.id) },
       orderBy: { id: "asc" },
       include: orderLineInclude(locale),
     });
@@ -182,6 +187,7 @@ ordersRouter.post("/checkout", async (c) => {
         shipping,
         tax,
         total,
+        originShopId: storefrontShop?.id ?? null,
         deliveryMethod,
         pickupLocationId: data.deliveryMethod === "pickup" ? pickupLoc!.id : null,
         ...shippingSnapshot,
@@ -230,7 +236,12 @@ ordersRouter.post("/checkout", async (c) => {
       });
     }
 
-    await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+    await tx.cartItem.deleteMany({
+      where: {
+        cartId: cart.id,
+        id: { in: items.map((line) => line.id) },
+      },
+    });
 
     return order;
   });
@@ -250,20 +261,39 @@ ordersRouter.post("/checkout", async (c) => {
 });
 
 ordersRouter.get("/orders", async (c) => {
+  const storefrontShop = c.get("storefrontShop");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Unauthorized" });
   }
 
   const orders = await prisma.order.findMany({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      ...(storefrontShop
+        ? {
+            items: {
+              some: {
+                listing: { shopId: storefrontShop.id },
+              },
+            },
+          }
+        : {}),
+    },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
       status: true,
+      originShopId: true,
       total: true,
       createdAt: true,
       deliveryMethod: true,
+      items: storefrontShop
+        ? {
+            where: { listing: { shopId: storefrontShop.id } },
+            select: { unitPrice: true, quantity: true },
+          }
+        : false,
       _count: { select: { items: true } },
       payment: {
         select: {
@@ -276,25 +306,40 @@ ordersRouter.get("/orders", async (c) => {
   });
 
   return c.json({
-    orders: orders.map((o) => ({
-      id: o.id,
-      status: o.status,
-      total: toNumber(o.total),
-      createdAt: o.createdAt.toISOString(),
-      deliveryMethod: o.deliveryMethod,
-      itemCount: o._count.items,
-      payment: o.payment
-        ? {
-            status: o.payment.status,
-            txRef: o.payment.txRef,
-            method: o.payment.paymentMethod,
-          }
-        : null,
-    })),
+    orders: orders.map((o) => {
+      const scopedItems =
+        "items" in o && Array.isArray(o.items)
+          ? o.items
+          : null;
+      const scopedSubtotal =
+        scopedItems?.reduce(
+          (sum, item) => sum + toNumber(item.unitPrice) * item.quantity,
+          0,
+        ) ?? null;
+      return {
+        id: o.id,
+        status: o.status,
+        total:
+          storefrontShop && o.originShopId !== storefrontShop.id && scopedSubtotal != null
+            ? scopedSubtotal
+            : toNumber(o.total),
+        createdAt: o.createdAt.toISOString(),
+        deliveryMethod: o.deliveryMethod,
+        itemCount: scopedItems?.length ?? o._count.items,
+        payment: o.payment
+          ? {
+              status: o.payment.status,
+              txRef: o.payment.txRef,
+              method: o.payment.paymentMethod,
+            }
+          : null,
+      };
+    }),
   });
 });
 
 ordersRouter.get("/orders/:id", async (c) => {
+  const storefrontShop = c.get("storefrontShop");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Unauthorized" });
@@ -325,6 +370,71 @@ ordersRouter.get("/orders/:id", async (c) => {
   }
 
   const isBuyer = order.userId === session.user.id;
+  if (storefrontShop) {
+    if (!isBuyer) {
+      throw new HTTPException(403, { message: "Forbidden" });
+    }
+
+    const listingIds = order.items
+      .map((item) => item.listingId)
+      .filter((listingId): listingId is string => Boolean(listingId));
+    const shopListings =
+      listingIds.length > 0
+        ? await prisma.listing.findMany({
+            where: { id: { in: listingIds }, shopId: storefrontShop.id },
+            select: { id: true },
+          })
+        : [];
+    const allowedListingIds = new Set(shopListings.map((listing) => listing.id));
+    const currentShopItems = order.items.filter(
+      (item) => item.listingId && allowedListingIds.has(item.listingId),
+    );
+    if (currentShopItems.length === 0) {
+      throw new HTTPException(403, { message: "Forbidden" });
+    }
+
+    const scopedSubtotal = currentShopItems.reduce(
+      (sum, item) => sum + toNumber(item.unitPrice) * item.quantity,
+      0,
+    );
+    const useOrderTotals = order.originShopId === storefrontShop.id;
+
+    return c.json({
+      order: {
+        id: order.id,
+        status: order.status,
+        subtotal: useOrderTotals ? toNumber(order.subtotal) : scopedSubtotal,
+        shipping: useOrderTotals ? toNumber(order.shipping) : 0,
+        tax: useOrderTotals ? toNumber(order.tax) : 0,
+        total: useOrderTotals ? toNumber(order.total) : scopedSubtotal,
+        deliveryMethod: order.deliveryMethod,
+        pickupLocation: order.pickupLocation,
+        shippingAddress: {
+          city: order.shippingCity,
+          subcity: order.shippingSubcity,
+          woreda: order.shippingWoreda,
+          kebele: order.shippingKebele,
+          specificLocation: order.shippingSpecificLocation,
+        },
+        createdAt: order.createdAt.toISOString(),
+        payment: order.payment
+          ? {
+              method: order.payment.paymentMethod,
+              status: order.payment.status,
+            }
+          : null,
+        items: currentShopItems.map((i) => ({
+          id: i.id,
+          listingName: i.listingName,
+          variantLabel: i.variantLabel,
+          unitPrice: toNumber(i.unitPrice),
+          quantity: i.quantity,
+          imageUrl: i.imageUrl,
+        })),
+      },
+    });
+  }
+
   let isSeller = false;
   if (!isBuyer) {
     const shop = await getOwnedShop(session.user.id);

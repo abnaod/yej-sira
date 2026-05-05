@@ -9,6 +9,7 @@ import { favoriteBodySchema } from "./favorites.schema";
 export const favoritesRouter = new Hono();
 
 favoritesRouter.get("/favorites", async (c) => {
+  const storefrontShop = c.get("storefrontShop");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Unauthorized" });
@@ -19,7 +20,10 @@ favoritesRouter.get("/favorites", async (c) => {
   const rows = await prisma.favorite.findMany({
     where: {
       userId: session.user.id,
-      listing: publicListingVisibilityWhere,
+      listing: {
+        ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
+        ...publicListingVisibilityWhere,
+      },
     },
     include: {
       listing: { include: getListingCardInclude(now, locale) },
@@ -35,6 +39,7 @@ favoritesRouter.get("/favorites", async (c) => {
 });
 
 favoritesRouter.post("/favorites", async (c) => {
+  const storefrontShop = c.get("storefrontShop");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Unauthorized" });
@@ -47,7 +52,11 @@ favoritesRouter.post("/favorites", async (c) => {
   }
 
   const listing = await prisma.listing.findFirst({
-    where: { slug: parsed.data.slug, ...publicListingVisibilityWhere },
+    where: {
+      slug: parsed.data.slug,
+      ...(storefrontShop ? { shopId: storefrontShop.id } : {}),
+      ...publicListingVisibilityWhere,
+    },
   });
   if (!listing) {
     throw new HTTPException(404, { message: "Listing not found" });
@@ -74,6 +83,7 @@ favoritesRouter.post("/favorites", async (c) => {
 });
 
 favoritesRouter.delete("/favorites/:slug", async (c) => {
+  const storefrontShop = c.get("storefrontShop");
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   if (!session?.user) {
     throw new HTTPException(401, { message: "Unauthorized" });
@@ -82,10 +92,13 @@ favoritesRouter.delete("/favorites/:slug", async (c) => {
   const slug = c.req.param("slug");
   const listing = await prisma.listing.findUnique({
     where: { slug },
-    select: { id: true },
+    select: { id: true, shopId: true },
   });
   if (!listing) {
     throw new HTTPException(404, { message: "Listing not found" });
+  }
+  if (storefrontShop && listing.shopId !== storefrontShop.id) {
+    throw new HTTPException(403, { message: "Favorite is outside this storefront" });
   }
 
   const deleted = await prisma.favorite.deleteMany({

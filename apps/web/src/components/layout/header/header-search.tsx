@@ -85,7 +85,7 @@ export function HeaderSearch() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t("searchPlaceholder")}
-              className="pl-9 pr-3 shadow-none"
+              className="pl-9 pr-3 text-sm shadow-none"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onFocus={() => setPopoverOpen(true)}

@@ -12,19 +12,46 @@ import { shopPublicQuery } from "./shop.queries";
 
 const routeApi = getRouteApi("/$locale/(store)/shops/$shopSlug");
 
-function shopInitials(name: string) {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
-  return name.slice(0, 2).toUpperCase() || "?";
-}
-
 export function ShopPage() {
   const { shopSlug, locale: localeParam } = routeApi.useParams();
   const { page } = routeApi.useSearch();
   const locale = localeParam as Locale;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
+  return (
+    <ShopCatalogPage
+      locale={locale}
+      shopSlug={shopSlug}
+      page={page}
+      onPageChange={(next) =>
+        navigate({
+          to: "/$locale/shops/$shopSlug",
+          params: { locale, shopSlug },
+          search: { page: next },
+        })
+      }
+      queryClient={queryClient}
+    />
+  );
+}
+
+export function ShopCatalogPage({
+  locale,
+  shopSlug,
+  page,
+  onPageChange,
+  queryClient,
+}: {
+  locale: Locale;
+  shopSlug: string;
+  page: number;
+  onPageChange?: (page: number) => void;
+  queryClient?: ReturnType<typeof useQueryClient>;
+}) {
+  const localQueryClient = useQueryClient();
+  const addToCart = useMutation(
+    addToCartMutationOptions(queryClient ?? localQueryClient, locale),
+  );
 
   const { data } = useSuspenseQuery(shopPublicQuery(locale, shopSlug, page));
 
@@ -40,80 +67,25 @@ export function ShopPage() {
   }, [shop.name]);
 
   return (
-    <main className="pb-12">
-      <header className="overflow-hidden rounded-2xl border border-border bg-white dark:bg-card">
-        <div className="p-6 sm:p-8">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            Shop
-          </p>
+    <main className="pb-6 md:pb-12">
+      <h1 className="sr-only">{shop.name}</h1>
 
-          <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-start">
-            <div className="size-20 shrink-0 overflow-hidden rounded-2xl border border-border bg-card sm:size-24">
-              {shop.imageUrl ? (
-                <img
-                  src={shop.imageUrl}
-                  alt={`${shop.name} logo`}
-                  className="size-full object-cover"
-                />
-              ) : (
-                <div
-                  className="flex size-full items-center justify-center bg-muted/60 text-lg font-medium text-muted-foreground"
-                  aria-label={`${shop.name} (no logo)`}
-                >
-                  {shopInitials(shop.name)}
-                </div>
-              )}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <div className="space-y-1.5">
-                <h1 className="font-serif text-xl font-normal tracking-tight text-foreground md:text-2xl">
-                  {shop.name}
-                </h1>
-                {shop.description ? (
-                  <p className="max-w-2xl text-muted-foreground leading-relaxed">{shop.description}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">
-                    This seller has not added a description yet.
-                  </p>
-                )}
-              </div>
-
-              <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                <div>
-                  <dt className="sr-only">Total products</dt>
-                  <dd>
-                    <span className="font-medium text-foreground">{total}</span>{" "}
-                    {total === 1 ? "product" : "products"}
-                  </dd>
-                </div>
-                {totalPages > 1 ? (
-                  <div>
-                    <dt className="sr-only">Catalog page</dt>
-                    <dd>
-                      Page{" "}
-                      <span className="font-medium text-foreground">
-                        {page} of {totalPages}
-                      </span>
-                    </dd>
-                  </div>
-                ) : null}
-              </dl>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <section className="mt-10" aria-labelledby="shop-products-heading">
-        <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+      <section aria-labelledby="shop-products-heading">
+        <div className="mb-4 flex flex-col gap-1 md:mb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 id="shop-products-heading" className="text-lg font-semibold tracking-tight">
+            <h2 id="shop-products-heading" className="text-base font-semibold tracking-tight md:text-lg">
               Products
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground md:text-sm">
               {total === 0
                 ? "No listings yet"
-                : `${total} ${total === 1 ? "listing" : "listings"} from this shop`}
+                : `${total} ${total === 1 ? "listing" : "listings"}`}
+              {totalPages > 1 ? (
+                <>
+                  {" · "}
+                  Page {page} of {totalPages}
+                </>
+              ) : null}
             </p>
           </div>
         </div>
@@ -161,18 +133,14 @@ export function ShopPage() {
           </div>
         ) : null}
 
-        <DataPagination
-          className="mt-10"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={(next) =>
-            navigate({
-              to: "/$locale/shops/$shopSlug",
-              params: { locale, shopSlug },
-              search: { page: next },
-            })
-          }
-        />
+        {onPageChange ? (
+          <DataPagination
+            className="mt-10"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+          />
+        ) : null}
       </section>
     </main>
   );

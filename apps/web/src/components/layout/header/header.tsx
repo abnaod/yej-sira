@@ -67,7 +67,7 @@ export function Header() {
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="hidden shrink-0 items-center gap-1 md:flex">
           {isPending ? (
             <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
               <User className="h-4 w-4" />

@@ -55,7 +55,11 @@ shopsRouter.get("/shops/me/", shopsMeHandler);
 
 shopsRouter.get("/shops/:slug", async (c) => {
   const locale = c.get("locale") as Locale;
+  const storefrontShop = c.get("storefrontShop");
   const slug = c.req.param("slug");
+  if (storefrontShop && storefrontShop.slug !== slug) {
+    throw new HTTPException(404, { message: "Shop not found" });
+  }
   const q = publicShopListingsQuerySchema.safeParse({
     page: c.req.query("page"),
     pageSize: c.req.query("pageSize"),

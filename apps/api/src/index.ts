@@ -7,8 +7,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { onError } from "./lib/error";
-import { getBrowserOrigins, getEnv } from "./lib/env";
+import { getEnv, isAllowedBrowserOrigin } from "./lib/env";
 import { localeMiddleware } from "./lib/middleware/locale";
+import { storefrontTenantMiddleware } from "./lib/middleware/storefront-tenant";
 import { adminRouter } from "./modules/admin/admin.routes";
 import { authRouter } from "./modules/auth/auth.routes";
 import { cartRouter } from "./modules/cart/cart.routes";
@@ -18,6 +19,7 @@ import { userRouter } from "./modules/user/user.routes";
 import { favoritesRouter } from "./modules/favorites/favorites.routes";
 import { promotionsRouter } from "./modules/promotions/promotions.routes";
 import { shopsRouter } from "./modules/shops/shops.routes";
+import { storefrontRouter } from "./modules/storefront/storefront.routes";
 import { sellerRouter } from "./modules/seller/seller.routes";
 import { paymentsRouter } from "./modules/payments/payments.routes";
 import { uploadsRouter } from "./modules/uploads/uploads.routes";
@@ -32,8 +34,18 @@ app.onError(onError);
 app.use(
   "*",
   cors({
-    origin: getBrowserOrigins(),
-    allowHeaders: ["Content-Type", "Authorization", "Cookie", "X-Cart-Token", "X-Locale", "x-chapa-signature", "chapa-signature"],
+    origin: (origin) => (isAllowedBrowserOrigin(origin) ? origin : undefined),
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cookie",
+      "X-Cart-Token",
+      "X-Locale",
+      "X-Shop-Slug",
+      "X-Storefront-Host",
+      "x-chapa-signature",
+      "chapa-signature",
+    ],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   }),
@@ -61,7 +73,9 @@ app.use(
 
 const api = new Hono();
 api.use("*", localeMiddleware);
+api.use("*", storefrontTenantMiddleware);
 api.route("/", authRouter);
+api.route("/", storefrontRouter);
 api.route("/", userRouter);
 api.route("/", catalogRouter);
 api.route("/", promotionsRouter);

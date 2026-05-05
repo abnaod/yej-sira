@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import { auth } from "../auth/auth";
 import { prisma } from "../../lib/db";
+import { getEnv, getShopSubdomainBaseDomain } from "../../lib/env";
 
 const CART_COOKIE = "ys_cart_token";
 const CART_TOKEN_HEADER = "x-cart-token";
@@ -42,6 +43,9 @@ export async function getOrCreateCart(c: Context) {
     path: "/",
     httpOnly: true,
     sameSite: "Lax",
+    ...(getEnv().NODE_ENV === "production"
+      ? { secure: true, domain: getEnv().SHOP_COOKIE_DOMAIN ?? getShopSubdomainBaseDomain() }
+      : {}),
     maxAge: 60 * 60 * 24 * 365,
   });
 

@@ -96,7 +96,7 @@ export function Footer() {
   const locale = useLocale();
   const year = new Date().getFullYear();
   return (
-    <footer className="border-t border-white/20 bg-primary text-white">
+    <footer className="hidden border-t border-white/20 bg-primary text-white md:block">
       <div className="mx-auto max-w-6xl px-4 py-12">
         <div className="flex flex-col gap-12 lg:flex-row lg:gap-16">
           <div className="max-w-sm shrink-0">
