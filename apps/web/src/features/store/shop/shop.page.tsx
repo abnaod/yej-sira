@@ -2,7 +2,7 @@ import type { Locale } from "@ys/intl";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { Clock, MapPin, Package, Percent, Share2 } from "lucide-react";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,12 @@ import { DataPagination } from "@/features/shared/data-pagination";
 import { addToCartMutationOptions } from "@/features/store/cart/cart.queries";
 import { assetUrl } from "@/lib/api";
 import { featureCartCheckout, featureConversations } from "@/lib/features";
+import { cn } from "@/lib/utils";
 
-import { SHOP_BANNER_PLACEHOLDER } from "./shop-assets";
-import { shopPublicQuery } from "./shop.queries";
+import { ShopHeroFallbackSurface } from "./shop-hero-fallback";
+import { shopPublicQuery, type ShopPublicResponse } from "./shop.queries";
 
-const routeApi = getRouteApi("/$locale/(store)/shops/$shopSlug");
+type ShopPublic = ShopPublicResponse["shop"];
 
 function shopInitials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -42,53 +43,25 @@ function formatReplyText(minutes: number): string {
   return h === 1 ? "Usually replies within 1 hour" : `Usually replies within ${h} hours`;
 }
 
-export function ShopPage() {
-  const { shopSlug, locale: localeParam } = routeApi.useParams();
-  const { page } = routeApi.useSearch();
-  const locale = localeParam as Locale;
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-  return (
-    <ShopCatalogPage
-      locale={locale}
-      shopSlug={shopSlug}
-      page={page}
-      onPageChange={(next) =>
-        navigate({
-          to: "/$locale/shops/$shopSlug",
-          params: { locale, shopSlug },
-          search: { page: next },
-        })
-      }
-      queryClient={queryClient}
-    />
-  );
-}
-
-export function ShopCatalogPage({
+function ShopCatalogHero({
   locale,
   shopSlug,
+  shop,
   page,
-  onPageChange,
-  queryClient,
+  totalPages,
 }: {
   locale: Locale;
   shopSlug: string;
+  shop: ShopPublic;
   page: number;
-  onPageChange?: (page: number) => void;
-  queryClient?: ReturnType<typeof useQueryClient>;
+  totalPages: number;
 }) {
-  const localQueryClient = useQueryClient();
-  const addToCart = useMutation(
-    addToCartMutationOptions(queryClient ?? localQueryClient, locale),
-  );
-
-  const { data } = useSuspenseQuery(shopPublicQuery(locale, shopSlug, page));
-
-  const { shop, listings, total, totalPages } = data;
-
-  const bannerSrc = shop.bannerImageUrl?.trim() || SHOP_BANNER_PLACEHOLDER;
-
+  const customBanner = shop.bannerImageUrl?.trim() ?? "";
+  const [customBannerFailed, setCustomBannerFailed] = useState(false);
+  useEffect(() => {
+    setCustomBannerFailed(false);
+  }, [customBanner]);
+  const showBannerPhoto = Boolean(customBanner && !customBannerFailed);
   const locationLine = [shop.subcity, shop.city].filter(Boolean).join(" · ") || null;
 
   const onShare = useCallback(async () => {
@@ -122,117 +95,248 @@ export function ShopCatalogPage({
     }
   }, [locale, shop.name, shopSlug]);
 
+  return (
+    <header className="overflow-hidden rounded-lg border border-border">
+      <div className="relative flex min-h-44 w-full flex-col justify-end sm:min-h-52">
+        {showBannerPhoto ? (
+          <img
+            src={assetUrl(customBanner)}
+            alt=""
+            className="absolute inset-0 size-full object-cover"
+            onError={() => {
+              setCustomBannerFailed(true);
+            }}
+          />
+        ) : (
+          <ShopHeroFallbackSurface />
+        )}
+        {showBannerPhoto ? (
+          <div
+            className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/92 via-black/55 to-black/10"
+            aria-hidden
+          />
+        ) : null}
+        <div
+          className={cn(
+            "relative z-10 flex flex-col gap-3 px-4 pt-4 pb-3 sm:flex-row sm:items-start sm:justify-between sm:gap-5 sm:px-6 sm:pt-5 sm:pb-4",
+            showBannerPhoto ? "text-white" : "text-foreground",
+          )}
+        >
+          <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+            <div
+              className={cn(
+                "shrink-0 rounded-lg border p-2 shadow-sm backdrop-blur-sm sm:p-2.5",
+                showBannerPhoto
+                  ? "border-white/25 bg-black/35"
+                  : "border-border bg-card/95",
+              )}
+            >
+              {shop.imageUrl ? (
+                <img
+                  src={assetUrl(shop.imageUrl)}
+                  alt={`${shop.name} logo`}
+                  className="size-10 rounded-md object-cover sm:size-12"
+                />
+              ) : (
+                <div
+                  className={cn(
+                    "flex size-10 items-center justify-center rounded-md text-xs font-semibold sm:size-12 sm:text-sm",
+                    showBannerPhoto
+                      ? "bg-white/15 text-white/90"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                  aria-label={`${shop.name} (no logo)`}
+                >
+                  {shopInitials(shop.name)}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="flex flex-col gap-0.5">
+                <p
+                  className={cn(
+                    "text-[10px] font-medium uppercase tracking-widest",
+                    showBannerPhoto ? "text-white/60" : "text-muted-foreground",
+                  )}
+                >
+                  Shop
+                </p>
+                <h1
+                  className={cn(
+                    "font-serif text-2xl font-normal tracking-tight md:text-3xl",
+                    showBannerPhoto ? "text-white" : "text-foreground",
+                  )}
+                >
+                  {shop.name}
+                </h1>
+              </div>
+              {locationLine ? (
+                <p
+                  className={cn(
+                    "flex items-center gap-1.5 text-sm",
+                    showBannerPhoto ? "text-white/80" : "text-muted-foreground",
+                  )}
+                >
+                  <MapPin className="size-3.5 shrink-0 opacity-80" />
+                  {locationLine}
+                </p>
+              ) : null}
+              <dl
+                className={cn(
+                  "flex flex-wrap gap-x-4 gap-y-1.5 text-xs",
+                  showBannerPhoto ? "text-white/75" : "text-muted-foreground",
+                )}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Package className="size-3 shrink-0 opacity-80" />
+                  <dt className="sr-only">Listings</dt>
+                  <dd>
+                    <span
+                      className={cn(
+                        "font-medium",
+                        showBannerPhoto ? "text-white" : "text-foreground",
+                      )}
+                    >
+                      {shop.listingCount}
+                    </span>{" "}
+                    {shop.listingCount === 1 ? "listing" : "listings"}
+                  </dd>
+                </div>
+                {totalPages > 1 ? (
+                  <div>
+                    <dt className="sr-only">Catalog page</dt>
+                    <dd>
+                      Page{" "}
+                      <span
+                        className={cn(
+                          "font-medium",
+                          showBannerPhoto ? "text-white" : "text-foreground",
+                        )}
+                      >
+                        {page} of {totalPages}
+                      </span>
+                    </dd>
+                  </div>
+                ) : null}
+                {shop.responseRate != null ? (
+                  <div className="flex items-center gap-1.5">
+                    <Percent className="size-3 shrink-0 opacity-80" />
+                    <dt className="sr-only">Response rate</dt>
+                    <dd>
+                      <span
+                        className={cn(
+                          "font-medium",
+                          showBannerPhoto ? "text-white" : "text-foreground",
+                        )}
+                      >
+                        {Math.round(shop.responseRate * 100)}%
+                      </span>{" "}
+                      response rate
+                    </dd>
+                  </div>
+                ) : null}
+                <div className="flex items-center gap-1.5">
+                  <Clock className="size-3 shrink-0 opacity-80" />
+                  <dt className="sr-only">Reply time</dt>
+                  <dd>{formatReplyText(shop.estimatedReplyMinutes)}</dd>
+                </div>
+                <div>
+                  <dt className="sr-only">On YEJSIRA since</dt>
+                  <dd>Member since {formatMemberSince(shop.createdAt, locale)}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={cn(
+              "shrink-0 self-start sm:self-auto",
+              showBannerPhoto &&
+                "border-white/35 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white",
+            )}
+            onClick={() => void onShare()}
+          >
+            <Share2 className="size-3.5" />
+            Share
+          </Button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+const routeApi = getRouteApi("/$locale/(store)/shops/$shopSlug");
+
+export function ShopPage() {
+  const { shopSlug, locale: localeParam } = routeApi.useParams();
+  const { page } = routeApi.useSearch();
+  const locale = localeParam as Locale;
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  return (
+    <ShopCatalogPage
+      locale={locale}
+      shopSlug={shopSlug}
+      page={page}
+      onPageChange={(next) =>
+        navigate({
+          to: "/$locale/shops/$shopSlug",
+          params: { locale, shopSlug },
+          search: { page: next },
+        })
+      }
+      queryClient={queryClient}
+    />
+  );
+}
+
+export function ShopCatalogPage({
+  locale,
+  shopSlug,
+  page,
+  onPageChange,
+  queryClient,
+  showShopHero = true,
+}: {
+  locale: Locale;
+  shopSlug: string;
+  page: number;
+  onPageChange?: (page: number) => void;
+  queryClient?: ReturnType<typeof useQueryClient>;
+  /** Banner + shop details block above the grid. Hidden on subdomain storefront home (already in ShopHeader). */
+  showShopHero?: boolean;
+}) {
+  const localQueryClient = useQueryClient();
+  const addToCart = useMutation(
+    addToCartMutationOptions(queryClient ?? localQueryClient, locale),
+  );
+
+  const { data } = useSuspenseQuery(shopPublicQuery(locale, shopSlug, page));
+
+  const { shop, listings, total, totalPages } = data;
+
   useEffect(() => {
     document.title = `${shop.name} · YEJSIRA`;
   }, [shop.name]);
 
   return (
     <main className="pb-12">
-      <header className="overflow-hidden rounded-lg border border-border">
-        <div
-          className="relative flex min-h-44 w-full flex-col justify-end sm:min-h-52"
-        >
-          <img
-            src={assetUrl(bannerSrc)}
-            alt=""
-            className="absolute inset-0 size-full object-cover"
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/92 via-black/55 to-black/10"
-            aria-hidden
-          />
-          <div className="relative z-10 flex flex-col gap-3 px-4 pt-4 pb-3 text-white sm:flex-row sm:items-start sm:justify-between sm:gap-5 sm:px-6 sm:pt-5 sm:pb-4">
-            <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
-              <div className="shrink-0 rounded-lg border border-white/25 bg-black/35 p-2 shadow-sm backdrop-blur-sm sm:p-2.5">
-                {shop.imageUrl ? (
-                  <img
-                    src={assetUrl(shop.imageUrl)}
-                    alt={`${shop.name} logo`}
-                    className="size-10 rounded-md object-cover sm:size-12"
-                  />
-                ) : (
-                  <div
-                    className="flex size-10 items-center justify-center rounded-md bg-white/15 text-xs font-semibold text-white/90 sm:size-12 sm:text-sm"
-                    aria-label={`${shop.name} (no logo)`}
-                  >
-                    {shopInitials(shop.name)}
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <div className="flex flex-col gap-0.5">
-                  <p className="text-[10px] font-medium uppercase tracking-widest text-white/60">
-                    Shop
-                  </p>
-                  <h1 className="font-serif text-2xl font-normal tracking-tight text-white md:text-3xl">
-                    {shop.name}
-                  </h1>
-                </div>
-                {locationLine ? (
-                  <p className="flex items-center gap-1.5 text-sm text-white/80">
-                    <MapPin className="size-3.5 shrink-0 opacity-80" />
-                    {locationLine}
-                  </p>
-                ) : null}
-                <dl className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-white/75">
-                  <div className="flex items-center gap-1.5">
-                    <Package className="size-3 shrink-0 opacity-80" />
-                    <dt className="sr-only">Listings</dt>
-                    <dd>
-                      <span className="font-medium text-white">{shop.listingCount}</span>{" "}
-                      {shop.listingCount === 1 ? "listing" : "listings"}
-                    </dd>
-                  </div>
-                  {totalPages > 1 ? (
-                    <div>
-                      <dt className="sr-only">Catalog page</dt>
-                      <dd>
-                        Page{" "}
-                        <span className="font-medium text-white">
-                          {page} of {totalPages}
-                        </span>
-                      </dd>
-                    </div>
-                  ) : null}
-                  {shop.responseRate != null ? (
-                    <div className="flex items-center gap-1.5">
-                      <Percent className="size-3 shrink-0 opacity-80" />
-                      <dt className="sr-only">Response rate</dt>
-                      <dd>
-                        <span className="font-medium text-white">
-                          {Math.round(shop.responseRate * 100)}%
-                        </span>{" "}
-                        response rate
-                      </dd>
-                    </div>
-                  ) : null}
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="size-3 shrink-0 opacity-80" />
-                    <dt className="sr-only">Reply time</dt>
-                    <dd>{formatReplyText(shop.estimatedReplyMinutes)}</dd>
-                  </div>
-                  <div>
-                    <dt className="sr-only">On YEJSIRA since</dt>
-                    <dd>Member since {formatMemberSince(shop.createdAt, locale)}</dd>
-                  </div>
-                </dl>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0 self-start border-white/35 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white sm:self-auto"
-              onClick={() => void onShare()}
-            >
-              <Share2 className="size-3.5" />
-              Share
-            </Button>
-          </div>
-        </div>
-      </header>
+      {showShopHero ? (
+        <ShopCatalogHero
+          locale={locale}
+          shopSlug={shopSlug}
+          shop={shop}
+          page={page}
+          totalPages={totalPages}
+        />
+      ) : null}
 
-      <section className="mt-10" aria-labelledby="shop-products-heading">
+      <section
+        className={showShopHero ? "mt-10" : undefined}
+        aria-labelledby="shop-products-heading"
+      >
         <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 id="shop-products-heading" className="text-base font-semibold tracking-tight md:text-lg">

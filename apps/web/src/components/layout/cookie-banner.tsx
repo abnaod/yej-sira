@@ -4,6 +4,7 @@ import type { Locale } from "@ys/intl";
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/lib/locale-path";
+import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "ys-cookie-consent-v1";
 
@@ -35,7 +36,12 @@ export function CookieBanner() {
     <div
       role="dialog"
       aria-label="Cookie notice"
-      className="fixed inset-x-2 bottom-2 z-50 mx-auto max-w-3xl rounded-lg border bg-background p-4 shadow-lg md:inset-x-4 md:bottom-4"
+      className={cn(
+        "fixed inset-x-2 z-50 mx-auto max-w-3xl rounded-lg border bg-background p-4 shadow-lg",
+        /* Sit above the mobile bottom nav (h-14 + safe area), not on top of it */
+        "bottom-[calc(0.5rem+3.5rem+env(safe-area-inset-bottom))]",
+        "md:inset-x-4 md:bottom-4",
+      )}
     >
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <p className="text-sm text-muted-foreground">

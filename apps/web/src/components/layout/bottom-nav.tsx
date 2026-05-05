@@ -32,6 +32,16 @@ import { cn } from "@/lib/utils";
 
 export type BottomNavVariant = "marketplace" | "shop";
 
+/** In-flow block: same height as `BottomNav` (`h-14` + safe area). Ensures scrollable pages clear the fixed bar. */
+export function MobileBottomNavScrollSpacer() {
+  return (
+    <div
+      aria-hidden
+      className="shrink-0 md:hidden min-h-[calc(3.5rem+env(safe-area-inset-bottom))]"
+    />
+  );
+}
+
 /** Mobile bottom navigation for the storefront. Hidden at `md` and above. */
 export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVariant }) {
   const { t } = useTranslation("common");

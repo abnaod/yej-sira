@@ -22,7 +22,7 @@ import { apiFetchJson, assetUrl, uploadImage } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 
-import { SHOP_BANNER_PLACEHOLDER } from "@/features/store/shop/shop-assets";
+import { ShopHeroFallbackSurface } from "@/features/store/shop/shop-hero-fallback";
 import { myShopQuery, type MyShop, type ShopSocialLinks, type UpdateShopBody } from "../shared/shop.queries";
 
 /**
@@ -527,6 +527,12 @@ function BannerEditor(props: {
   shopName: string;
 }) {
   const { previewUrl, uploading, inputRef, onPick, onClear, onFile, logoUrl, shopName } = props;
+  const customBanner = previewUrl?.trim() ?? "";
+  const [customBannerFailed, setCustomBannerFailed] = useState(false);
+  useEffect(() => {
+    setCustomBannerFailed(false);
+  }, [customBanner]);
+  const showBannerPhoto = Boolean(customBanner && !customBannerFailed);
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -538,11 +544,18 @@ function BannerEditor(props: {
           "relative aspect-4/1 w-full overflow-hidden rounded-lg border border-border bg-muted",
         )}
       >
-        <img
-          src={assetUrl(previewUrl || SHOP_BANNER_PLACEHOLDER)}
-          alt="Storefront banner preview"
-          className="size-full object-cover"
-        />
+        {showBannerPhoto ? (
+          <img
+            src={assetUrl(customBanner)}
+            alt="Storefront banner preview"
+            className="size-full object-cover"
+            onError={() => {
+              if (customBanner) setCustomBannerFailed(true);
+            }}
+          />
+        ) : (
+          <ShopHeroFallbackSurface />
+        )}
         {logoUrl ? (
           <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-md bg-background/80 px-2 py-1 backdrop-blur-sm">
             <img

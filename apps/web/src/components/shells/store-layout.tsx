@@ -1,7 +1,7 @@
 import { Link, Outlet, getRouteApi } from "@tanstack/react-router";
 import { Heart, Package, ShoppingCart, Store, User } from "lucide-react";
 
-import { BottomNav } from "@/components/layout/bottom-nav";
+import { BottomNav, MobileBottomNavScrollSpacer } from "@/components/layout/bottom-nav";
 import { ContentContainer } from "@/components/layout/content-container";
 import { CookieBanner } from "@/components/layout/cookie-banner";
 import { Footer } from "@/components/layout/footer/footer";
@@ -16,9 +16,6 @@ import { useLocale } from "@/lib/locale-path";
 import { StorefrontTenantProvider } from "@/lib/storefront-context";
 import { marketplaceUrl } from "@/lib/storefront";
 import type { PublicStorefrontShop } from "@/lib/storefront";
-
-/** Reserve space below the fixed mobile bottom nav (`h-14` + iOS safe area). */
-const BOTTOM_NAV_SPACER = "pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0";
 
 const routeApi = getRouteApi("/$locale/(store)");
 
@@ -39,12 +36,13 @@ export function StoreLayout() {
   if (tenant.context.isStorefront && tenant.shop) {
     return (
       <StorefrontTenantProvider value={tenant}>
-        <div className={`flex min-h-dvh flex-col ${BOTTOM_NAV_SPACER}`}>
+        <div className="flex min-h-dvh flex-col">
           <ShopHeader shop={tenant.shop} />
           <ContentContainer>
             <Outlet />
           </ContentContainer>
           <ShopFooter shop={tenant.shop} />
+          <MobileBottomNavScrollSpacer />
         </div>
         <BottomNav variant="shop" />
       </StorefrontTenantProvider>
@@ -53,12 +51,13 @@ export function StoreLayout() {
 
   return (
     <StorefrontTenantProvider value={tenant}>
-      <div className={`flex min-h-dvh flex-col ${BOTTOM_NAV_SPACER}`}>
+      <div className="flex min-h-dvh flex-col">
         <Header />
         <ContentContainer>
           <Outlet />
         </ContentContainer>
         <Footer />
+        <MobileBottomNavScrollSpacer />
         <CookieBanner />
       </div>
       <BottomNav variant="marketplace" />

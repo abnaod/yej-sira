@@ -35,7 +35,12 @@ function StoreIndexPage() {
   const shop = useActiveStorefrontShop();
   if (shop) {
     return (
-      <ShopCatalogPage locale={locale as Locale} shopSlug={shop.slug} page={1} />
+      <ShopCatalogPage
+        locale={locale as Locale}
+        shopSlug={shop.slug}
+        page={1}
+        showShopHero={false}
+      />
     );
   }
   return <HomePage />;

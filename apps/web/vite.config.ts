@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
@@ -11,36 +11,43 @@ import { nitro } from "nitro/vite";
 /** Monorepo root so `VITE_*` from `<repo>/.env` is loaded (same file as the API uses). */
 const monorepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
-export default defineConfig({
-  envDir: monorepoRoot,
-  build: {
-    rollupOptions: {
-      external: [/^@sentry\//],
-    },
-  },
-  server: {
-    /** Listen on all interfaces so both `localhost` and `127.0.0.1` work in dev. */
-    host: true,
-    port: 5000,
-    strictPort: true,
-    proxy: {
-      "/api": { target: "http://127.0.0.1:5001", changeOrigin: true },
-      "/static": { target: "http://127.0.0.1:5001", changeOrigin: true },
-    },
-  },
-  plugins: [
-    nitro({
-      rollupConfig: { external: [/^@sentry\//] },
-      /** Hashed Vite assets are safe to cache forever; improves repeat visits (Lighthouse “cache lifetimes”). */
-      routeRules: {
-        "/assets/**": {
-          headers: { "cache-control": "public, max-age=31536000, immutable" },
-        },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, monorepoRoot, ["WEB_"]);
+  const webDevPort = Number(env.WEB_DEV_PORT);
+  const port =
+    Number.isFinite(webDevPort) && webDevPort > 0 ? webDevPort : 3000;
+
+  return {
+    envDir: monorepoRoot,
+    build: {
+      rollupOptions: {
+        external: [/^@sentry\//],
       },
-    }),
-    tsconfigPaths({ projects: ["./tsconfig.json"] }),
-    tailwindcss(),
-    tanstackStart(),
-    viteReact(),
-  ],
+    },
+    server: {
+      /** Listen on all interfaces so both `localhost` and `127.0.0.1` work in dev. */
+      host: true,
+      port,
+      strictPort: true,
+      proxy: {
+        "/api": { target: "http://127.0.0.1:5001", changeOrigin: true },
+        "/static": { target: "http://127.0.0.1:5001", changeOrigin: true },
+      },
+    },
+    plugins: [
+      nitro({
+        rollupConfig: { external: [/^@sentry\//] },
+        /** Hashed Vite assets are safe to cache forever; improves repeat visits (Lighthouse “cache lifetimes”). */
+        routeRules: {
+          "/assets/**": {
+            headers: { "cache-control": "public, max-age=31536000, immutable" },
+          },
+        },
+      }),
+      tsconfigPaths({ projects: ["./tsconfig.json"] }),
+      tailwindcss(),
+      tanstackStart(),
+      viteReact(),
+    ],
+  };
 });
