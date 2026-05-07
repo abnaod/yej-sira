@@ -27,7 +27,8 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "lightningcss",
-      "prisma"
+      "prisma",
+      "sharp"
     ]
   }
 }
