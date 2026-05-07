@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
+import { Copy, MoreHorizontal, Send } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 
@@ -62,6 +62,11 @@ function ShopStatusActions({ shop }: { shop: AdminShopListItem }) {
       },
     );
   };
+  const copyTelegramMiniAppUrl = () => {
+    if (!shop.telegramMiniAppUrl) return;
+    void navigator.clipboard.writeText(shop.telegramMiniAppUrl);
+    toast.success("Telegram Mini App link copied");
+  };
 
   return (
     <DropdownMenu>
@@ -82,6 +87,25 @@ function ShopStatusActions({ shop }: { shop: AdminShopListItem }) {
             View storefront
           </Link>
         </DropdownMenuItem>
+        {shop.telegramMiniAppUrl ? (
+          <>
+            <DropdownMenuItem asChild>
+              <a href={shop.telegramMiniAppUrl} target="_blank" rel="noreferrer">
+                <Send className="size-3.5" />
+                Open Telegram Mini App
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                copyTelegramMiniAppUrl();
+              }}
+            >
+              <Copy className="size-3.5" />
+              Copy Telegram link
+            </DropdownMenuItem>
+          </>
+        ) : null}
         <DropdownMenuSeparator />
         {ALL_STATUSES.filter((s) => s !== shop.status).map((s) => (
           <DropdownMenuItem

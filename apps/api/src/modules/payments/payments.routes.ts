@@ -9,7 +9,7 @@ import { z } from "zod";
 import { createHmac, timingSafeEqual } from "crypto";
 
 import { prisma } from "../../lib/db";
-import { getEnv, getShopSubdomainBaseDomain } from "../../lib/env";
+import { getEnv, getShopSubdomainBaseDomain, isStorefrontLauncherHost } from "../../lib/env";
 import { auth } from "../auth/auth";
 import { logger } from "../../lib/logger";
 import { sendOrderConfirmedEmail, sendSellerNewOrderEmail } from "../../lib/email/order-emails";
@@ -54,8 +54,11 @@ function dbPaymentMethodFromChapaResponse(
 
 function storefrontReturnOrigin(order: {
   originShop?: { slug: string } | null;
-}) {
+}, preferLauncherHost = false) {
   const env = getEnv();
+  if (preferLauncherHost) {
+    return env.PUBLIC_WEB_URL.replace(/\/$/, "");
+  }
   if (order.originShop) {
     const protocol = env.NODE_ENV === "production" ? "https" : "http";
     const port = env.NODE_ENV === "production" ? "" : ":5000";
@@ -138,14 +141,23 @@ paymentsRouter.post("/payments/chapa/initialize", async (c) => {
   const env = getEnv();
   let effectiveTxRef = order.payment?.txRef ?? `yejsira-${orderId}-${Date.now()}`;
   const callbackUrl = `${env.BETTER_AUTH_URL}/api/payments/chapa/webhook`;
-  const returnOrigin = storefrontReturnOrigin(order);
+  const storefrontHost = c.req.header("x-storefront-host");
+  const shouldReturnToLauncher =
+    Boolean(order.originShop) &&
+    Boolean(storefrontHost) &&
+    isStorefrontLauncherHost(storefrontHost!);
+  const returnOrigin = storefrontReturnOrigin(order, shouldReturnToLauncher);
   const localeSeg =
     localeFromBody && /^[a-z0-9-]{2,16}$/i.test(localeFromBody) ? localeFromBody : "en";
   const tokenQuery =
     !session?.user && orderAccessToken
       ? `&token=${encodeURIComponent(orderAccessToken)}`
       : "";
-  const returnUrl = `${returnOrigin}/${localeSeg}/payments/success?orderId=${encodeURIComponent(order.id)}${tokenQuery}`;
+  const shopQuery =
+    shouldReturnToLauncher && order.originShop
+      ? `&shop=${encodeURIComponent(order.originShop.slug)}`
+      : "";
+  const returnUrl = `${returnOrigin}/${localeSeg}/payments/success?orderId=${encodeURIComponent(order.id)}${tokenQuery}${shopQuery}`;
 
   const customer = await chapaCustomerFromUser(order.userId);
 

@@ -27,6 +27,8 @@ export default defineConfig(({ mode }) => {
     server: {
       /** Listen on all interfaces so both `localhost` and `127.0.0.1` work in dev. */
       host: true,
+      /** Allow public dev tunnels (ngrok) to reach this Vite server. */
+      allowedHosts: true,
       port,
       strictPort: true,
       proxy: {
@@ -39,6 +41,12 @@ export default defineConfig(({ mode }) => {
         rollupConfig: { external: [/^@sentry\//] },
         /** Hashed Vite assets are safe to cache forever; improves repeat visits (Lighthouse “cache lifetimes”). */
         routeRules: {
+          "/api/**": {
+            proxy: "http://127.0.0.1:5001/api/**",
+          },
+          "/static/**": {
+            proxy: "http://127.0.0.1:5001/static/**",
+          },
           "/assets/**": {
             headers: { "cache-control": "public, max-age=31536000, immutable" },
           },

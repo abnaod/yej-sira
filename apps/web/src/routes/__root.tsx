@@ -22,6 +22,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       { title: "YEJSIRA" },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
+    scripts: [
+      {
+        src: "https://telegram.org/js/telegram-web-app.js",
+      },
+    ],
   }),
   shellComponent: RootDocument,
 });

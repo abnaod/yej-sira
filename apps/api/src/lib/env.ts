@@ -42,8 +42,12 @@ const rawEnvSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   /** Bot @handle without the @ (e.g. my_shop_bot) */
   TELEGRAM_BOT_USERNAME: z.string().optional(),
-  /** OIDC client secret from BotFather Web Login — not the bot token */
+  /** OIDC client ID from BotFather Web Login. Defaults to the numeric bot token prefix when omitted. */
+  TELEGRAM_OIDC_CLIENT_ID: z.string().optional(),
+  /** OIDC client secret from BotFather Web Login — not the bot token. */
   TELEGRAM_OIDC_CLIENT_SECRET: z.string().optional(),
+  /** Optional secret token Telegram sends in `X-Telegram-Bot-Api-Secret-Token` for webhook calls. */
+  TELEGRAM_WEBHOOK_SECRET: z.string().optional(),
   /** Chapa payment gateway */
   CHAPA_SECRET_KEY: z.string().min(1),
   CHAPA_WEBHOOK_SECRET: z.string().optional(),
@@ -203,6 +207,16 @@ export function isGeneratedShopHost(rawHost: string): boolean {
   return isValidShopSubdomainSlug(slug) && !isReservedShopSlug(slug);
 }
 
+export function isStorefrontLauncherHost(rawHost: string): boolean {
+  const host = normalizeHost(rawHost);
+  if (host === getMarketplaceHost()) return true;
+  try {
+    return host === normalizeHost(new URL(getEnv().PUBLIC_WEB_URL).host);
+  } catch {
+    return false;
+  }
+}
+
 export function isDevStorefrontHost(rawHost: string): boolean {
   const host = normalizeHost(rawHost);
   if (host === "localhost" || host === "127.0.0.1") return Boolean(getEnv().STOREFRONT_DEV_SHOP_SLUG);
@@ -242,4 +256,18 @@ export function normalizeHost(raw: string): string {
 
 export function isValidShopSubdomainSlug(slug: string): boolean {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+}
+
+export function getTelegramMiniAppUrl(shopSlug: string): string | null {
+  const username = getEnv().TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
+  if (!username || !isValidShopSubdomainSlug(shopSlug)) return null;
+  return `https://t.me/${encodeURIComponent(username)}?startapp=${encodeURIComponent(shopSlug)}`;
+}
+
+export function getTelegramMiniAppLauncherUrl(shopSlug?: string): string | null {
+  const base = getEnv().PUBLIC_WEB_URL.replace(/\/$/, "");
+  if (!shopSlug) return `${base}/tg`;
+  if (!isValidShopSubdomainSlug(shopSlug)) return null;
+  const search = new URLSearchParams({ shop: shopSlug });
+  return `${base}/tg?${search.toString()}`;
 }

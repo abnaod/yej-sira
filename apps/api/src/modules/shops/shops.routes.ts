@@ -6,6 +6,7 @@ import { HTTPException } from "hono/http-exception";
 
 import { prisma, publicListingVisibilityWhere } from "../../lib/db";
 import { requireUserId } from "../../lib/auth";
+import { getTelegramMiniAppUrl } from "../../lib/env";
 import { toNumber } from "../../lib/money";
 import { getOwnedShop } from "./shops.authz";
 import { getListingCardInclude, mapListingCard, minVariantPrice } from "../catalog/catalog.mappers";
@@ -52,6 +53,7 @@ function jsonShopForOwner(shop: Shop) {
     payoutBankCode: shop.payoutBankCode,
     acceptedSellerPolicyAt: shop.acceptedSellerPolicyAt?.toISOString() ?? null,
     onboardingCompletedAt: shop.onboardingCompletedAt?.toISOString() ?? null,
+    telegramMiniAppUrl: getTelegramMiniAppUrl(shop.slug),
     createdAt: shop.createdAt.toISOString(),
     updatedAt: shop.updatedAt.toISOString(),
   };

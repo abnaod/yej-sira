@@ -36,6 +36,7 @@ export function assetUrl(path: string | null | undefined): string {
   if (!path) return "";
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   if (path.startsWith("data:") || path.startsWith("blob:")) return path;
+  if (import.meta.env.DEV && path.startsWith("/static/")) return path;
   return `${getPublicApiOrigin()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 

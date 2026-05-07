@@ -2,6 +2,8 @@ import type { Locale } from "@ys/intl";
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { Copy, Send } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -82,6 +84,12 @@ export function SellerDashboardPage() {
   const stats = dashboardState.data;
   const dashboardLoading = dashboardState.isLoading;
   const storefrontUrl = generatedStorefrontUrl(shop.slug, locale);
+  const telegramMiniAppUrl = shop.telegramMiniAppUrl;
+  const copyTelegramMiniAppUrl = () => {
+    if (!telegramMiniAppUrl) return;
+    void navigator.clipboard.writeText(telegramMiniAppUrl);
+    toast.success("Telegram Mini App link copied");
+  };
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-4">
@@ -98,6 +106,29 @@ export function SellerDashboardPage() {
           </a>
         </Button>
       </div>
+
+      {telegramMiniAppUrl ? (
+        <div className="flex flex-col gap-3 rounded-md border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+              <Send className="size-4 text-muted-foreground" />
+              Telegram Mini App
+            </p>
+            <p className="mt-1 break-all text-sm text-muted-foreground">{telegramMiniAppUrl}</p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={copyTelegramMiniAppUrl}>
+              <Copy className="size-3.5" />
+              Copy
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <a href={telegramMiniAppUrl} target="_blank" rel="noreferrer">
+                Open
+              </a>
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       <SellerDashboardSectionCards
         stats={

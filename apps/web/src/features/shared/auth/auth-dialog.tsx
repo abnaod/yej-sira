@@ -45,6 +45,26 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+function TelegramIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      aria-hidden
+      {...props}
+    >
+      <path
+        fill="#229ED9"
+        d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z"
+      />
+      <path
+        fill="#fff"
+        d="M16.84 7.35c.16-.04.31.1.27.28l-1.54 8.08c-.03.15-.2.22-.33.14l-2.51-1.75-1.28 1.36c-.12.13-.34.07-.38-.1l-.56-2.45-2.35-.86c-.19-.07-.2-.34-.02-.43l8.7-4.27Zm-2.22 2.22-3.53 2.93.38 1.65.42-1.14a.4.4 0 0 1 .14-.19l2.59-3.25Z"
+      />
+    </svg>
+  );
+}
+
 function getDefaultCallbackUrl() {
   if (typeof window === "undefined") return "/";
   return `${window.location.origin}/`;
@@ -77,7 +97,7 @@ export type AuthDialogProps = {
    */
   mode?: "default" | "checkout";
   onContinueAsGuest?: () => void;
-  /** Invoked after a successful sign-in (email or Google). */
+  /** Invoked after a successful sign-in (email or OAuth). */
   onSignInSuccess?: () => void;
 };
 
@@ -157,6 +177,52 @@ export function AuthDialog({
       if (err) {
         setOauthError(formatAuthError(err));
       }
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const handleTelegram = async () => {
+    setError(null);
+    setOauthError(null);
+    setPending(true);
+    try {
+      console.info("[telegram-oauth] start", {
+        callbackURL: oauthCallbackUrl,
+        href: typeof window !== "undefined" ? window.location.href : null,
+      });
+      const res = await fetch("/api/auth/sign-in/oauth2", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          providerId: "telegram",
+          callbackURL: oauthCallbackUrl,
+          disableRedirect: true,
+        }),
+      });
+      console.info("[telegram-oauth] response", {
+        url: res.url,
+        status: res.status,
+        redirected: res.redirected,
+      });
+      const data = (await res.json().catch(async () => {
+        const text = await res.text().catch(() => "");
+        return { text };
+      })) as { url?: string; error?: string; message?: string; text?: string };
+      console.info("[telegram-oauth] result", data);
+      if (!res.ok) {
+        setOauthError(data.error ?? data.message ?? res.statusText);
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setOauthError("Telegram did not return an authorization URL.");
+    } catch (err) {
+      console.error("[telegram-oauth] thrown", err);
+      setOauthError(formatAuthError(err));
     } finally {
       setPending(false);
     }
@@ -254,6 +320,17 @@ export function AuthDialog({
               >
                 <GoogleIcon className="size-4 shrink-0" />
                 {tab === "login" ? "Sign in with Google" : "Sign up with Google"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full text-sm text-foreground hover:text-foreground"
+                disabled={pending}
+                onClick={() => void handleTelegram()}
+              >
+                <TelegramIcon className="size-4 shrink-0" />
+                {tab === "login" ? "Sign in with Telegram" : "Sign up with Telegram"}
               </Button>
               {oauthError && (
                 <p className="text-sm text-destructive" role="alert">

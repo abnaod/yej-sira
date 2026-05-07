@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception";
 
 import { requireAdminUserId } from "../../lib/auth";
 import { prisma } from "../../lib/db";
+import { getTelegramMiniAppUrl } from "../../lib/env";
 import { toNumber } from "../../lib/money";
 import {
   createCategorySchema,
@@ -277,6 +278,7 @@ adminRouter.get("/admin/shops", async (c) => {
       businessType: s.businessType,
       listingCount: s._count.listings,
       owner: s.owner,
+      telegramMiniAppUrl: getTelegramMiniAppUrl(s.slug),
       createdAt: s.createdAt.toISOString(),
     })),
     page,

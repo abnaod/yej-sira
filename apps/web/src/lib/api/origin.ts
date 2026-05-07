@@ -1,7 +1,9 @@
 /**
  * Origin for API fetches, static assets, and Better Auth (no path, no trailing slash).
  *
- * - When `VITE_API_URL` is set, it wins (direct API or CDN).
+ * - When `VITE_API_URL` is set, it wins (direct API or CDN), except in dev when
+ *   it points at loopback and the page is opened through a public tunnel such as
+ *   ngrok; then browser calls stay same-origin so Vite can proxy `/api` and `/static`.
  * - In the browser during dev, if the page is on `localhost` or `127.0.0.1` but
  *   `VITE_API_URL` uses the other loopback name, rewrite the API hostname to match
  *   the page. Otherwise OAuth cookies are cross-site and Google sign-in fails with
@@ -25,11 +27,12 @@ export function getPublicApiOrigin(): string {
       try {
         const api = new URL(origin);
         const pageHost = window.location.hostname;
-        if (
-          (api.hostname === "localhost" || api.hostname === "127.0.0.1") &&
-          (pageHost === "localhost" || pageHost === "127.0.0.1") &&
-          api.hostname !== pageHost
-        ) {
+        const apiIsLoopback = api.hostname === "localhost" || api.hostname === "127.0.0.1";
+        const pageIsLoopback = pageHost === "localhost" || pageHost === "127.0.0.1";
+        if (apiIsLoopback && !pageIsLoopback) {
+          return window.location.origin;
+        }
+        if (apiIsLoopback && pageIsLoopback && api.hostname !== pageHost) {
           api.hostname = pageHost;
           origin = api.origin;
         }

@@ -13,6 +13,7 @@ export type AdminShopListItem = {
   businessType: "individual" | "business" | null;
   listingCount: number;
   owner: { id: string; name: string; email: string } | null;
+  telegramMiniAppUrl: string | null;
   createdAt: string;
 };
 

@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { telegram } from "better-auth-telegram";
+import { genericOAuth } from "better-auth/plugins";
 
 import { getBetterAuthTrustedOrigins, getEnv, getShopSubdomainBaseDomain } from "../../lib/env";
 import { prisma } from "../../lib/db";
@@ -13,7 +13,7 @@ const googleClientSecret = env.GOOGLE_CLIENT_SECRET?.trim();
 const facebookClientId = env.FACEBOOK_CLIENT_ID?.trim();
 const facebookClientSecret = env.FACEBOOK_CLIENT_SECRET?.trim();
 const telegramBotToken = env.TELEGRAM_BOT_TOKEN?.trim();
-const telegramBotUsername = env.TELEGRAM_BOT_USERNAME?.trim();
+const telegramOidcClientId = env.TELEGRAM_OIDC_CLIENT_ID?.trim();
 const telegramOidcClientSecret = env.TELEGRAM_OIDC_CLIENT_SECRET?.trim();
 
 const socialProviders: Record<string, { clientId: string; clientSecret: string }> = {};
@@ -25,17 +25,49 @@ if (facebookClientId && facebookClientSecret) {
 }
 const hasSocialProviders = Object.keys(socialProviders).length > 0;
 
-/** https://github.com/vcode-sh/better-auth-telegram — OIDC only (no extra Prisma columns). */
-const telegramAuthPlugin =
-  telegramBotToken && telegramBotUsername && telegramOidcClientSecret
-    ? telegram({
-        botToken: telegramBotToken,
-        botUsername: telegramBotUsername,
-        loginWidget: false,
-        oidc: {
-          enabled: true,
-          clientSecret: telegramOidcClientSecret,
-        },
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  const [, payload] = token.split(".");
+  if (!payload) return null;
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    return JSON.parse(Buffer.from(padded, "base64").toString("utf8")) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+const telegramGenericOAuthPlugin =
+  (telegramOidcClientId || telegramBotToken) && telegramOidcClientSecret
+    ? genericOAuth({
+        config: [
+          {
+            providerId: "telegram",
+            clientId: telegramOidcClientId ?? telegramBotToken!.split(":")[0]!,
+            clientSecret: telegramOidcClientSecret,
+            authorizationUrl: "https://oauth.telegram.org/auth",
+            tokenUrl: "https://oauth.telegram.org/token",
+            issuer: "https://oauth.telegram.org",
+            scopes: ["openid", "profile"],
+            pkce: true,
+            getUserInfo: async (tokens) => {
+              const idToken = (tokens as { idToken?: string }).idToken;
+              if (!idToken) return null;
+              const claims = decodeJwtPayload(idToken);
+              const sub = typeof claims?.sub === "string" ? claims.sub : null;
+              if (!sub) return null;
+              const name = typeof claims?.name === "string" ? claims.name : "Telegram user";
+              const image = typeof claims?.picture === "string" ? claims.picture : undefined;
+              return {
+                id: sub,
+                name,
+                image,
+                email: `${sub}@telegram.oidc`,
+                emailVerified: false,
+              };
+            },
+          },
+        ],
       })
     : undefined;
 
@@ -59,6 +91,9 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
   basePath: "/api/auth",
+  account: {
+    storeStateStrategy: "cookie",
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: env.REQUIRE_EMAIL_VERIFICATION,
@@ -81,7 +116,7 @@ export const auth = betterAuth({
     sendOnSignUp: true,
   },
   ...(hasSocialProviders ? { socialProviders } : {}),
-  ...(telegramAuthPlugin ? { plugins: [telegramAuthPlugin] } : {}),
+  ...(telegramGenericOAuthPlugin ? { plugins: [telegramGenericOAuthPlugin] } : {}),
   secret: env.BETTER_AUTH_SECRET,
   baseURL,
   trustedOrigins: getBetterAuthTrustedOrigins(),

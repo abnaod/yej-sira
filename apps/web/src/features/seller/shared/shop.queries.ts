@@ -45,6 +45,7 @@ export type MyShop = {
   payoutBankCode: string | null;
   acceptedSellerPolicyAt: string | null;
   onboardingCompletedAt: string | null;
+  telegramMiniAppUrl: string | null;
   createdAt: string;
   updatedAt: string;
 };

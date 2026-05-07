@@ -7,6 +7,7 @@ import {
   isDevStorefrontHost,
   isGeneratedShopHost,
   isReservedShopSlug,
+  isStorefrontLauncherHost,
   isValidShopSubdomainSlug,
   normalizeHost,
   shopSlugFromHost,
@@ -42,7 +43,11 @@ function publicShopSelect() {
 }
 
 function storefrontHostAllowed(rawHost: string) {
-  return isGeneratedShopHost(rawHost) || isDevStorefrontHost(rawHost);
+  return (
+    isGeneratedShopHost(rawHost) ||
+    isDevStorefrontHost(rawHost) ||
+    isStorefrontLauncherHost(rawHost)
+  );
 }
 
 export async function resolveStorefrontShop(args: {

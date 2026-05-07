@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TgRouteImport } from './routes/tg'
 import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LocalestoreRouteRouteImport } from './routes/$locale/(store)/route'
@@ -63,6 +64,11 @@ import { Route as LocalesellerSellListingsNewRouteImport } from './routes/$local
 import { Route as LocalesellerSellListingsListingIdRouteImport } from './routes/$locale/(seller)/sell/listings/$listingId'
 import { Route as LocaleadminAdminOrdersOrderIdRouteImport } from './routes/$locale/(admin)/admin/orders/$orderId'
 
+const TgRoute = TgRouteImport.update({
+  id: '/tg',
+  path: '/tg',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LocaleRoute = LocaleRouteImport.update({
   id: '/$locale',
   path: '/$locale',
@@ -362,6 +368,7 @@ const LocaleadminAdminOrdersOrderIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$locale': typeof LocalestoreRouteRouteWithChildren
+  '/tg': typeof TgRoute
   '/$locale/admin': typeof LocaleadminAdminRouteRouteWithChildren
   '/$locale/sell': typeof LocalesellerSellRouteRouteWithChildren
   '/$locale/auth/forgot-password': typeof LocaleAuthForgotPasswordRoute
@@ -414,6 +421,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$locale': typeof LocalestoreIndexRoute
+  '/tg': typeof TgRoute
   '/$locale/auth/forgot-password': typeof LocaleAuthForgotPasswordRoute
   '/$locale/auth/reset-password': typeof LocaleAuthResetPasswordRoute
   '/$locale/auth/verify-email': typeof LocaleAuthVerifyEmailRoute
@@ -463,6 +471,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$locale': typeof LocaleRouteWithChildren
+  '/tg': typeof TgRoute
   '/$locale/(admin)': typeof LocaleadminRouteRouteWithChildren
   '/$locale/(seller)': typeof LocalesellerRouteRouteWithChildren
   '/$locale/(store)': typeof LocalestoreRouteRouteWithChildren
@@ -520,6 +529,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$locale'
+    | '/tg'
     | '/$locale/admin'
     | '/$locale/sell'
     | '/$locale/auth/forgot-password'
@@ -572,6 +582,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$locale'
+    | '/tg'
     | '/$locale/auth/forgot-password'
     | '/$locale/auth/reset-password'
     | '/$locale/auth/verify-email'
@@ -620,6 +631,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$locale'
+    | '/tg'
     | '/$locale/(admin)'
     | '/$locale/(seller)'
     | '/$locale/(store)'
@@ -676,10 +688,18 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LocaleRoute: typeof LocaleRouteWithChildren
+  TgRoute: typeof TgRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tg': {
+      id: '/tg'
+      path: '/tg'
+      fullPath: '/tg'
+      preLoaderRoute: typeof TgRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$locale': {
       id: '/$locale'
       path: '/$locale'
@@ -1234,6 +1254,7 @@ const LocaleRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LocaleRoute: LocaleRouteWithChildren,
+  TgRoute: TgRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

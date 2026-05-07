@@ -26,6 +26,7 @@ import { promotionsRouter } from "./modules/promotions/promotions.routes";
 import { shopsRouter } from "./modules/shops/shops.routes";
 import { storefrontRouter } from "./modules/storefront/storefront.routes";
 import { sellerRouter } from "./modules/seller/seller.routes";
+import { telegramRouter } from "./modules/telegram/telegram.routes";
 import { paymentsRouter } from "./modules/payments/payments.routes";
 import { conversationsRouter } from "./modules/conversations/conversations.routes";
 import { seoRouter } from "./modules/seo/seo.routes";
@@ -146,6 +147,7 @@ api.use(
   rateLimit({ name: "conversations.send", limit: 60, windowMs: 60_000, keyBy: "user" }),
 );
 api.route("/", authRouter);
+api.route("/", telegramRouter);
 api.route("/", storefrontRouter);
 api.route("/", userRouter);
 api.route("/", catalogRouter);
