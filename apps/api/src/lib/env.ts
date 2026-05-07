@@ -109,17 +109,30 @@ export function getBrowserOrigins(): string[] {
   const e = getEnv();
   if (e.NODE_ENV === "production") return [e.CORS_ORIGIN];
   const out = new Set<string>([e.CORS_ORIGIN]);
+
+  for (const origin of [e.CORS_ORIGIN, e.PUBLIC_WEB_URL]) {
+    addLoopbackOriginPair(out, origin);
+  }
+
+  for (const port of ["3000", "5000"]) {
+    out.add(`http://localhost:${port}`);
+    out.add(`http://127.0.0.1:${port}`);
+  }
+
+  return [...out];
+}
+
+function addLoopbackOriginPair(out: Set<string>, origin: string): void {
   try {
-    const u = new URL(e.CORS_ORIGIN);
+    const u = new URL(origin);
     if (u.hostname === "localhost" || u.hostname === "127.0.0.1") {
       const otherHost = u.hostname === "localhost" ? "127.0.0.1" : "localhost";
       const portPart = u.port ? `:${u.port}` : "";
       out.add(`${u.protocol}//${otherHost}${portPart}`);
     }
   } catch {
-    /* keep CORS_ORIGIN only */
+    /* keep the configured origins only */
   }
-  return [...out];
 }
 
 export function getBetterAuthTrustedOrigins(): string[] {

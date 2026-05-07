@@ -26,6 +26,7 @@ import { useAuthDialog } from "@/features/shared/auth";
 import { currentUserQuery } from "@/features/shared/current-user.queries";
 import { categoriesQuery } from "@/features/store/home";
 import { authClient } from "@/lib/auth-client";
+import { featureCartCheckout } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 import { marketplaceUrl } from "@/lib/storefront";
 import { cn } from "@/lib/utils";
@@ -106,7 +107,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
           "pb-[env(safe-area-inset-bottom)] md:hidden",
         )}
       >
-        <ul className="grid h-14 grid-cols-5">
+        <ul className={cn("grid h-14", featureCartCheckout ? "grid-cols-5" : "grid-cols-4")}>
           <NavSlot>
             <Link
               to="/$locale"
@@ -146,17 +147,19 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
             </Link>
           </NavSlot>
 
-          <NavSlot>
-            <Link
-              to="/$locale/cart"
-              params={{ locale }}
-              className={navItemClass(isCartActive)}
-              aria-current={isCartActive ? "page" : undefined}
-            >
-              <ShoppingCart className="size-5" aria-hidden />
-              <span className="text-[11px] leading-none">{t("cart")}</span>
-            </Link>
-          </NavSlot>
+          {featureCartCheckout ? (
+            <NavSlot>
+              <Link
+                to="/$locale/cart"
+                params={{ locale }}
+                className={navItemClass(isCartActive)}
+                aria-current={isCartActive ? "page" : undefined}
+              >
+                <ShoppingCart className="size-5" aria-hidden />
+                <span className="text-[11px] leading-none">{t("cart")}</span>
+              </Link>
+            </NavSlot>
+          ) : null}
 
           <NavSlot>
             <button

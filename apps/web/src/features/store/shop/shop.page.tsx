@@ -271,15 +271,18 @@ export function ShopCatalogPage({
         className={showShopHero ? "mt-10" : undefined}
         aria-labelledby="shop-featured-heading"
       >
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <h2 id="shop-featured-heading" className="text-xl font-semibold tracking-tight md:text-2xl">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <h2
+            id="shop-featured-heading"
+            className="min-w-0 truncate text-xl font-semibold tracking-tight md:text-2xl"
+          >
             Featured items
           </h2>
           {onSortChange ? (
             <SearchSortToolbar
               sort={sortValue}
               onSortChange={onSortChange}
-              className="py-0 sm:justify-end"
+              className="shrink-0 py-0 sm:justify-end [&_button]:max-w-[min(58vw,16rem)] sm:[&_button]:max-w-full"
             />
           ) : null}
         </div>

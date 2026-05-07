@@ -47,7 +47,7 @@ export function SellerAppShell() {
 
   return (
     <SidebarProvider>
-      <SellerAppSidebar />
+      <SellerAppSidebar shop={shopQuery.data.shop} />
       <SidebarInset>
         <div
           className={

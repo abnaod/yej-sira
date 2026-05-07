@@ -24,6 +24,7 @@ import {
 import { useLocale } from "@/lib/locale-path";
 import type { Locale } from "@ys/intl";
 
+import type { MyShop } from "../shared/shop.queries";
 import { SellerNavUser } from "./nav-user";
 
 function matchesSellPath(pathname: string, locale: Locale, suffix: string) {
@@ -40,12 +41,13 @@ function isSellerOrderDetailPath(pathname: string, locale: Locale) {
 }
 
 /** Left nav for the seller portal (shadcn sidebar-01–style `AppSidebar`). */
-export function SellerAppSidebar() {
+export function SellerAppSidebar({ shop }: { shop: MyShop }) {
   const locale = useLocale() as Locale;
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const sidebarSubtitle = isSellerOrderDetailPath(pathname, locale) ? "Order details" : "Seller portal";
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -55,19 +57,10 @@ export function SellerAppSidebar() {
                   <Store className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-xss leading-tight">
-                  {isSellerOrderDetailPath(pathname, locale) ? (
-                    <>
-                      <span className="truncate font-medium">Portal</span>
-                      <span className="truncate text-xxs text-sidebar-foreground/70">
-                        Order details
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="truncate font-medium">Seller</span>
-                      <span className="truncate text-xxs text-sidebar-foreground/70">Portal</span>
-                    </>
-                  )}
+                  <span className="truncate font-medium">{shop.name}</span>
+                  <span className="truncate text-xxs text-sidebar-foreground/70">
+                    {sidebarSubtitle}
+                  </span>
                 </div>
               </Link>
             </SidebarMenuButton>

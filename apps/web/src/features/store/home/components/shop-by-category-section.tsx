@@ -12,7 +12,7 @@ export function ShopByCategorySection() {
   const { data } = useSuspenseQuery(categoriesQuery(locale));
 
   return (
-    <section>
+    <section className="hidden md:block">
       <div className="text-center">
         <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
           {t("shopByCategory")}
