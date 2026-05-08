@@ -21,6 +21,26 @@ export const patchShopStatusSchema = z.object({
   status: z.enum(["pending", "active", "rejected", "suspended"]),
 });
 
+const shopSlugSchema = z
+  .string()
+  .min(2)
+  .max(80)
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase kebab-case");
+
+export const createAdminShopSchema = z.object({
+  name: z.string().min(1).max(120),
+  slug: shopSlugSchema,
+  ownerEmail: z.string().email(),
+  initialPassword: z.string().min(8).max(256),
+  status: z.enum(["pending", "active", "rejected", "suspended"]).default("active"),
+  description: z.string().max(2000).optional(),
+  imageUrl: z.string().max(500).optional(),
+  contactEmail: z.string().email().optional(),
+  contactPhone: z.string().max(40).optional(),
+  businessType: z.enum(["individual", "business"]).optional(),
+  listingsLimit: z.coerce.number().int().min(1).max(10000).default(20),
+});
+
 export const patchListingSchema = z.object({
   isPublished: z.boolean().optional(),
   featured: z.boolean().optional(),

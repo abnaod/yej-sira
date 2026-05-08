@@ -20,8 +20,8 @@ const rawEnvSchema = z.object({
   DATABASE_URL: z.string().url(),
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(),
-  PORT: z.coerce.number().default(5001),
-  CORS_ORIGIN: z.string().url().default("http://localhost:5000"),
+  PORT: z.coerce.number().default(3001),
+  CORS_ORIGIN: z.string().url().default("http://localhost:3000"),
   MARKETPLACE_HOST: z.string().min(1).optional(),
   SHOP_SUBDOMAIN_BASE_DOMAIN: z.string().min(1).optional(),
   SHOP_COOKIE_DOMAIN: z.string().min(1).optional(),
@@ -52,7 +52,7 @@ const rawEnvSchema = z.object({
   CHAPA_SECRET_KEY: z.string().min(1),
   CHAPA_WEBHOOK_SECRET: z.string().optional(),
   CHAPA_BASE_URL: z.string().url().default("https://api.chapa.co"),
-  PUBLIC_WEB_URL: z.string().url().default("http://localhost:5000"),
+  PUBLIC_WEB_URL: z.string().url().default("http://localhost:3000"),
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().email().optional(),
   EMAIL_FROM_NAME: z.string().min(1).optional(),
@@ -85,6 +85,21 @@ export type Env = z.infer<typeof rawEnvSchema>;
 
 let cached: Env | null = null;
 
+function addOriginWithLoopbackPair(out: Set<string>, origin: string | undefined) {
+  if (!origin) return;
+  out.add(origin);
+  try {
+    const u = new URL(origin);
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") {
+      const otherHost = u.hostname === "localhost" ? "127.0.0.1" : "localhost";
+      const portPart = u.port ? `:${u.port}` : "";
+      out.add(`${u.protocol}//${otherHost}${portPart}`);
+    }
+  } catch {
+    /* keep the original value only */
+  }
+}
+
 export function getEnv(): Env {
   if (cached) return cached;
   const parsed = envSchema.safeParse(process.env);
@@ -112,11 +127,14 @@ export function getEnv(): Env {
 export function getBrowserOrigins(): string[] {
   const e = getEnv();
   if (e.NODE_ENV === "production") return [e.CORS_ORIGIN];
-  const out = new Set<string>([e.CORS_ORIGIN]);
 
-  for (const origin of [e.CORS_ORIGIN, e.PUBLIC_WEB_URL]) {
-    addLoopbackOriginPair(out, origin);
-  }
+  const out = new Set<string>();
+  addOriginWithLoopbackPair(out, e.CORS_ORIGIN);
+  addOriginWithLoopbackPair(out, e.PUBLIC_WEB_URL);
+
+  // Local Vite defaults stay trusted even when dev env values point at an
+  // external tunnel for OAuth callback testing.
+  addOriginWithLoopbackPair(out, "http://localhost:3000");
 
   for (const port of ["3000", "5000"]) {
     out.add(`http://localhost:${port}`);
@@ -126,19 +144,6 @@ export function getBrowserOrigins(): string[] {
   return [...out];
 }
 
-function addLoopbackOriginPair(out: Set<string>, origin: string): void {
-  try {
-    const u = new URL(origin);
-    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") {
-      const otherHost = u.hostname === "localhost" ? "127.0.0.1" : "localhost";
-      const portPart = u.port ? `:${u.port}` : "";
-      out.add(`${u.protocol}//${otherHost}${portPart}`);
-    }
-  } catch {
-    /* keep the configured origins only */
-  }
-}
-
 export function getBetterAuthTrustedOrigins(): string[] {
   const e = getEnv();
   const origins = new Set(getBrowserOrigins());
@@ -146,29 +151,30 @@ export function getBetterAuthTrustedOrigins(): string[] {
   const base = getShopSubdomainBaseDomain();
   origins.add(`${protocol}://*.${base}`);
   if (e.NODE_ENV !== "production") {
+    origins.add("http://*.localhost:3000");
     origins.add("http://*.localhost:5000");
   }
   return [...origins];
 }
 
 export function getMarketplaceHost(): string {
-  const e = getEnv();
-  if (e.MARKETPLACE_HOST) return normalizeHost(e.MARKETPLACE_HOST);
-  return normalizeHost(new URL(e.CORS_ORIGIN).host);
+  const env = getEnv();
+  if (env.MARKETPLACE_HOST) return normalizeHost(env.MARKETPLACE_HOST);
+  return normalizeHost(new URL(env.CORS_ORIGIN).host);
 }
 
 export function getShopSubdomainBaseDomain(): string {
-  const e = getEnv();
-  if (e.SHOP_SUBDOMAIN_BASE_DOMAIN) {
-    return normalizeHost(e.SHOP_SUBDOMAIN_BASE_DOMAIN);
+  const env = getEnv();
+  if (env.SHOP_SUBDOMAIN_BASE_DOMAIN) {
+    return normalizeHost(env.SHOP_SUBDOMAIN_BASE_DOMAIN);
   }
   return getMarketplaceHost();
 }
 
 export function getReservedShopSubdomains(): Set<string> {
-  const e = getEnv();
+  const env = getEnv();
   return new Set(
-    e.RESERVED_SHOP_SUBDOMAINS.split(",")
+    env.RESERVED_SHOP_SUBDOMAINS.split(",")
       .map((x) => x.trim().toLowerCase())
       .filter(Boolean),
   );
@@ -176,7 +182,7 @@ export function getReservedShopSubdomains(): Set<string> {
 
 export function isAllowedBrowserOrigin(origin: string | undefined): boolean {
   if (!origin) return false;
-  const e = getEnv();
+  const env = getEnv();
   if (getBrowserOrigins().includes(origin)) return true;
 
   let url: URL;
@@ -187,7 +193,7 @@ export function isAllowedBrowserOrigin(origin: string | undefined): boolean {
   }
 
   const protocolOk =
-    e.NODE_ENV === "production" ? url.protocol === "https:" : url.protocol === "http:";
+    env.NODE_ENV === "production" ? url.protocol === "https:" : url.protocol === "http:";
   if (!protocolOk) return false;
 
   return isGeneratedShopHost(url.host) || isDevStorefrontHost(url.host);

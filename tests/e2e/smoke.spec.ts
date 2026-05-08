@@ -9,7 +9,7 @@ test.describe("smoke", () => {
   });
 
   test("robots.txt served by API", async ({ request }) => {
-    const apiUrl = process.env.E2E_API_URL ?? "http://localhost:5001";
+    const apiUrl = process.env.E2E_API_URL ?? "http://localhost:3001";
     const res = await request.get(`${apiUrl}/robots.txt`);
     expect(res.status()).toBe(200);
     const body = await res.text();
@@ -17,7 +17,7 @@ test.describe("smoke", () => {
   });
 
   test("health endpoint responds", async ({ request }) => {
-    const apiUrl = process.env.E2E_API_URL ?? "http://localhost:5001";
+    const apiUrl = process.env.E2E_API_URL ?? "http://localhost:3001";
     const res = await request.get(`${apiUrl}/health`);
     expect(res.status()).toBe(200);
     expect(await res.json()).toMatchObject({ ok: true });

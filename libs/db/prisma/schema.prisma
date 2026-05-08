@@ -19,6 +19,7 @@ model User {
   email                  String
   phone                  String?
   emailVerified          Boolean                        @map("email_verified")
+  mustChangePassword     Boolean                        @default(false) @map("must_change_password")
   image                  String?
   role                   UserRole                       @default(customer)
   createdAt              DateTime                       @map("created_at")

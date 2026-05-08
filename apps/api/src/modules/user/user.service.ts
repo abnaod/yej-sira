@@ -8,6 +8,7 @@ export async function getUserById(id: string) {
       name: true,
       email: true,
       emailVerified: true,
+      mustChangePassword: true,
       image: true,
       role: true,
       createdAt: true,

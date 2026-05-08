@@ -10,7 +10,7 @@
  *   `state_mismatch`.
  * - On the server during dev / SSR, defaults to the local API origin.
  * - `SERVER_API_URL` (runtime, not Vite-inlined) overrides SSR only for **fetch** — use
- *   in Docker so the web container calls `http://api:5001` instead of `localhost:5001`.
+ *   in Docker so the web container calls `http://api:5001` instead of `localhost:3001`.
  * - **Never** use `SERVER_API_URL` for `img src` / `assetUrl`: browsers must get a
  *   host-reachable origin (`VITE_API_URL`), not the Docker service name.
  */
@@ -47,7 +47,7 @@ export function getPublicApiOrigin(): string {
     if (typeof window !== "undefined") {
       return window.location.origin;
     }
-    return "http://localhost:5001";
+    return "http://localhost:3001";
   }
 
   if (typeof window !== "undefined") {
@@ -56,8 +56,8 @@ export function getPublicApiOrigin(): string {
     if (import.meta.env.PROD) {
       try {
         const page = new URL(window.location.href);
-        if (page.port === "5000") {
-          page.port = "5001";
+        if (page.port === "3000") {
+          page.port = "3001";
           return page.origin;
         }
       } catch {
@@ -67,7 +67,7 @@ export function getPublicApiOrigin(): string {
     return window.location.origin;
   }
 
-  return "http://localhost:5001";
+  return "http://localhost:3001";
 }
 
 /**

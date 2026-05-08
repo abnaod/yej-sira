@@ -14,8 +14,7 @@ const monorepoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, monorepoRoot, ["WEB_"]);
   const webDevPort = Number(env.WEB_DEV_PORT);
-  const port =
-    Number.isFinite(webDevPort) && webDevPort > 0 ? webDevPort : 3000;
+  const port = Number.isFinite(webDevPort) && webDevPort > 0 ? webDevPort : 3000;
 
   return {
     envDir: monorepoRoot,
@@ -32,8 +31,8 @@ export default defineConfig(({ mode }) => {
       port,
       strictPort: true,
       proxy: {
-        "/api": { target: "http://127.0.0.1:5001", changeOrigin: true },
-        "/static": { target: "http://127.0.0.1:5001", changeOrigin: true },
+        "/api": { target: "http://127.0.0.1:3001", changeOrigin: true },
+        "/static": { target: "http://127.0.0.1:3001", changeOrigin: true },
       },
     },
     plugins: [
@@ -42,10 +41,10 @@ export default defineConfig(({ mode }) => {
         /** Hashed Vite assets are safe to cache forever; improves repeat visits (Lighthouse “cache lifetimes”). */
         routeRules: {
           "/api/**": {
-            proxy: "http://127.0.0.1:5001/api/**",
+            proxy: "http://127.0.0.1:3001/api/**",
           },
           "/static/**": {
-            proxy: "http://127.0.0.1:5001/static/**",
+            proxy: "http://127.0.0.1:3001/static/**",
           },
           "/assets/**": {
             headers: { "cache-control": "public, max-age=31536000, immutable" },

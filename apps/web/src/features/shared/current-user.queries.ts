@@ -14,6 +14,7 @@ export type CurrentUser = {
   name: string;
   email: string;
   emailVerified: boolean;
+  mustChangePassword: boolean;
   image: string | null;
   role: "customer" | "admin";
   createdAt: string;

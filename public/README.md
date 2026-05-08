@@ -1,6 +1,6 @@
 # public/
 
-Static image assets served by the Hono API at `http://localhost:5001/static/*`.
+Static image assets served by the Hono API at `http://localhost:3001/static/*`.
 
 Anything you drop in this folder is reachable at the same relative path, e.g.
 `public/categories/pottery.jpg` is served at `/static/categories/pottery.jpg`.

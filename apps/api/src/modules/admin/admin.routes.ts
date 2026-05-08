@@ -1,13 +1,18 @@
+import { randomUUID } from "node:crypto";
+
 import { ContentLocale, type OrderStatus, Prisma, type ShopStatus } from "@prisma/client";
+import { hashPassword } from "better-auth/crypto";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 
 import { requireAdminUserId } from "../../lib/auth";
 import { prisma } from "../../lib/db";
-import { getTelegramMiniAppUrl } from "../../lib/env";
+import { getEnv, getTelegramMiniAppUrl } from "../../lib/env";
 import { toNumber } from "../../lib/money";
+import { auth } from "../auth/auth";
 import {
   createCategorySchema,
+  createAdminShopSchema,
   createPromoCodeSchema,
   createPromotionSchema,
   listQuerySchema,
@@ -38,6 +43,51 @@ function parseListQuery(c: { req: { query: (k: string) => string | undefined } }
     throw new HTTPException(400, { message: "Invalid query" });
   }
   return parsed.data;
+}
+
+function passwordResetRedirectTo(): string {
+  return `${getEnv().PUBLIC_WEB_URL.replace(/\/$/, "")}/en/auth/reset-password`;
+}
+
+async function sendPasswordSetupEmail(email: string) {
+  await auth.api.requestPasswordReset({
+    body: {
+      email,
+      redirectTo: passwordResetRedirectTo(),
+    },
+  });
+}
+
+async function upsertCredentialAccount(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  password: string,
+) {
+  const now = new Date();
+  const passwordHash = await hashPassword(password);
+  const account = await tx.account.findFirst({
+    where: { userId, providerId: "credential" },
+    select: { id: true },
+  });
+  if (account) {
+    await tx.account.update({
+      where: { id: account.id },
+      data: { password: passwordHash, updatedAt: now },
+    });
+    return;
+  }
+
+  await tx.account.create({
+    data: {
+      id: randomUUID(),
+      accountId: userId,
+      providerId: "credential",
+      userId,
+      password: passwordHash,
+      createdAt: now,
+      updatedAt: now,
+    },
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -303,6 +353,79 @@ adminRouter.get("/admin/shops/:id", async (c) => {
   return c.json({ shop });
 });
 
+adminRouter.post("/admin/shops", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = createAdminShopSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new HTTPException(400, { message: "Invalid body" });
+  }
+  const d = parsed.data;
+  const ownerEmail = d.ownerEmail.trim().toLowerCase();
+
+  let ownerUserId: string | undefined;
+
+  try {
+    const shop = await prisma.$transaction(async (tx) => {
+      const owner = await tx.user.findUnique({
+        where: { email: ownerEmail },
+        select: { id: true, ownedShop: { select: { id: true } } },
+      });
+      if (owner?.ownedShop) {
+        throw new HTTPException(400, { message: "Owner already has a shop" });
+      }
+      if (owner) {
+        ownerUserId = owner.id;
+      } else {
+        const now = new Date();
+        const createdOwner = await tx.user.create({
+          data: {
+            id: randomUUID(),
+            name: d.name,
+            email: ownerEmail,
+            emailVerified: true,
+            mustChangePassword: true,
+            role: "customer",
+            createdAt: now,
+            updatedAt: now,
+          },
+          select: { id: true },
+        });
+        ownerUserId = createdOwner.id;
+      }
+      await upsertCredentialAccount(tx, ownerUserId, d.initialPassword);
+      await tx.user.update({
+        where: { id: ownerUserId },
+        data: { mustChangePassword: true, emailVerified: true },
+        select: { id: true },
+      });
+
+      return tx.shop.create({
+        data: {
+          name: d.name,
+          slug: d.slug,
+          ownerUserId,
+          status: d.status,
+          description: d.description,
+          imageUrl: d.imageUrl,
+          contactEmail: d.contactEmail ?? ownerEmail,
+          contactPhone: d.contactPhone,
+          businessType: d.businessType,
+          listingsLimit: d.listingsLimit,
+          onboardingCompletedAt: new Date(),
+        },
+        select: { id: true, slug: true, name: true, status: true },
+      });
+    });
+
+    return c.json({ shop }, 201);
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw new HTTPException(400, { message: "Shop slug or owner is already in use" });
+    }
+    throw err;
+  }
+});
+
 adminRouter.patch("/admin/shops/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json().catch(() => null);
@@ -320,6 +443,70 @@ adminRouter.patch("/admin/shops/:id", async (c) => {
     select: { id: true, status: true },
   });
   return c.json({ shop: updated });
+});
+
+adminRouter.post("/admin/shops/:id/password-reset", async (c) => {
+  const id = c.req.param("id");
+
+  const { email } = await prisma.$transaction(async (tx) => {
+    const shop = await tx.shop.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        contactEmail: true,
+        owner: { select: { id: true, email: true } },
+      },
+    });
+    if (!shop) {
+      throw new HTTPException(404, { message: "Shop not found" });
+    }
+
+    if (shop.owner) {
+      return { email: shop.owner.email.trim().toLowerCase() };
+    }
+
+    const contactEmail = shop.contactEmail?.trim().toLowerCase();
+    if (!contactEmail) {
+      throw new HTTPException(400, { message: "Shop does not have an owner or contact email" });
+    }
+
+    const existingUser = await tx.user.findUnique({
+      where: { email: contactEmail },
+      select: { id: true, ownedShop: { select: { id: true } } },
+    });
+    if (existingUser?.ownedShop && existingUser.ownedShop.id !== shop.id) {
+      throw new HTTPException(400, { message: "Email already owns another shop" });
+    }
+
+    const ownerId =
+      existingUser?.id ??
+      (
+        await tx.user.create({
+          data: {
+            id: randomUUID(),
+            name: shop.name,
+            email: contactEmail,
+            emailVerified: false,
+            role: "customer",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          select: { id: true },
+        })
+      ).id;
+
+    await tx.shop.update({
+      where: { id: shop.id },
+      data: { ownerUserId: ownerId },
+      select: { id: true },
+    });
+
+    return { email: contactEmail };
+  });
+
+  await sendPasswordSetupEmail(email);
+  return c.json({ ok: true, email });
 });
 
 // ---------------------------------------------------------------------------
