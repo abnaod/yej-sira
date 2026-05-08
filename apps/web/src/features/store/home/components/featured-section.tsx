@@ -20,7 +20,7 @@ export function FeaturedSection() {
       <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
         {t("popularPicks")}
       </h2>
-      <div className="mt-8 grid grid-cols-2 gap-x-5 gap-y-6 sm:mt-10 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-6 sm:mt-5 sm:grid-cols-3 lg:grid-cols-4">
         {data.listings.map((listing) => (
           <ListingCard
             key={listing.id}
