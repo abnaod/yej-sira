@@ -94,6 +94,13 @@ export const auth = betterAuth({
   account: {
     storeStateStrategy: "cookie",
   },
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60,
+      strategy: "compact",
+    },
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: env.REQUIRE_EMAIL_VERIFICATION,

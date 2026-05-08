@@ -56,7 +56,6 @@ export function ListingPage() {
           messageSellerDisabled={listing.isViewerShopOwner}
           name={listing.name}
           shop={listing.shop}
-          monthlyPrice={99.99}
           financingNote="Suggested payments with 6 months special financing"
           rating={listing.rating}
           reviewCount={listing.reviewCount}

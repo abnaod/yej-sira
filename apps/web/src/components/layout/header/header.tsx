@@ -52,8 +52,9 @@ export function Header() {
   const cartItemCount =
     cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
+  const fullName = session?.user?.name?.trim();
   const displayName =
-    session?.user?.name?.trim() ||
+    fullName?.split(/\s+/)[0] ||
     session?.user?.email?.split("@")[0] ||
     t("account");
 
@@ -80,9 +81,9 @@ export function Header() {
 
         <div className="hidden shrink-0 items-center gap-1 md:flex">
           {isPending ? (
-            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5 px-1.5 py-1 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
-              <span className="hidden sm:inline">…</span>
+              <span className="hidden sm:inline">{t("signIn")}</span>
             </span>
           ) : session?.user ? (
             <DropdownMenu>
@@ -156,7 +157,7 @@ export function Header() {
               onClick={() => openAuth()}
             >
               <User className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("account")}</span>
+              <span className="hidden sm:inline">{t("signIn")}</span>
             </Button>
           )}
           {!isPending && session?.user && featureConversations && (

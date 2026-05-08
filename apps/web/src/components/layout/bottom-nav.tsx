@@ -22,6 +22,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { useAuthDialog } from "@/features/shared/auth";
 import { currentUserQuery } from "@/features/shared/current-user.queries";
 import { categoriesQuery } from "@/features/store/home";
@@ -178,14 +185,11 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
         </ul>
       </nav>
 
-      <Sheet open={categoriesOpen} onOpenChange={setCategoriesOpen}>
-        <SheetContent
-          side="bottom"
-          className="max-h-[80dvh] gap-0 rounded-t-xl p-0"
-        >
-          <SheetHeader className="border-b border-border">
-            <SheetTitle>{t("categories")}</SheetTitle>
-          </SheetHeader>
+      <Drawer open={categoriesOpen} onOpenChange={setCategoriesOpen}>
+        <DrawerContent className="max-h-[80dvh] gap-0">
+          <DrawerHeader className="border-b border-border text-left">
+            <DrawerTitle>{t("categories")}</DrawerTitle>
+          </DrawerHeader>
           <div className="overflow-y-auto pb-[env(safe-area-inset-bottom)]">
             {categoriesQ.isPending ? (
               <p className="px-4 py-6 text-sm text-muted-foreground">
@@ -206,7 +210,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
                     key={cat.id}
                     className="border-b border-border last:border-none"
                   >
-                    <SheetClose asChild>
+                    <DrawerClose asChild>
                       <Link
                         to="/$locale/categories/$categoryId"
                         params={{ locale, categoryId: cat.slug }}
@@ -225,14 +229,14 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
                           aria-hidden
                         />
                       </Link>
-                    </SheetClose>
+                    </DrawerClose>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
 
       <Sheet open={accountOpen} onOpenChange={setAccountOpen}>
         <SheetContent side="bottom" className="gap-0 rounded-t-xl p-0">

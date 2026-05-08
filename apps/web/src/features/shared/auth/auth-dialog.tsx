@@ -10,9 +10,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import type { Locale } from "@ys/intl";
@@ -120,6 +128,7 @@ export function AuthDialog({
   const [error, setError] = React.useState<string | null>(null);
   const [oauthError, setOauthError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState(false);
+  const isMobile = useIsMobile();
 
   React.useEffect(() => {
     if (!open) {
@@ -263,218 +272,225 @@ export function AuthDialog({
   };
 
   const isCheckout = mode === "checkout";
+  const title = isCheckout
+    ? "Go to checkout"
+    : tab === "login"
+      ? "Sign in to your account"
+      : "Create your YEJSIRA account";
+  const description = "Sign in or create an account to shop and track orders.";
+  const body = (
+    <div className="flex flex-col gap-6">
+      {isCheckout && (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            className="w-full text-sm"
+            disabled={pending}
+            onClick={() => {
+              onContinueAsGuest?.();
+              onOpenChange(false);
+            }}
+          >
+            Continue as a guest
+          </Button>
+          <div className="flex items-center gap-3">
+            <Separator className="flex-1" />
+            <span className="whitespace-nowrap text-sm text-muted-foreground">
+              OR
+            </span>
+            <Separator className="flex-1" />
+          </div>
+          <p className="text-base font-semibold">Sign in or register</p>
+        </>
+      )}
+      <div className="flex flex-col gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="w-full text-sm text-foreground hover:text-foreground"
+          disabled={pending}
+          onClick={() => void handleGoogle()}
+        >
+          <GoogleIcon className="size-4 shrink-0" />
+          {tab === "login" ? "Sign in with Google" : "Sign up with Google"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="w-full text-sm text-foreground hover:text-foreground"
+          disabled={pending}
+          onClick={() => void handleTelegram()}
+        >
+          <TelegramIcon className="size-4 shrink-0" />
+          {tab === "login" ? "Sign in with Telegram" : "Sign up with Telegram"}
+        </Button>
+        {oauthError && (
+          <p className="text-sm text-destructive" role="alert">
+            {oauthError}
+          </p>
+        )}
+        <div className="mt-3 flex items-center gap-3">
+          <Separator className="flex-1" />
+          <span className="whitespace-nowrap text-sm text-muted-foreground">
+            Or with email
+          </span>
+          <Separator className="flex-1" />
+        </div>
+      </div>
+      <div>
+        {tab === "login" ? (
+          <form onSubmit={handleLogin} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="auth-login-email">Email</Label>
+              <Input
+                id="auth-login-email"
+                type="email"
+                autoComplete="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="auth-login-password">Password</Label>
+                <Link
+                  to="/$locale/auth/forgot-password"
+                  params={{ locale }}
+                  className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => onOpenChange(false)}
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+              <Input
+                id="auth-login-password"
+                type="password"
+                autoComplete="current-password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+            <Button type="submit" size="lg" disabled={pending} className="text-sm">
+              {pending ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
+        ) : (
+          <form onSubmit={handleRegister} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="auth-reg-first">First name</Label>
+              <Input
+                id="auth-reg-first"
+                type="text"
+                autoComplete="given-name"
+                value={regFirstName}
+                onChange={(e) => setRegFirstName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="auth-reg-email">Email</Label>
+              <Input
+                id="auth-reg-email"
+                type="email"
+                autoComplete="email"
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="auth-reg-password">Password</Label>
+              <Input
+                id="auth-reg-password"
+                type="password"
+                autoComplete="new-password"
+                value={regPassword}
+                onChange={(e) => setRegPassword(e.target.value)}
+                required
+                minLength={8}
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            )}
+            <Button type="submit" size="lg" disabled={pending} className="text-sm">
+              {pending ? "Creating account…" : "Create account"}
+            </Button>
+          </form>
+        )}
+      </div>
+
+      <div>
+        {tab === "login" ? (
+          <p className="text-center text-sm text-muted-foreground">
+            New to YEJSIRA?{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-sm font-medium"
+              onClick={() => switchAuthMode("register")}
+            >
+              Create account
+            </Button>
+          </p>
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-sm font-medium"
+              onClick={() => switchAuthMode("login")}
+            >
+              Sign in
+            </Button>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="max-h-[92dvh] gap-0">
+          <DrawerHeader className="border-b border-border text-left">
+            <DrawerTitle>{title}</DrawerTitle>
+            {!isCheckout && <DrawerDescription>{description}</DrawerDescription>}
+          </DrawerHeader>
+          <div className="overflow-y-auto px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+            {body}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md gap-6 p-8 pb-6">
         <DialogHeader className="gap-1.5">
-          <DialogTitle>
-            {isCheckout
-              ? "Go to checkout"
-              : tab === "login"
-                ? "Sign in to your account"
-                : "Create your YEJSIRA account"}
-          </DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
           {!isCheckout && (
-            <DialogDescription>
-              Sign in or create an account to shop and track orders.
-            </DialogDescription>
+            <DialogDescription>{description}</DialogDescription>
           )}
         </DialogHeader>
 
         <DialogBody className="flex-none max-h-[85dvh] py-2">
-          <div className="flex flex-col gap-6">
-            {isCheckout && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  className="w-full text-sm"
-                  disabled={pending}
-                  onClick={() => {
-                    onContinueAsGuest?.();
-                    onOpenChange(false);
-                  }}
-                >
-                  Continue as a guest
-                </Button>
-                <div className="flex items-center gap-3">
-                  <Separator className="flex-1" />
-                  <span className="whitespace-nowrap text-sm text-muted-foreground">
-                    OR
-                  </span>
-                  <Separator className="flex-1" />
-                </div>
-                <p className="text-base font-semibold">Sign in or register</p>
-              </>
-            )}
-            <div className="flex flex-col gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="w-full text-sm text-foreground hover:text-foreground"
-                disabled={pending}
-                onClick={() => void handleGoogle()}
-              >
-                <GoogleIcon className="size-4 shrink-0" />
-                {tab === "login" ? "Sign in with Google" : "Sign up with Google"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="w-full text-sm text-foreground hover:text-foreground"
-                disabled={pending}
-                onClick={() => void handleTelegram()}
-              >
-                <TelegramIcon className="size-4 shrink-0" />
-                {tab === "login" ? "Sign in with Telegram" : "Sign up with Telegram"}
-              </Button>
-              {oauthError && (
-                <p className="text-sm text-destructive" role="alert">
-                  {oauthError}
-                </p>
-              )}
-              <div className="mt-3 flex items-center gap-3">
-                <Separator className="flex-1" />
-                <span className="whitespace-nowrap text-sm text-muted-foreground">
-                  Or with email
-                </span>
-                <Separator className="flex-1" />
-              </div>
-            </div>
-            <div>
-              {tab === "login" ? (
-                <form onSubmit={handleLogin} className="flex flex-col gap-5">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="auth-login-email">Email</Label>
-                    <Input
-                      id="auth-login-email"
-                      type="email"
-                      autoComplete="email"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <Label htmlFor="auth-login-password">Password</Label>
-                      <Link
-                        to="/$locale/auth/forgot-password"
-                        params={{ locale }}
-                        className="shrink-0 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        onClick={() => onOpenChange(false)}
-                      >
-                        Forgot your password?
-                      </Link>
-                    </div>
-                    <Input
-                      id="auth-login-password"
-                      type="password"
-                      autoComplete="current-password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  {error && (
-                    <p className="text-sm text-destructive" role="alert">
-                      {error}
-                    </p>
-                  )}
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={pending}
-                    className="text-sm"
-                  >
-                    {pending ? "Signing in…" : "Sign in"}
-                  </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleRegister} className="flex flex-col gap-5">
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="auth-reg-first">First name</Label>
-                    <Input
-                      id="auth-reg-first"
-                      type="text"
-                      autoComplete="given-name"
-                      value={regFirstName}
-                      onChange={(e) => setRegFirstName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="auth-reg-email">Email</Label>
-                    <Input
-                      id="auth-reg-email"
-                      type="email"
-                      autoComplete="email"
-                      value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="auth-reg-password">Password</Label>
-                    <Input
-                      id="auth-reg-password"
-                      type="password"
-                      autoComplete="new-password"
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      required
-                      minLength={8}
-                    />
-                  </div>
-                  {error && (
-                    <p className="text-sm text-destructive" role="alert">
-                      {error}
-                    </p>
-                  )}
-                  <Button
-                    type="submit"
-                    size="lg"
-                    disabled={pending}
-                    className="text-sm"
-                  >
-                    {pending ? "Creating account…" : "Create account"}
-                  </Button>
-                </form>
-              )}
-            </div>
-
-            <div>
-              {tab === "login" ? (
-                <p className="text-center text-sm text-muted-foreground">
-                  New to YEJSIRA?{" "}
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="h-auto p-0 text-sm font-medium"
-                    onClick={() => switchAuthMode("register")}
-                  >
-                    Create account
-                  </Button>
-                </p>
-              ) : (
-                <p className="text-center text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <Button
-                    type="button"
-                    variant="link"
-                    className="h-auto p-0 text-sm font-medium"
-                    onClick={() => switchAuthMode("login")}
-                  >
-                    Sign in
-                  </Button>
-                </p>
-              )}
-            </div>
-          </div>
+          {body}
         </DialogBody>
       </DialogContent>
     </Dialog>
