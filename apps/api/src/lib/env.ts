@@ -74,6 +74,21 @@ export type Env = z.infer<typeof rawEnvSchema>;
 
 let cached: Env | null = null;
 
+function addOriginWithLoopbackPair(out: Set<string>, origin: string | undefined) {
+  if (!origin) return;
+  out.add(origin);
+  try {
+    const u = new URL(origin);
+    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") {
+      const otherHost = u.hostname === "localhost" ? "127.0.0.1" : "localhost";
+      const portPart = u.port ? `:${u.port}` : "";
+      out.add(`${u.protocol}//${otherHost}${portPart}`);
+    }
+  } catch {
+    /* keep the original value only */
+  }
+}
+
 export function getEnv(): Env {
   if (cached) return cached;
   const parsed = envSchema.safeParse(process.env);
@@ -101,16 +116,13 @@ export function getEnv(): Env {
 export function getBrowserOrigins(): string[] {
   const e = getEnv();
   if (e.NODE_ENV === "production") return [e.CORS_ORIGIN];
-  const out = new Set<string>([e.CORS_ORIGIN]);
-  try {
-    const u = new URL(e.CORS_ORIGIN);
-    if (u.hostname === "localhost" || u.hostname === "127.0.0.1") {
-      const otherHost = u.hostname === "localhost" ? "127.0.0.1" : "localhost";
-      const portPart = u.port ? `:${u.port}` : "";
-      out.add(`${u.protocol}//${otherHost}${portPart}`);
-    }
-  } catch {
-    /* keep CORS_ORIGIN only */
-  }
+  const out = new Set<string>();
+  addOriginWithLoopbackPair(out, e.CORS_ORIGIN);
+  addOriginWithLoopbackPair(out, e.PUBLIC_WEB_URL);
+
+  // Local Vite defaults stay trusted even when dev env values point at an
+  // external tunnel for OAuth callback testing.
+  addOriginWithLoopbackPair(out, "http://localhost:3000");
+
   return [...out];
 }

@@ -30,7 +30,8 @@ const shopSlugSchema = z
 export const createAdminShopSchema = z.object({
   name: z.string().min(1).max(120),
   slug: shopSlugSchema,
-  ownerEmail: z.string().email().optional(),
+  ownerEmail: z.string().email(),
+  initialPassword: z.string().min(8).max(256),
   status: z.enum(["pending", "active", "rejected", "suspended"]).default("active"),
   description: z.string().max(2000).optional(),
   imageUrl: z.string().max(500).optional(),

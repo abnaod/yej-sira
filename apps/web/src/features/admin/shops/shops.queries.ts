@@ -27,7 +27,8 @@ export type AdminShopsResponse = {
 export type CreateAdminShopBody = {
   name: string;
   slug: string;
-  ownerEmail?: string;
+  ownerEmail: string;
+  initialPassword: string;
   status?: AdminShopListItem["status"];
   description?: string;
   imageUrl?: string;
@@ -88,6 +89,22 @@ export function updateAdminShopStatusMutation(queryClient: QueryClient) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["admin", "shops"] });
       void queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
+    },
+  });
+}
+
+export function sendAdminShopPasswordResetMutation(queryClient: QueryClient) {
+  return mutationOptions({
+    mutationKey: ["admin", "shops", "password-reset"] as const,
+    mutationFn: (id: string) =>
+      apiFetchJson<{ ok: true; email: string }>(
+        `/api/admin/shops/${encodeURIComponent(id)}/password-reset`,
+        {
+          method: "POST",
+        },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin", "shops"] });
     },
   });
 }

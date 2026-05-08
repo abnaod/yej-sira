@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { type ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Loader2, MoreHorizontal, Plus, Trash2, Upload } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 
@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { assetUrl, uploadImage } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 import type { Locale } from "@ys/intl";
 
@@ -36,6 +37,7 @@ import { SellerShellDataTable } from "@/features/seller/shared/shell-data-table"
 import {
   adminShopsQuery,
   createAdminShopMutation,
+  sendAdminShopPasswordResetMutation,
   updateAdminShopStatusMutation,
   type AdminShopListItem,
 } from "./shops.queries";
@@ -65,10 +67,10 @@ type CreateShopFormState = {
   name: string;
   slug: string;
   ownerEmail: string;
+  initialPassword: string;
   status: Status;
   description: string;
   imageUrl: string;
-  contactEmail: string;
   contactPhone: string;
   businessType: "" | "individual" | "business";
   listingsLimit: string;
@@ -79,10 +81,10 @@ function emptyCreateShopForm(): CreateShopFormState {
     name: "",
     slug: "",
     ownerEmail: "",
+    initialPassword: "",
     status: "active",
     description: "",
     imageUrl: "",
-    contactEmail: "",
     contactPhone: "",
     businessType: "",
     listingsLimit: "20",
@@ -103,36 +105,63 @@ function optionalString(value: string) {
   return trimmed ? trimmed : undefined;
 }
 
+function generateTemporaryPassword() {
+  return `Ys-${Math.random().toString(36).slice(2, 8)}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+}
+
 function CreateShopDialog() {
   const queryClient = useQueryClient();
+  const locale = useLocale() as Locale;
   const mutation = useMutation(createAdminShopMutation(queryClient));
   const [open, setOpen] = React.useState(false);
   const [form, setForm] = React.useState<CreateShopFormState>(emptyCreateShopForm);
   const [slugEdited, setSlugEdited] = React.useState(false);
+  const logoInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [logoUploading, setLogoUploading] = React.useState(false);
+  const [logoError, setLogoError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (open) {
       setForm(emptyCreateShopForm());
       setSlugEdited(false);
+      setLogoError(null);
+      setLogoUploading(false);
     }
   }, [open]);
 
-  const pending = mutation.isPending;
+  const pending = mutation.isPending || logoUploading;
   const bind = <K extends keyof CreateShopFormState>(key: K) =>
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm((current) => ({ ...current, [key]: event.target.value }));
 
+  const handleLogoFileChosen = async (file: File) => {
+    setLogoError(null);
+    setLogoUploading(true);
+    try {
+      const url = await uploadImage(file, "shops", locale);
+      setForm((current) => ({ ...current, imageUrl: url }));
+    } catch (err) {
+      setLogoError(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (logoUploading) return;
     mutation.mutate(
       {
         name: form.name.trim(),
         slug: form.slug.trim(),
-        ownerEmail: optionalString(form.ownerEmail),
+        ownerEmail: form.ownerEmail.trim(),
+        initialPassword: form.initialPassword,
         status: form.status,
         description: optionalString(form.description),
         imageUrl: optionalString(form.imageUrl),
-        contactEmail: optionalString(form.contactEmail),
+        contactEmail: optionalString(form.ownerEmail),
         contactPhone: optionalString(form.contactPhone),
         businessType: form.businessType || undefined,
         listingsLimit: Number(form.listingsLimit) || 20,
@@ -194,14 +223,40 @@ function CreateShopDialog() {
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="shop-owner">Owner email</Label>
+              <Label htmlFor="shop-email">Email address</Label>
               <Input
-                id="shop-owner"
+                id="shop-email"
                 type="email"
+                required
                 value={form.ownerEmail}
                 onChange={bind("ownerEmail")}
                 placeholder="seller@example.com"
               />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="shop-initial-password">Initial password</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="shop-initial-password"
+                  type="text"
+                  minLength={8}
+                  required
+                  value={form.initialPassword}
+                  onChange={bind("initialPassword")}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    setForm((current) => ({
+                      ...current,
+                      initialPassword: generateTemporaryPassword(),
+                    }))
+                  }
+                >
+                  Generate
+                </Button>
+              </div>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="shop-status">Status</Label>
@@ -212,16 +267,6 @@ function CreateShopDialog() {
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="shop-contact-email">Contact email</Label>
-              <Input
-                id="shop-contact-email"
-                type="email"
-                value={form.contactEmail}
-                onChange={bind("contactEmail")}
-                placeholder="hello@shop.com"
-              />
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="shop-contact-phone">Contact phone</Label>
@@ -255,14 +300,70 @@ function CreateShopDialog() {
                 onChange={bind("listingsLimit")}
               />
             </div>
-            <div className="grid gap-1.5 sm:col-span-2">
-              <Label htmlFor="shop-image-url">Logo URL</Label>
-              <Input
-                id="shop-image-url"
-                value={form.imageUrl}
-                onChange={bind("imageUrl")}
-                placeholder="/static/shops/logo.webp or https://..."
+            <div className="flex flex-col gap-2 sm:col-span-2">
+              <Label>Logo image</Label>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) void handleLogoFileChosen(file);
+                  event.target.value = "";
+                }}
               />
+              <div className="flex items-center gap-4 rounded-lg border border-dashed border-border p-4">
+                <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted">
+                  {form.imageUrl ? (
+                    <img
+                      src={assetUrl(form.imageUrl)}
+                      alt="Shop logo preview"
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No logo</span>
+                  )}
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={logoUploading}
+                      onClick={() => logoInputRef.current?.click()}
+                    >
+                      {logoUploading ? (
+                        <>
+                          <Loader2 data-icon="inline-start" className="animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload data-icon="inline-start" />
+                          {form.imageUrl ? "Replace logo" : "Upload logo"}
+                        </>
+                      )}
+                    </Button>
+                    {form.imageUrl && !logoUploading ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          setForm((current) => ({ ...current, imageUrl: "" }))
+                        }
+                      >
+                        <Trash2 data-icon="inline-start" />
+                        Remove
+                      </Button>
+                    ) : null}
+                  </div>
+                  <p className="text-xs text-muted-foreground">PNG, JPG, WEBP, or GIF. Max 5MB.</p>
+                  {logoError ? <p className="text-xs text-destructive">{logoError}</p> : null}
+                </div>
+              </div>
             </div>
             <div className="grid gap-1.5 sm:col-span-2">
               <Label htmlFor="shop-description">Description</Label>
@@ -290,11 +391,12 @@ function CreateShopDialog() {
 
 function ShopStatusActions({ shop }: { shop: AdminShopListItem }) {
   const queryClient = useQueryClient();
-  const mutation = useMutation(updateAdminShopStatusMutation(queryClient));
+  const statusMutation = useMutation(updateAdminShopStatusMutation(queryClient));
+  const passwordResetMutation = useMutation(sendAdminShopPasswordResetMutation(queryClient));
   const locale = useLocale() as Locale;
 
   const setStatus = (status: Status) => {
-    mutation.mutate(
+    statusMutation.mutate(
       { id: shop.id, status },
       {
         onSuccess: () => toast.success(`Shop marked ${status}`),
@@ -302,6 +404,14 @@ function ShopStatusActions({ shop }: { shop: AdminShopListItem }) {
           toast.error(err instanceof Error ? err.message : "Failed to update shop"),
       },
     );
+  };
+
+  const sendPasswordReset = () => {
+    passwordResetMutation.mutate(shop.id, {
+      onSuccess: (data) => toast.success(`Password setup email sent to ${data.email}`),
+      onError: (err: unknown) =>
+        toast.error(err instanceof Error ? err.message : "Failed to send password email"),
+    });
   };
 
   return (
@@ -324,10 +434,20 @@ function ShopStatusActions({ shop }: { shop: AdminShopListItem }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+        <DropdownMenuItem
+          disabled={passwordResetMutation.isPending}
+          onSelect={(e) => {
+            e.preventDefault();
+            sendPasswordReset();
+          }}
+        >
+          Send password setup email
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         {ALL_STATUSES.filter((s) => s !== shop.status).map((s) => (
           <DropdownMenuItem
             key={s}
-            disabled={mutation.isPending}
+            disabled={statusMutation.isPending}
             onSelect={(e) => {
               e.preventDefault();
               setStatus(s);
@@ -409,12 +529,10 @@ const columns: ColumnDef<AdminShopListItem>[] = [
 
 export function AdminShopsPage() {
   const [search, setSearch] = React.useState("");
-  const [status, setStatus] = React.useState<Status | "all">("all");
   const [page, setPage] = React.useState(1);
   const { data, isLoading } = useQuery(
     adminShopsQuery({
       q: search || undefined,
-      status: status === "all" ? undefined : status,
       page,
       pageSize: 25,
     }),
@@ -432,26 +550,9 @@ export function AdminShopsPage() {
             setPage(1);
           }}
         />
-        <div className="flex gap-1">
-          {(["all", ...ALL_STATUSES] as const).map((s) => (
-            <Button
-              key={s}
-              variant={status === s ? "default" : "outline"}
-              size="sm"
-              className="h-8 capitalize"
-              onClick={() => {
-                setStatus(s);
-                setPage(1);
-              }}
-            >
-              {s}
-            </Button>
-          ))}
+        <div className="ml-auto">
+          <CreateShopDialog />
         </div>
-        <span className="ml-auto text-xs text-muted-foreground">
-          {data ? `${data.total} shop${data.total === 1 ? "" : "s"}` : "…"}
-        </span>
-        <CreateShopDialog />
       </div>
 
       <SellerShellDataTable
