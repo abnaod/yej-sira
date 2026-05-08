@@ -24,6 +24,19 @@ export type AdminShopsResponse = {
   totalPages: number;
 };
 
+export type CreateAdminShopBody = {
+  name: string;
+  slug: string;
+  ownerEmail?: string;
+  status?: AdminShopListItem["status"];
+  description?: string;
+  imageUrl?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  businessType?: "individual" | "business";
+  listingsLimit?: number;
+};
+
 export const adminShopsQuery = (
   params: { q?: string; status?: string; page?: number; pageSize?: number } = {},
 ) => {
@@ -39,6 +52,24 @@ export const adminShopsQuery = (
       apiFetchJson<AdminShopsResponse>(`/api/admin/shops${qs ? `?${qs}` : ""}`),
   });
 };
+
+export function createAdminShopMutation(queryClient: QueryClient) {
+  return mutationOptions({
+    mutationKey: ["admin", "shops", "create"] as const,
+    mutationFn: (body: CreateAdminShopBody) =>
+      apiFetchJson<{ shop: { id: string; slug: string; name: string; status: string } }>(
+        "/api/admin/shops",
+        {
+          method: "POST",
+          body: JSON.stringify(body),
+        },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin", "shops"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
+    },
+  });
+}
 
 export function updateAdminShopStatusMutation(queryClient: QueryClient) {
   return mutationOptions({

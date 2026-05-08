@@ -7,6 +7,7 @@ import { prisma } from "../../lib/db";
 import { toNumber } from "../../lib/money";
 import {
   createCategorySchema,
+  createAdminShopSchema,
   createPromoCodeSchema,
   createPromotionSchema,
   listQuerySchema,
@@ -299,6 +300,55 @@ adminRouter.get("/admin/shops/:id", async (c) => {
     throw new HTTPException(404, { message: "Shop not found" });
   }
   return c.json({ shop });
+});
+
+adminRouter.post("/admin/shops", async (c) => {
+  const body = await c.req.json().catch(() => null);
+  const parsed = createAdminShopSchema.safeParse(body);
+  if (!parsed.success) {
+    throw new HTTPException(400, { message: "Invalid body" });
+  }
+  const d = parsed.data;
+
+  let ownerUserId: string | undefined;
+  if (d.ownerEmail) {
+    const owner = await prisma.user.findUnique({
+      where: { email: d.ownerEmail },
+      select: { id: true, ownedShop: { select: { id: true } } },
+    });
+    if (!owner) {
+      throw new HTTPException(400, { message: "Owner email does not match a user" });
+    }
+    if (owner.ownedShop) {
+      throw new HTTPException(400, { message: "Owner already has a shop" });
+    }
+    ownerUserId = owner.id;
+  }
+
+  try {
+    const shop = await prisma.shop.create({
+      data: {
+        name: d.name,
+        slug: d.slug,
+        ownerUserId,
+        status: d.status,
+        description: d.description,
+        imageUrl: d.imageUrl,
+        contactEmail: d.contactEmail,
+        contactPhone: d.contactPhone,
+        businessType: d.businessType,
+        listingsLimit: d.listingsLimit,
+        onboardingCompletedAt: new Date(),
+      },
+      select: { id: true, slug: true, name: true, status: true },
+    });
+    return c.json({ shop }, 201);
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      throw new HTTPException(400, { message: "Shop slug or owner is already in use" });
+    }
+    throw err;
+  }
 });
 
 adminRouter.patch("/admin/shops/:id", async (c) => {

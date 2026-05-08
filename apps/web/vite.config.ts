@@ -21,11 +21,11 @@ export default defineConfig({
   server: {
     /** Listen on all interfaces so both `localhost` and `127.0.0.1` work in dev. */
     host: true,
-    port: 5000,
+    port: 3000,
     strictPort: true,
     proxy: {
-      "/api": { target: "http://127.0.0.1:5001", changeOrigin: true },
-      "/static": { target: "http://127.0.0.1:5001", changeOrigin: true },
+      "/api": { target: "http://127.0.0.1:3001", changeOrigin: true },
+      "/static": { target: "http://127.0.0.1:3001", changeOrigin: true },
     },
   },
   plugins: [
