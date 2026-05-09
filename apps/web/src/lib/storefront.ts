@@ -31,13 +31,31 @@ export type StorefrontHostContext = {
 };
 
 export function normalizeHost(raw: string | null | undefined): string {
-  return (raw ?? "")
+  const first = (raw ?? "")
     .trim()
     .toLowerCase()
+    .split(",")[0]
+    ?.trim();
+  return (first ?? "")
     .replace(/^https?:\/\//, "")
     .replace(/\/.*$/, "")
     .replace(/:\d+$/, "")
     .replace(/\.$/, "");
+}
+
+/**
+ * Infer marketplace / shop-subdomain base from the request host when VITE_* env
+ * is absent (e.g. production image built without bake args). `shop.example.com`
+ * → `example.com`; apex `example.com` unchanged; `shop.localhost` → `localhost`.
+ */
+export function inferRegistrarBaseDomainFromHost(hostInput: string | null | undefined): string {
+  const host = normalizeHost(hostInput);
+  if (!host) return "";
+  if (host === "localhost" || host === "127.0.0.1") return host;
+  if (host.endsWith(".localhost")) return "localhost";
+  const parts = host.split(".");
+  if (parts.length >= 3) return parts.slice(1).join(".");
+  return host;
 }
 
 export function isValidShopSlug(slug: string) {
@@ -48,9 +66,7 @@ export function getMarketplaceHost() {
   const fromEnv = normalizeHost(import.meta.env.VITE_MARKETPLACE_HOST as string | undefined);
   if (fromEnv) return fromEnv;
   if (typeof window === "undefined") return "";
-  const current = normalizeHost(window.location.host);
-  if (current.endsWith(".localhost")) return "localhost";
-  return current;
+  return inferRegistrarBaseDomainFromHost(window.location.host);
 }
 
 export function getShopSubdomainBaseDomain() {
@@ -71,8 +87,11 @@ export function resolveStorefrontHost(hostInput: string | null | undefined): Sto
   if (!host) return { isStorefront: false, shopSlug: null, host: null };
 
   const reserved = getReservedSubdomains();
-  const base = getShopSubdomainBaseDomain();
-  const marketplaceHost = getMarketplaceHost();
+  const baseFromEnv = normalizeHost(import.meta.env.VITE_SHOP_SUBDOMAIN_BASE_DOMAIN as string | undefined);
+  const marketplaceFromEnv = normalizeHost(import.meta.env.VITE_MARKETPLACE_HOST as string | undefined);
+  const inferred = inferRegistrarBaseDomainFromHost(host);
+  const base = baseFromEnv || marketplaceFromEnv || inferred;
+  const marketplaceHost = marketplaceFromEnv || inferred;
   const devSlug = (import.meta.env.VITE_STOREFRONT_DEV_SHOP_SLUG as string | undefined)
     ?.trim()
     .toLowerCase();

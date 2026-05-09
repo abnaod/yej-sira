@@ -251,9 +251,8 @@ export function shopSlugFromHost(rawHost: string): string | null {
 }
 
 export function normalizeHost(raw: string): string {
-  return raw
-    .trim()
-    .toLowerCase()
+  const first = raw.trim().toLowerCase().split(",")[0]?.trim() ?? "";
+  return first
     .replace(/^https?:\/\//, "")
     .replace(/\/.*$/, "")
     .replace(/:\d+$/, "")
