@@ -69,27 +69,64 @@ function shopLocationParts(shop: PublicStorefrontShop) {
     .filter((part): part is string => Boolean(part));
 }
 
-function approximateCoordinates(shop: PublicStorefrontShop) {
-  const city = normalizeLocation(shop.businessCity ?? "");
-  if (!city.includes("addis") && !city.includes("adiss")) return null;
+/** Any structured address field beyond the generic country suffix used for search/embed. */
+function hasShopLocationDetail(shop: PublicStorefrontShop) {
+  return Boolean(
+    shop.businessSpecificLocation?.trim() ||
+      shop.businessSubcity?.trim() ||
+      shop.businessCity?.trim(),
+  );
+}
 
-  const subcity = normalizeLocation(shop.businessSubcity ?? "");
-  if (subcity) {
-    const matchedKey = Object.keys(ADDIS_SUBCITY_COORDS).find((key) =>
-      subcity.includes(key),
-    );
-    if (matchedKey) return ADDIS_SUBCITY_COORDS[matchedKey];
+/** Geographic centroid of Ethiopia for coarse preview when we cannot infer Addis-level coords. */
+const ETHIOPIA_OVERVIEW = { lat: 9.145, lon: 40.49 };
+
+function approximateCoordinates(shop: PublicStorefrontShop): {
+  lat: number;
+  lon: number;
+  bboxDelta?: number;
+} | null {
+  if (!hasShopLocationDetail(shop)) return null;
+
+  const rawCombined = [
+    shop.businessSpecificLocation,
+    shop.businessSubcity,
+    shop.businessCity,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const cityNorm = normalizeLocation(shop.businessCity ?? "");
+  const subcityNorm = normalizeLocation(shop.businessSubcity ?? "");
+
+  const looksLikeAddis =
+    rawCombined.includes("addis") ||
+    rawCombined.includes("adiss") ||
+    rawCombined.includes("አዲስ") ||
+    cityNorm.includes("addis") ||
+    cityNorm.includes("adiss") ||
+    subcityNorm.includes("addis");
+
+  if (looksLikeAddis) {
+    if (subcityNorm) {
+      const matchedKey = Object.keys(ADDIS_SUBCITY_COORDS).find((key) =>
+        subcityNorm.includes(key),
+      );
+      if (matchedKey) return ADDIS_SUBCITY_COORDS[matchedKey];
+    }
+    return ADDIS_ABABA_COORDS;
   }
 
-  return ADDIS_ABABA_COORDS;
+  return { ...ETHIOPIA_OVERVIEW, bboxDelta: 4 };
 }
 
 function osmSearchUrl(parts: string[]) {
   return `https://www.openstreetmap.org/search?query=${encodeURIComponent(parts.join(", "))}`;
 }
 
-function osmEmbedUrl(coords: { lat: number; lon: number }) {
-  const delta = 0.014;
+function osmEmbedUrl(coords: { lat: number; lon: number; bboxDelta?: number }) {
+  const delta = coords.bboxDelta ?? 0.014;
   const params = new URLSearchParams({
     bbox: [
       (coords.lon - delta).toFixed(5),
@@ -98,8 +135,11 @@ function osmEmbedUrl(coords: { lat: number; lon: number }) {
       (coords.lat + delta).toFixed(5),
     ].join(","),
     layer: "mapnik",
-    marker: `${coords.lat.toFixed(5)},${coords.lon.toFixed(5)}`,
   });
+  // Avoid a misleading pin when showing country-scale fallback (non–Addis-resolved addresses).
+  if (delta <= 0.05) {
+    params.set("marker", `${coords.lat.toFixed(5)},${coords.lon.toFixed(5)}`);
+  }
   return `https://www.openstreetmap.org/export/embed.html?${params.toString()}`;
 }
 
@@ -227,7 +267,9 @@ function LocationSection({ shop }: { shop: PublicStorefrontShop }) {
     .filter(Boolean)
     .join(", ");
   const coords = approximateCoordinates(shop);
-  const searchUrl = parts.length ? osmSearchUrl(parts) : "https://www.openstreetmap.org";
+  const searchUrl = hasShopLocationDetail(shop)
+    ? osmSearchUrl(parts)
+    : "https://www.openstreetmap.org";
 
   return (
     <section className="flex min-w-0 flex-col gap-4 border-t border-border pt-8 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
@@ -244,7 +286,7 @@ function LocationSection({ shop }: { shop: PublicStorefrontShop }) {
               </span>
             ) : null}
             {locationLine ? <span className="block">{locationLine}</span> : null}
-            {!parts.length ? <span>Location details coming soon.</span> : null}
+            {!hasShopLocationDetail(shop) ? <span>Location details coming soon.</span> : null}
           </address>
         </div>
         <Button variant="outline" size="sm" asChild>
@@ -268,7 +310,7 @@ function LocationSection({ shop }: { shop: PublicStorefrontShop }) {
           <div className="flex h-72 flex-col items-center justify-center gap-3 px-6 text-center">
             <MapPin className="size-8 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium text-foreground">
-              {parts.length
+              {hasShopLocationDetail(shop)
                 ? "Open this shop location in OpenStreetMap."
                 : "No shop location has been added yet."}
             </p>

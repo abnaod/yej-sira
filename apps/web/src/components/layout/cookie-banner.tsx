@@ -38,8 +38,8 @@ export function CookieBanner() {
       aria-label="Cookie notice"
       className={cn(
         "fixed inset-x-2 z-50 mx-auto max-w-3xl rounded-lg border bg-background p-4 shadow-lg",
-        /* Sit above the mobile bottom nav (h-14 + safe area), not on top of it */
-        "bottom-[calc(0.5rem+3.5rem+env(safe-area-inset-bottom))]",
+        /* Sit above the mobile bottom nav (h-16 + safe area), not on top of it */
+        "bottom-[calc(0.5rem+4rem+env(safe-area-inset-bottom))]",
         "md:inset-x-4 md:bottom-4",
       )}
     >

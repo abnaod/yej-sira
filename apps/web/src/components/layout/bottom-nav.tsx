@@ -31,12 +31,12 @@ import { cn } from "@/lib/utils";
 
 export type BottomNavVariant = "marketplace" | "shop";
 
-/** In-flow block: same height as `BottomNav` (`h-14` + safe area). Ensures scrollable pages clear the fixed bar. */
+/** In-flow block: same height as `BottomNav` (`h-16` + safe area). Ensures scrollable pages clear the fixed bar. */
 export function MobileBottomNavScrollSpacer() {
   return (
     <div
       aria-hidden
-      className="shrink-0 md:hidden min-h-[calc(3.5rem+env(safe-area-inset-bottom))]"
+      className="shrink-0 md:hidden min-h-[calc(4rem+env(safe-area-inset-bottom))]"
     />
   );
 }
@@ -102,7 +102,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
       >
         <ul
           className={cn(
-            "grid h-14",
+            "grid h-16",
             showCart && featureConversations
               ? "grid-cols-5"
               : showCart || featureConversations
@@ -114,11 +114,13 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
             <Link
               to="/$locale"
               params={{ locale }}
-              className={navItemClass(isHomeActive)}
+              className={navItemOuterClass}
               aria-current={isHomeActive ? "page" : undefined}
             >
-              <Home className="size-4" aria-hidden />
-              <span className="text-[11px] leading-none">{t("home")}</span>
+              <span className={navItemInnerClass(isHomeActive)}>
+                <Home className="size-4" aria-hidden />
+                <span className="min-w-0 max-w-full truncate text-[11px] leading-none">{t("home")}</span>
+              </span>
             </Link>
           </NavSlot>
 
@@ -126,11 +128,13 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
             <Link
               to="/$locale/favorites"
               params={{ locale }}
-              className={navItemClass(isFavoritesActive)}
+              className={navItemOuterClass}
               aria-current={isFavoritesActive ? "page" : undefined}
             >
-              <Heart className="size-4" aria-hidden />
-              <span className="text-[11px] leading-none">{t("favorites")}</span>
+              <span className={navItemInnerClass(isFavoritesActive)}>
+                <Heart className="size-4" aria-hidden />
+                <span className="min-w-0 max-w-full truncate text-[11px] leading-none">{t("favorites")}</span>
+              </span>
             </Link>
           </NavSlot>
 
@@ -139,11 +143,13 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               <Link
                 to="/$locale/messages"
                 params={{ locale }}
-                className={navItemClass(isMessagesActive)}
+                className={navItemOuterClass}
                 aria-current={isMessagesActive ? "page" : undefined}
               >
-                <MessageSquare className="size-4" aria-hidden />
-                <span className="text-[11px] leading-none">{t("messages")}</span>
+                <span className={navItemInnerClass(isMessagesActive)}>
+                  <MessageSquare className="size-4" aria-hidden />
+                  <span className="min-w-0 max-w-full truncate text-[11px] leading-none">{t("messages")}</span>
+                </span>
               </Link>
             </NavSlot>
           ) : null}
@@ -153,11 +159,13 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               <Link
                 to="/$locale/cart"
                 params={{ locale }}
-                className={navItemClass(isCartActive)}
+                className={navItemOuterClass}
                 aria-current={isCartActive ? "page" : undefined}
               >
-                <ShoppingCart className="size-4" aria-hidden />
-                <span className="text-[11px] leading-none">{t("cart")}</span>
+                <span className={navItemInnerClass(isCartActive)}>
+                  <ShoppingCart className="size-4" aria-hidden />
+                  <span className="min-w-0 max-w-full truncate text-[11px] leading-none">{t("cart")}</span>
+                </span>
               </Link>
             </NavSlot>
           ) : null}
@@ -167,12 +175,14 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               <Link
                 to="/$locale/shop"
                 params={{ locale }}
-                className={navItemClass(isShopInfoActive)}
+                className={navItemOuterClass}
                 aria-current={isShopInfoActive ? "page" : undefined}
               >
-                <Store className="size-4" aria-hidden />
-                <span className="text-[11px] leading-none">
-                  {t("shopInfo", { defaultValue: "Shop" })}
+                <span className={navItemInnerClass(isShopInfoActive)}>
+                  <Store className="size-4" aria-hidden />
+                  <span className="min-w-0 max-w-full truncate text-[11px] leading-none">
+                    {t("shopInfo", { defaultValue: "Shop" })}
+                  </span>
                 </span>
               </Link>
             </NavSlot>
@@ -183,11 +193,13 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
                 onClick={handleAccountClick}
                 aria-haspopup={session?.user ? "dialog" : undefined}
                 aria-expanded={session?.user ? accountOpen : undefined}
-                className={navItemClass(isAccountActive)}
+                className={navItemOuterClass}
               >
-                <User className="size-4" aria-hidden />
-                <span className="text-[11px] leading-none">
-                  {session?.user ? t("account") : t("signIn")}
+                <span className={navItemInnerClass(isAccountActive)}>
+                  <User className="size-4" aria-hidden />
+                  <span className="min-w-0 max-w-full truncate text-[11px] leading-none">
+                    {session?.user ? t("account") : t("signIn")}
+                  </span>
                 </span>
               </button>
             </NavSlot>
@@ -281,11 +293,18 @@ function NavSlot({ children }: { children: React.ReactNode }) {
   return <li className="contents">{children}</li>;
 }
 
-function navItemClass(isActive: boolean) {
+/** Full-cell tap target; hover state delegated to inner via `group-hover`. */
+const navItemOuterClass = cn(
+  "group flex h-full w-full items-center justify-center",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
+);
+
+function navItemInnerClass(isActive: boolean) {
   return cn(
-    "flex h-full w-full flex-col items-center justify-center gap-1 px-1 text-center transition-colors",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
-    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+    "flex h-14 w-20 max-w-full shrink-0 flex-col items-center justify-center gap-1 rounded-lg text-center transition-colors",
+    isActive
+      ? "bg-muted text-primary"
+      : "text-muted-foreground group-hover:text-foreground",
   );
 }
 

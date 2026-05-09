@@ -155,18 +155,20 @@ function SellerPortalBottomNav({
       aria-label="Shop portal navigation"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_0_rgba(0,0,0,0.04)] md:hidden"
     >
-      <ul className="grid h-14 grid-cols-5">
+      <ul className="grid h-16 grid-cols-5">
         {items.map((item) => (
           <li key={item.label} className="contents">
             <Link
               to={item.to}
               params={{ locale }}
               search={item.search}
-              className={sellerBottomNavItemClass(item.active)}
+              className={sellerBottomNavOuterClass}
               aria-current={item.active ? "page" : undefined}
             >
-              <item.icon className="size-4" aria-hidden />
-              <span className="text-[10px] leading-none">{item.label}</span>
+              <span className={sellerBottomNavInnerClass(item.active)}>
+                <item.icon className="size-4" aria-hidden />
+                <span className="min-w-0 max-w-full truncate text-[10px] leading-none">{item.label}</span>
+              </span>
             </Link>
           </li>
         ))}
@@ -175,11 +177,17 @@ function SellerPortalBottomNav({
   );
 }
 
-function sellerBottomNavItemClass(isActive: boolean) {
+const sellerBottomNavOuterClass = cn(
+  "group flex h-full w-full items-center justify-center",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
+);
+
+function sellerBottomNavInnerClass(isActive: boolean) {
   return cn(
-    "flex h-full w-full flex-col items-center justify-center gap-1 px-1 text-center transition-colors",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
-    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
+    "flex h-14 w-20 max-w-full shrink-0 flex-col items-center justify-center gap-1 rounded-lg text-center transition-colors",
+    isActive
+      ? "bg-muted text-primary"
+      : "text-muted-foreground group-hover:text-foreground",
   );
 }
 
