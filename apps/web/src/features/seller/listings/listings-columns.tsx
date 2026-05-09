@@ -40,7 +40,8 @@ export type SellerListingTableActions = {
 function formatMoney(n: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "ETB",
+    currencyDisplay: "code",
     minimumFractionDigits: 2,
   }).format(n);
 }

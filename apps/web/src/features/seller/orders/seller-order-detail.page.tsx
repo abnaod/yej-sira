@@ -34,7 +34,8 @@ const routeApi = getRouteApi("/$locale/(seller)/sell/orders/$orderId");
 function formatMoney(n: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency: "ETB",
+    currencyDisplay: "code",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(n);
