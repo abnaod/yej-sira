@@ -79,7 +79,7 @@ export function SellerAppShell() {
       <SidebarInset>
         <div
           className={cn(
-            "flex min-h-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-6",
+            "flex min-h-0 flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-6",
             showHeader && "gap-4",
             isMessagesPath
               ? "px-0 pt-0 lg:px-6 lg:pt-3"
@@ -155,7 +155,7 @@ function SellerPortalBottomNav({
       aria-label="Shop portal navigation"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_0_rgba(0,0,0,0.04)] md:hidden"
     >
-      <ul className="grid h-16 grid-cols-5">
+      <ul className="grid h-14 grid-cols-5">
         {items.map((item) => (
           <li key={item.label} className="contents">
             <Link
@@ -167,7 +167,7 @@ function SellerPortalBottomNav({
             >
               <span className={sellerBottomNavInnerClass(item.active)}>
                 <item.icon className="size-4" aria-hidden />
-                <span className="min-w-0 max-w-full truncate text-[10px] leading-none">{item.label}</span>
+                <span className="min-w-0 max-w-full truncate text-[10px] leading-tight">{item.label}</span>
               </span>
             </Link>
           </li>
@@ -184,7 +184,7 @@ const sellerBottomNavOuterClass = cn(
 
 function sellerBottomNavInnerClass(isActive: boolean) {
   return cn(
-    "flex h-14 w-20 max-w-full shrink-0 flex-col items-center justify-center gap-1 rounded-lg text-center transition-colors",
+    "flex h-[calc(100%-10px)] max-h-[calc(100%-10px)] min-h-0 w-[4.5rem] max-w-full shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1 text-center transition-colors",
     isActive
       ? "bg-muted text-primary"
       : "text-muted-foreground group-hover:text-foreground",

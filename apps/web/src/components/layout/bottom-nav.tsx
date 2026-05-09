@@ -31,12 +31,12 @@ import { cn } from "@/lib/utils";
 
 export type BottomNavVariant = "marketplace" | "shop";
 
-/** In-flow block: same height as `BottomNav` (`h-16` + safe area). Ensures scrollable pages clear the fixed bar. */
+/** In-flow block: same height as `BottomNav` (`h-14` + safe area). Ensures scrollable pages clear the fixed bar. */
 export function MobileBottomNavScrollSpacer() {
   return (
     <div
       aria-hidden
-      className="shrink-0 md:hidden min-h-[calc(4rem+env(safe-area-inset-bottom))]"
+      className="shrink-0 md:hidden min-h-[calc(3.5rem+env(safe-area-inset-bottom))]"
     />
   );
 }
@@ -102,7 +102,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
       >
         <ul
           className={cn(
-            "grid h-16",
+            "grid h-14",
             showCart && featureConversations
               ? "grid-cols-5"
               : showCart || featureConversations
@@ -119,7 +119,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
             >
               <span className={navItemInnerClass(isHomeActive)}>
                 <Home className="size-4" aria-hidden />
-                <span className="min-w-0 max-w-full truncate text-[11px] leading-none">{t("home")}</span>
+                <span className="min-w-0 max-w-full truncate text-[11px] leading-tight">{t("home")}</span>
               </span>
             </Link>
           </NavSlot>
@@ -133,7 +133,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
             >
               <span className={navItemInnerClass(isFavoritesActive)}>
                 <Heart className="size-4" aria-hidden />
-                <span className="min-w-0 max-w-full truncate text-[11px] leading-none">{t("favorites")}</span>
+                <span className="min-w-0 max-w-full truncate text-[11px] leading-tight">{t("favorites")}</span>
               </span>
             </Link>
           </NavSlot>
@@ -148,7 +148,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               >
                 <span className={navItemInnerClass(isMessagesActive)}>
                   <MessageSquare className="size-4" aria-hidden />
-                  <span className="min-w-0 max-w-full truncate text-[11px] leading-none">{t("messages")}</span>
+                  <span className="min-w-0 max-w-full truncate text-[11px] leading-tight">{t("messages")}</span>
                 </span>
               </Link>
             </NavSlot>
@@ -164,7 +164,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               >
                 <span className={navItemInnerClass(isCartActive)}>
                   <ShoppingCart className="size-4" aria-hidden />
-                  <span className="min-w-0 max-w-full truncate text-[11px] leading-none">{t("cart")}</span>
+                  <span className="min-w-0 max-w-full truncate text-[11px] leading-tight">{t("cart")}</span>
                 </span>
               </Link>
             </NavSlot>
@@ -180,7 +180,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               >
                 <span className={navItemInnerClass(isShopInfoActive)}>
                   <Store className="size-4" aria-hidden />
-                  <span className="min-w-0 max-w-full truncate text-[11px] leading-none">
+                  <span className="min-w-0 max-w-full truncate text-[11px] leading-tight">
                     {t("shopInfo", { defaultValue: "Shop" })}
                   </span>
                 </span>
@@ -197,7 +197,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               >
                 <span className={navItemInnerClass(isAccountActive)}>
                   <User className="size-4" aria-hidden />
-                  <span className="min-w-0 max-w-full truncate text-[11px] leading-none">
+                  <span className="min-w-0 max-w-full truncate text-[11px] leading-tight">
                     {session?.user ? t("account") : t("signIn")}
                   </span>
                 </span>
@@ -301,7 +301,7 @@ const navItemOuterClass = cn(
 
 function navItemInnerClass(isActive: boolean) {
   return cn(
-    "flex h-14 w-20 max-w-full shrink-0 flex-col items-center justify-center gap-1 rounded-lg text-center transition-colors",
+    "flex h-[calc(100%-10px)] max-h-[calc(100%-10px)] min-h-0 w-[4.5rem] max-w-full shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1 text-center transition-colors",
     isActive
       ? "bg-muted text-primary"
       : "text-muted-foreground group-hover:text-foreground",
