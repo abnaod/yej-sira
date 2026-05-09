@@ -7,6 +7,7 @@ import {
   Home,
   LayoutGrid,
   LogOut,
+  MessageSquare,
   Package,
   Shield,
   ShoppingCart,
@@ -15,13 +16,6 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import {
   Drawer,
   DrawerClose,
@@ -33,7 +27,7 @@ import { useAuthDialog } from "@/features/shared/auth";
 import { currentUserQuery } from "@/features/shared/current-user.queries";
 import { categoriesQuery } from "@/features/store/home";
 import { authClient } from "@/lib/auth-client";
-import { featureCartCheckout } from "@/lib/features";
+import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 import { marketplaceUrl } from "@/lib/storefront";
 import { cn } from "@/lib/utils";
@@ -72,6 +66,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
   const isCategoriesActive =
     pathname.startsWith(`/${locale}/categories`) || categoriesOpen;
   const isFavoritesActive = pathname.startsWith(`/${locale}/favorites`);
+  const isMessagesActive = pathname.startsWith(`/${locale}/messages`);
   const isCartActive = pathname.startsWith(`/${locale}/cart`);
   const isAccountActive =
     pathname.startsWith(`/${locale}/orders`) ||
@@ -114,7 +109,16 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
           "pb-[env(safe-area-inset-bottom)] md:hidden",
         )}
       >
-        <ul className={cn("grid h-14", featureCartCheckout ? "grid-cols-5" : "grid-cols-4")}>
+        <ul
+          className={cn(
+            "grid h-14",
+            featureCartCheckout && featureConversations
+              ? "grid-cols-6"
+              : featureCartCheckout || featureConversations
+                ? "grid-cols-5"
+                : "grid-cols-4",
+          )}
+        >
           <NavSlot>
             <Link
               to="/$locale"
@@ -122,7 +126,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               className={navItemClass(isHomeActive)}
               aria-current={isHomeActive ? "page" : undefined}
             >
-              <Home className="size-5" aria-hidden />
+              <Home className="size-4" aria-hidden />
               <span className="text-[11px] leading-none">{t("home")}</span>
             </Link>
           </NavSlot>
@@ -135,7 +139,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               aria-expanded={categoriesOpen}
               className={navItemClass(isCategoriesActive)}
             >
-              <LayoutGrid className="size-5" aria-hidden />
+              <LayoutGrid className="size-4" aria-hidden />
               <span className="text-[11px] leading-none">
                 {t("categories")}
               </span>
@@ -149,10 +153,24 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               className={navItemClass(isFavoritesActive)}
               aria-current={isFavoritesActive ? "page" : undefined}
             >
-              <Heart className="size-5" aria-hidden />
+              <Heart className="size-4" aria-hidden />
               <span className="text-[11px] leading-none">{t("favorites")}</span>
             </Link>
           </NavSlot>
+
+          {featureConversations ? (
+            <NavSlot>
+              <Link
+                to="/$locale/messages"
+                params={{ locale }}
+                className={navItemClass(isMessagesActive)}
+                aria-current={isMessagesActive ? "page" : undefined}
+              >
+                <MessageSquare className="size-4" aria-hidden />
+                <span className="text-[11px] leading-none">{t("messages")}</span>
+              </Link>
+            </NavSlot>
+          ) : null}
 
           {featureCartCheckout ? (
             <NavSlot>
@@ -162,7 +180,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
                 className={navItemClass(isCartActive)}
                 aria-current={isCartActive ? "page" : undefined}
               >
-                <ShoppingCart className="size-5" aria-hidden />
+                <ShoppingCart className="size-4" aria-hidden />
                 <span className="text-[11px] leading-none">{t("cart")}</span>
               </Link>
             </NavSlot>
@@ -176,7 +194,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               aria-expanded={session?.user ? accountOpen : undefined}
               className={navItemClass(isAccountActive)}
             >
-              <User className="size-5" aria-hidden />
+              <User className="size-4" aria-hidden />
               <span className="text-[11px] leading-none">
                 {session?.user ? t("account") : t("signIn")}
               </span>
@@ -238,18 +256,18 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
         </DrawerContent>
       </Drawer>
 
-      <Sheet open={accountOpen} onOpenChange={setAccountOpen}>
-        <SheetContent side="bottom" className="gap-0 rounded-t-xl p-0">
-          <SheetHeader className="border-b border-border">
-            <SheetTitle className="truncate">
+      <Drawer open={accountOpen} onOpenChange={setAccountOpen}>
+        <DrawerContent className="max-h-[80dvh] gap-0">
+          <DrawerHeader className="border-b border-border text-left">
+            <DrawerTitle className="truncate">
               {session?.user?.name?.trim() ||
                 session?.user?.email ||
                 t("account")}
-            </SheetTitle>
-          </SheetHeader>
+            </DrawerTitle>
+          </DrawerHeader>
           <ul className="flex flex-col py-1 pb-[env(safe-area-inset-bottom)]">
             <li>
-              <SheetClose asChild>
+              <DrawerClose asChild>
                 <Link
                   to="/$locale/orders"
                   params={{ locale }}
@@ -258,11 +276,11 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
                   <Package className="size-4" aria-hidden />
                   {t("orders")}
                 </Link>
-              </SheetClose>
+              </DrawerClose>
             </li>
             {variant === "marketplace" && (
               <li>
-                <SheetClose asChild>
+                <DrawerClose asChild>
                   <Link
                     to="/$locale/sell"
                     params={{ locale }}
@@ -271,12 +289,12 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
                     <Store className="size-4" aria-hidden />
                     {t("myShop")}
                   </Link>
-                </SheetClose>
+                </DrawerClose>
               </li>
             )}
             {variant === "marketplace" && isAdmin && (
               <li>
-                <SheetClose asChild>
+                <DrawerClose asChild>
                   <Link
                     to="/$locale/admin/dashboard"
                     params={{ locale }}
@@ -285,18 +303,20 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
                     <Shield className="size-4" aria-hidden />
                     {t("adminPortal", { defaultValue: "Admin portal" })}
                   </Link>
-                </SheetClose>
+                </DrawerClose>
               </li>
             )}
             {variant === "shop" && (
               <li>
-                <a
-                  href={marketplaceUrl(`/${locale}`)}
-                  className={accountItemClass}
-                >
-                  <Store className="size-4" aria-hidden />
-                  {t("brand")}
-                </a>
+                <DrawerClose asChild>
+                  <a
+                    href={marketplaceUrl(`/${locale}`)}
+                    className={accountItemClass}
+                  >
+                    <Store className="size-4" aria-hidden />
+                    {t("brand")}
+                  </a>
+                </DrawerClose>
               </li>
             )}
             <li className="mt-1 border-t border-border pt-1">
@@ -310,8 +330,8 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               </button>
             </li>
           </ul>
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

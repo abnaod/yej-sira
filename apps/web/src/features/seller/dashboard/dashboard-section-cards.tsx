@@ -1,4 +1,4 @@
-import { DollarSign, Package, ShoppingBag, Store } from "lucide-react";
+import { Package, Store } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,8 +13,6 @@ const ICON_ACCENTS = [
 ] as const;
 
 export type SellerDashboardStats = {
-  revenue30d: number;
-  orders30d: number;
   listingCount: number;
   publishedCount: number;
 };
@@ -22,14 +20,16 @@ export type SellerDashboardStats = {
 export function SellerDashboardSectionCards({
   stats,
   isLoading,
+  className,
 }: {
   stats: SellerDashboardStats | undefined;
   isLoading: boolean;
+  className?: string;
 }) {
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className={cn("grid gap-4 sm:grid-cols-2", className)}>
+        {Array.from({ length: 2 }).map((_, i) => (
           <Card key={i} className="gap-2 py-4">
             <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-0">
               <Skeleton className="h-4 w-24" />
@@ -52,24 +52,10 @@ export function SellerDashboardSectionCards({
     );
   }
 
-  const revenue = stats?.revenue30d ?? 0;
-  const orders = stats?.orders30d ?? 0;
   const listings = stats?.listingCount ?? 0;
   const published = stats?.publishedCount ?? 0;
 
   const items = [
-    {
-      title: "Total revenue",
-      value: `$${revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      description: "Last 30 days",
-      icon: DollarSign,
-    },
-    {
-      title: "Orders",
-      value: String(orders),
-      description: "Last 30 days",
-      icon: ShoppingBag,
-    },
     {
       title: "Listings",
       value: String(listings),
@@ -85,7 +71,7 @@ export function SellerDashboardSectionCards({
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={cn("grid gap-4 sm:grid-cols-2", className)}>
       {items.map((item, index) => (
         <Card key={item.title} className="gap-2 py-4">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-0">

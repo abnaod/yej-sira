@@ -8,15 +8,21 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import { Skeleton } from "@/components/ui/skeleton";
 import { sellerMessageMetricsQuery } from "@/features/store/conversations/conversations.queries";
 import { useLocale } from "@/lib/locale-path";
+import { cn } from "@/lib/utils";
 import type { Locale } from "@ys/intl";
 
-export function SellerMessageMetricsCards() {
+const ICON_ACCENTS = [
+  { wrap: "bg-violet-500/15", fg: "text-violet-600 dark:text-violet-400" },
+  { wrap: "bg-amber-500/15", fg: "text-amber-600 dark:text-amber-400" },
+] as const;
+
+export function SellerMessageMetricsCards({ className }: { className?: string }) {
   const { t } = useTranslation("common");
   const locale = useLocale() as Locale;
   const q = useQuery(sellerMessageMetricsQuery(locale));
   if (q.isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={cn("grid gap-4 sm:grid-cols-2", className)}>
         <Card className="gap-2 py-4">
           <Skeleton className="h-20 w-full" />
         </Card>
@@ -36,11 +42,18 @@ export function SellerMessageMetricsCards() {
         : `${Math.round(m.avgResponseSeconds / 60)}m`
       : "—";
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className={cn("grid gap-4 sm:grid-cols-2", className)}>
       <Card className="gap-2 py-4">
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-0">
           <CardDescription>{t("leads")}</CardDescription>
-          <MessageSquare className="size-4 text-primary" aria-hidden />
+          <div
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-lg",
+              ICON_ACCENTS[0].wrap,
+            )}
+          >
+            <MessageSquare className={cn("size-4", ICON_ACCENTS[0].fg)} aria-hidden />
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
           <p className="text-2xl font-semibold tabular-nums">{m?.leads ?? 0}</p>
@@ -50,7 +63,14 @@ export function SellerMessageMetricsCards() {
       <Card className="gap-2 py-4">
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-0">
           <CardDescription>{t("responseRate")}</CardDescription>
-          <Timer className="size-4 text-muted-foreground" aria-hidden />
+          <div
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-lg",
+              ICON_ACCENTS[1].wrap,
+            )}
+          >
+            <Timer className={cn("size-4", ICON_ACCENTS[1].fg)} aria-hidden />
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
           <p className="text-2xl font-semibold tabular-nums">

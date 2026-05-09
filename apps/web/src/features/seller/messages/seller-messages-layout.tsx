@@ -58,43 +58,28 @@ export function SellerMessagesLayout() {
     );
   }, [data?.conversations, query]);
 
-  const totalUnread = useMemo(() => (data?.conversations ?? []).reduce((a, c) => a + c.unreadCount, 0), [data?.conversations]);
-
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 flex-1 overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm",
+        "flex h-full min-h-0 flex-1 overflow-hidden bg-background lg:rounded-lg lg:border lg:border-border/80 lg:bg-card lg:shadow-sm",
         "max-lg:min-h-[min(100dvh,52rem)] lg:min-h-[calc(100dvh-7.5rem)]",
       )}
     >
       <aside
         className={cn(
-          "flex w-full min-w-0 flex-col border-border/80 bg-muted/20 lg:max-w-88 lg:shrink-0 lg:border-r",
+          "flex w-full min-w-0 flex-col border-border/80 bg-muted/20 lg:w-96 lg:max-w-96 lg:shrink-0 lg:border-r",
           !showInbox && "hidden",
         )}
       >
-        <div className="shrink-0 space-y-3 border-b border-border/60 bg-background/80 p-3 backdrop-blur-sm">
+        <div className="shrink-0 border-b border-border/60 bg-background/80 p-3 backdrop-blur-sm">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("searchMessages")}
-              className="h-10 rounded-lg border border-border/80 bg-white pl-9 shadow-sm"
+              className="h-10 rounded-lg border border-border/80 bg-white pl-9 shadow-xs"
             />
-          </div>
-          <div className="flex items-center justify-between gap-2 px-0.5">
-            <div className="inline-flex h-8 items-center rounded-full bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-sm">
-              {t("inbox")}
-              {totalUnread > 0 ? (
-                <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-primary-foreground/20 px-1 text-[10px]">
-                  {totalUnread > 99 ? "99+" : totalUnread}
-                </span>
-              ) : null}
-            </div>
-            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              {t("leads")}
-            </span>
           </div>
         </div>
         {isLoading ? (
@@ -148,16 +133,16 @@ function InboxItem(props: {
         to={detailTo}
         params={{ locale, conversationId: c.id }}
         className={cn(
-          "flex gap-2.5 rounded-md px-2.5 py-2.5 transition-colors",
+          "flex min-w-0 gap-2.5 overflow-hidden rounded-md px-2.5 py-2.5 transition-colors",
           active
             ? "bg-primary/10 ring-1 ring-primary/20"
             : "hover:bg-muted/60",
         )}
       >
-        <div className="relative flex w-1 shrink-0 items-center justify-center">
-          {c.unreadCount > 0 && !active ? <span className="size-2 rounded-full bg-primary shadow-sm" /> : null}
-        </div>
         <div className="relative h-11 w-11 shrink-0">
+          {c.unreadCount > 0 && !active ? (
+            <span className="absolute -left-0.5 top-1/2 z-10 size-1.5 -translate-y-1/2 rounded-full bg-primary shadow-sm" />
+          ) : null}
           <div className="h-11 w-11 overflow-hidden rounded-full border border-border/60 bg-muted">
             {c.listing.imageUrl ? (
               <img src={assetUrl(c.listing.imageUrl)} alt="" className="h-full w-full object-cover" />

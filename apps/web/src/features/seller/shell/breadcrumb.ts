@@ -36,6 +36,10 @@ export function sellerPortalHeaderTitle(
     return "";
   }
 
+  if (segments[0] === "storefront") {
+    return "";
+  }
+
   return segments.at(-1) ?? "Page";
 }
 
@@ -68,6 +72,10 @@ export function sellerPortalHeaderSubtitle(
   }
 
   if (segments[0] === "messages") {
+    return "";
+  }
+
+  if (segments[0] === "storefront") {
     return "";
   }
 

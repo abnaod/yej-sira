@@ -1,10 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
-  DollarSign,
   Package,
   ShieldAlert,
-  ShoppingBag,
   Store,
   Users,
 } from "lucide-react";
@@ -37,18 +35,6 @@ export function AdminDashboardPage() {
   const { data, isLoading } = useQuery(adminStatsQuery());
 
   const items = [
-    {
-      title: "Revenue (30d)",
-      value: formatMoney(data?.revenue30d ?? 0),
-      description: "Paid + fulfilled orders",
-      icon: DollarSign,
-    },
-    {
-      title: "Orders (30d)",
-      value: String(data?.orders30dCount ?? 0),
-      description: `${data?.orderCount ?? 0} total`,
-      icon: ShoppingBag,
-    },
     {
       title: "Users",
       value: String(data?.userCount ?? 0),

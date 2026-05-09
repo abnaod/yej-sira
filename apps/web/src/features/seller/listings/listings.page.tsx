@@ -1,10 +1,11 @@
 import type { Locale } from "@ys/intl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
-import { Plus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ImageIcon, Plus } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataPagination } from "@/features/shared/data-pagination";
 import {
@@ -14,9 +15,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { assetUrl } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
+import { cn } from "@/lib/utils";
 import { myShopQuery } from "../shared/shop.queries";
 import { SellerListingEditDialogForm, SellerListingNewDialogForm } from "./listing-editor.page";
 import { getSellerListingColumns } from "./listings-columns";
@@ -24,7 +26,7 @@ import {
   deleteSellerListingMutationOptions,
   publishSellerListingMutationOptions,
   sellerListingsQuery,
-  type SellerListingStockStatus,
+  type SellerListingListItem,
 } from "./listings.queries";
 import { SellerListingStockEditorDialog } from "./stock-editor.dialog";
 import { SellerShellDataTable } from "../shared/shell-data-table";
@@ -32,6 +34,92 @@ import { SellerShellDataTable } from "../shared/shell-data-table";
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
 
 const routeApi = getRouteApi("/$locale/(seller)/sell/listings/");
+
+function formatMoney(n: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "ETB",
+    currencyDisplay: "code",
+    minimumFractionDigits: 2,
+  }).format(n);
+}
+
+function ListingMobileCard(props: {
+  listing: SellerListingListItem;
+  actions: ReactNode;
+  lowStockThreshold: number;
+}) {
+  const { listing, actions, lowStockThreshold } = props;
+  const url = listing.imageUrl?.trim();
+  const allOut = listing.variantCount > 0 && listing.stock === 0;
+  const anyOut = listing.outOfStockVariants > 0;
+  const low = listing.stock > 0 && listing.stock <= lowStockThreshold;
+  const stockTone = allOut
+    ? "text-destructive"
+    : low || anyOut
+      ? "text-amber-700 dark:text-amber-400"
+      : "text-foreground";
+  const stockLabel = allOut
+    ? "Out"
+    : low
+      ? "Low"
+      : anyOut
+        ? `${listing.outOfStockVariants} out`
+        : null;
+
+  return (
+    <article className="rounded-md border border-border bg-background p-2.5 shadow-xs">
+      <div className="flex gap-2.5">
+        <div className="size-13 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+          {url ? (
+            <img src={assetUrl(url)} alt="" className="size-full object-cover" />
+          ) : (
+            <div className="flex size-full items-center justify-center text-muted-foreground">
+              <ImageIcon className="size-5" aria-hidden />
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <p className="truncate text-sm font-semibold leading-5 text-foreground">
+                  {listing.name}
+                </p>
+                {listing.isPublished ? (
+                  <span className="size-1.5 shrink-0 rounded-full bg-green-600" aria-label="Published" />
+                ) : (
+                  <span className="shrink-0 rounded-full border border-border px-1.5 py-0 text-[10px] font-medium leading-4 text-muted-foreground">
+                    Draft
+                  </span>
+                )}
+              </div>
+              <p className="truncate text-[11px] leading-4 text-muted-foreground">
+                {listing.category.name}
+              </p>
+              <p className="text-xs font-semibold leading-4 tabular-nums text-foreground">
+                {formatMoney(listing.priceFrom)}
+              </p>
+            </div>
+            <div className="-mr-1 -mt-1 flex shrink-0 items-start gap-1">
+              {actions}
+            </div>
+          </div>
+          <div className="mt-1.5 flex items-center justify-between gap-2 text-[11px] leading-4">
+            <span className="font-medium tabular-nums text-foreground">
+              {listing.stock} stock
+            </span>
+            {stockLabel ? (
+              <span className={cn("font-medium", stockTone)}>
+                {stockLabel}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export function SellerListingsPage() {
   const locale = useLocale() as Locale;
@@ -44,7 +132,6 @@ export function SellerListingsPage() {
   const [editListingFormKey, setEditListingFormKey] = useState(0);
   const [listSearch, setListSearch] = useState("");
   const [listPage, setListPage] = useState(1);
-  const [stockStatus, setStockStatus] = useState<SellerListingStockStatus>("all");
   const [stockDialogOpen, setStockDialogOpen] = useState(false);
   const [stockListingId, setStockListingId] = useState<string | null>(null);
   const listPageSize = 25;
@@ -58,7 +145,7 @@ export function SellerListingsPage() {
       page: listPage,
       pageSize: listPageSize,
       q: listSearch.trim() || undefined,
-      stockStatus,
+      stockStatus: "all",
     }),
     enabled: !!session?.user && shopState.data?.shop?.status === "active",
   });
@@ -224,8 +311,7 @@ export function SellerListingsPage() {
   const listings = listingsState.data?.listings ?? [];
   const listingsLoading = listingsState.isLoading;
   const listingsMeta = listingsState.data;
-  const stockCounts = listingsMeta?.stockCounts;
-  const listingCountForLimit = stockCounts?.all ?? 0;
+  const listingCountForLimit = listingsMeta?.stockCounts.all ?? 0;
   const atListingLimit = listingCountForLimit >= shop.listingsLimit;
   const stockListingName =
     listings.find((l) => l.id === stockListingId)?.name ?? undefined;
@@ -288,9 +374,9 @@ export function SellerListingsPage() {
         lowStockThreshold={lowStockThreshold}
       />
       <div className="flex min-h-0 flex-1 flex-col gap-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
           <input
-            className="h-8 w-full max-w-sm rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm shadow-xs focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:max-w-sm"
             placeholder="Search name or slug…"
             value={listSearch}
             onChange={(e) => {
@@ -298,34 +384,22 @@ export function SellerListingsPage() {
               setListPage(1);
             }}
           />
-          <span className="text-xs text-muted-foreground">
-            {listingsMeta
-              ? `${listingsMeta.total} listing${listingsMeta.total === 1 ? "" : "s"} · ${listingCountForLimit} / ${shop.listingsLimit} shop limit`
-              : "…"}
-          </span>
+          <Button
+            type="button"
+            className="size-8 shrink-0 px-0 sm:size-auto sm:px-3"
+            onClick={openNewListingDialog}
+            disabled={atListingLimit}
+            title={
+              atListingLimit
+                ? `You can have at most ${shop.listingsLimit} listings. Delete one to add another.`
+                : "New listing"
+            }
+            aria-label="New listing"
+          >
+            <Plus className="size-3.5 shrink-0" aria-hidden />
+            <span className="hidden sm:inline">New listing</span>
+          </Button>
         </div>
-        <Tabs
-          value={stockStatus}
-          onValueChange={(v) => {
-            setStockStatus(v as SellerListingStockStatus);
-            setListPage(1);
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="all">
-              All{stockCounts ? ` (${stockCounts.all})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="in_stock">
-              In stock{stockCounts ? ` (${stockCounts.in_stock})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="low_stock">
-              Low stock{stockCounts ? ` (${stockCounts.low_stock})` : ""}
-            </TabsTrigger>
-            <TabsTrigger value="out_of_stock">
-              Out of stock{stockCounts ? ` (${stockCounts.out_of_stock})` : ""}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
         <SellerShellDataTable
           columns={columns}
           data={listings}
@@ -335,21 +409,14 @@ export function SellerListingsPage() {
           isLoading={listingsLoading}
           showFilter={false}
           showPagination={false}
-          toolbarEnd={
-            <Button
-              type="button"
-              onClick={openNewListingDialog}
-              disabled={atListingLimit}
-              title={
-                atListingLimit
-                  ? `You can have at most ${shop.listingsLimit} listings. Delete one to add another.`
-                  : undefined
-              }
-            >
-              <Plus className="size-3.5 shrink-0" aria-hidden />
-              New listing
-            </Button>
-          }
+          mobileCard={({ row, renderCell }) => (
+            <ListingMobileCard
+              key={row.id}
+              listing={row.original}
+              actions={renderCell("actions")}
+              lowStockThreshold={lowStockThreshold}
+            />
+          )}
         />
         {listingsMeta ? (
           <DataPagination

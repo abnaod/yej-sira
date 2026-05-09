@@ -1,6 +1,13 @@
-import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useState } from "react";
+import {
+  LayoutDashboard,
+  MessageSquare,
+  Package,
+  Palette,
+  ShoppingBag,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +16,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { apiFetchJson } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
+import { cn } from "@/lib/utils";
 import type { Locale } from "@ys/intl";
 import { currentUserQuery } from "@/features/shared/current-user.queries";
 
@@ -63,17 +71,20 @@ export function SellerAppShell() {
   const title = sellerPortalHeaderTitle(pathname, locale);
   const subtitle = sellerPortalHeaderSubtitle(pathname, locale);
   const showHeader = title.length > 0 || subtitle.length > 0;
+  const isMessagesPath = matchesSellPath(pathname, locale, "/messages");
 
   return (
     <SidebarProvider>
       <SellerAppSidebar shop={shopQuery.data.shop} />
       <SidebarInset>
         <div
-          className={
-            showHeader
-              ? "flex min-h-0 flex-1 flex-col gap-4 px-4 pt-2 pb-4 sm:px-6 sm:pt-3 sm:pb-6"
-              : "flex min-h-0 flex-1 flex-col px-4 pt-2 pb-4 sm:px-6 sm:pt-3 sm:pb-6"
-          }
+          className={cn(
+            "flex min-h-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-6",
+            showHeader && "gap-4",
+            isMessagesPath
+              ? "px-0 pt-0 lg:px-6 lg:pt-3"
+              : "px-4 pt-2 sm:px-6 sm:pt-3",
+          )}
         >
           {showHeader ? (
             <div className="shrink-0 space-y-0.5">
@@ -88,7 +99,87 @@ export function SellerAppShell() {
           </div>
         </div>
       </SidebarInset>
+      <SellerPortalBottomNav pathname={pathname} locale={locale} />
     </SidebarProvider>
+  );
+}
+
+function matchesSellPath(pathname: string, locale: Locale, suffix: string) {
+  const prefix = `/${locale}/sell`;
+  return pathname === `${prefix}${suffix}` || pathname.startsWith(`${prefix}${suffix}/`);
+}
+
+function SellerPortalBottomNav({
+  pathname,
+  locale,
+}: {
+  pathname: string;
+  locale: Locale;
+}) {
+  const items = [
+    {
+      label: "Dashboard",
+      to: "/$locale/sell/dashboard" as const,
+      active: matchesSellPath(pathname, locale, "/dashboard"),
+      icon: LayoutDashboard,
+    },
+    {
+      label: "Orders",
+      to: "/$locale/sell/orders" as const,
+      active: matchesSellPath(pathname, locale, "/orders"),
+      icon: ShoppingBag,
+    },
+    {
+      label: "Messages",
+      to: "/$locale/sell/messages" as const,
+      active: matchesSellPath(pathname, locale, "/messages"),
+      icon: MessageSquare,
+    },
+    {
+      label: "Listings",
+      to: "/$locale/sell/listings" as const,
+      active: matchesSellPath(pathname, locale, "/listings"),
+      icon: Package,
+      search: { new: false, edit: undefined },
+    },
+    {
+      label: "Storefront",
+      to: "/$locale/sell/storefront" as const,
+      active: matchesSellPath(pathname, locale, "/storefront"),
+      icon: Palette,
+    },
+  ];
+
+  return (
+    <nav
+      aria-label="Shop portal navigation"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_0_rgba(0,0,0,0.04)] md:hidden"
+    >
+      <ul className="grid h-14 grid-cols-5">
+        {items.map((item) => (
+          <li key={item.label} className="contents">
+            <Link
+              to={item.to}
+              params={{ locale }}
+              search={item.search}
+              className={sellerBottomNavItemClass(item.active)}
+              aria-current={item.active ? "page" : undefined}
+            >
+              <item.icon className="size-4" aria-hidden />
+              <span className="text-[10px] leading-none">{item.label}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+function sellerBottomNavItemClass(isActive: boolean) {
+  return cn(
+    "flex h-full w-full flex-col items-center justify-center gap-1 px-1 text-center transition-colors",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40",
+    isActive ? "text-primary" : "text-muted-foreground hover:text-foreground",
   );
 }
 

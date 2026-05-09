@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
-import { generatedStorefrontUrl } from "@/lib/storefront";
 import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { sellerDashboardQuery } from "./dashboard.queries";
 import { SellerDashboardSectionCards } from "./dashboard-section-cards";
@@ -83,7 +82,6 @@ export function SellerDashboardPage() {
 
   const stats = dashboardState.data;
   const dashboardLoading = dashboardState.isLoading;
-  const storefrontUrl = generatedStorefrontUrl(shop.slug, locale);
   const telegramMiniAppUrl = shop.telegramMiniAppUrl;
   const copyTelegramMiniAppUrl = () => {
     if (!telegramMiniAppUrl) return;
@@ -93,18 +91,23 @@ export function SellerDashboardPage() {
 
   return (
     <div className="@container/main flex flex-1 flex-col gap-4">
-      {featureConversations && !featureCartCheckout ? <SellerMessageMetricsCards /> : null}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {featureConversations && !featureCartCheckout ? (
+          <SellerMessageMetricsCards className="contents" />
+        ) : null}
 
-      <div className="flex flex-col gap-3 rounded-md border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground">Storefront</p>
-          <p className="mt-1 break-all text-sm text-muted-foreground">{storefrontUrl}</p>
-        </div>
-        <Button asChild variant="outline" size="sm">
-          <a href={storefrontUrl} target="_blank" rel="noreferrer">
-            Open storefront
-          </a>
-        </Button>
+        <SellerDashboardSectionCards
+          className="contents"
+          stats={
+            stats
+              ? {
+                  listingCount: stats.listingCount,
+                  publishedCount: stats.publishedCount,
+                }
+              : undefined
+          }
+          isLoading={dashboardLoading}
+        />
       </div>
 
       {telegramMiniAppUrl ? (
@@ -129,20 +132,6 @@ export function SellerDashboardPage() {
           </div>
         </div>
       ) : null}
-
-      <SellerDashboardSectionCards
-        stats={
-          stats
-            ? {
-                revenue30d: stats.revenue30d,
-                orders30d: stats.orders30d,
-                listingCount: stats.listingCount,
-                publishedCount: stats.publishedCount,
-              }
-            : undefined
-        }
-        isLoading={dashboardLoading}
-      />
 
       <React.Suspense
         fallback={

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, MoreHorizontal } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -55,11 +55,6 @@ export function ChatHeader(props: {
               {leadingSubtitle ?? shopName}
             </p>
           </div>
-        </div>
-        <div className="hidden shrink-0 items-center gap-0.5 sm:flex">
-          <Button type="button" size="icon" variant="ghost" className="text-muted-foreground" aria-label="More">
-            <MoreHorizontal className="size-4" />
-          </Button>
         </div>
       </div>
     );

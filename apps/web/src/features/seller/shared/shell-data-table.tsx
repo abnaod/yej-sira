@@ -7,6 +7,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  type Row,
   type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
@@ -109,6 +110,11 @@ export type SellerShellDataTableProps<TData, TValue> = {
   tableHeaderClassName?: string;
   /** Merged into `TableBody` (e.g. `bg-white` for body rows on a tinted surface). */
   tableBodyClassName?: string;
+  /** Optional small-screen card renderer. Uses the same TanStack row model as the table. */
+  mobileCard?: (context: {
+    row: Row<TData>;
+    renderCell: (columnId: string) => React.ReactNode;
+  }) => React.ReactNode;
 };
 
 export function SellerShellDataTable<TData, TValue>({
@@ -130,6 +136,7 @@ export function SellerShellDataTable<TData, TValue>({
   tableSurfaceClassName,
   tableHeaderClassName,
   tableBodyClassName,
+  mobileCard,
 }: SellerShellDataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -194,6 +201,43 @@ export function SellerShellDataTable<TData, TValue>({
   const EmptyIcon = emptyState.icon;
   const filterFieldLabel = filterLabelProp ?? defaultFilterLabel(countNoun);
   const loadingTitle = loadingTitleProp ?? defaultLoadingTitle(countNoun);
+  const renderStatusState = (
+    kind: "loading" | "empty" | "no-match",
+    className?: string,
+  ) => {
+    const Icon = kind === "loading" ? Loader2 : kind === "no-match" ? Search : EmptyIcon;
+    const title =
+      kind === "loading" ? loadingTitle : kind === "no-match" ? "No matches" : emptyState.title;
+    const description =
+      kind === "no-match"
+        ? noFilterMatchMessage ?? defaultNoMatch
+        : kind === "empty"
+          ? emptyState.description
+          : undefined;
+
+    return (
+      <div
+        className={cn(
+          "flex w-full flex-col items-center justify-center gap-3 px-4 text-center",
+          className,
+        )}
+      >
+        <div
+          className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          aria-busy={kind === "loading" ? true : undefined}
+          aria-live={kind === "loading" ? "polite" : undefined}
+        >
+          <Icon className={cn("size-6", kind === "loading" && "animate-spin")} aria-hidden />
+        </div>
+        <div className="flex max-w-sm flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">{title}</p>
+          {description ? (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
@@ -278,6 +322,7 @@ export function SellerShellDataTable<TData, TValue>({
           "overflow-hidden",
           tableBorder && "rounded-md border",
           fillHeight && "flex min-h-0 flex-1 flex-col",
+          mobileCard && "max-md:hidden",
           tableSurfaceClassName,
         )}
       >
@@ -328,23 +373,7 @@ export function SellerShellDataTable<TData, TValue>({
                       : "h-px p-0 text-center whitespace-normal",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "flex w-full flex-col items-center justify-center gap-3 px-4 text-center",
-                      fillHeight ? "min-h-0 h-full py-8" : "py-14",
-                    )}
-                  >
-                    <div
-                      className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"
-                      aria-busy
-                      aria-live="polite"
-                    >
-                      <Loader2 className="size-6 animate-spin" aria-hidden />
-                    </div>
-                    <div className="flex max-w-sm flex-col gap-1">
-                      <p className="text-sm font-medium text-foreground">{loadingTitle}</p>
-                    </div>
-                  </div>
+                  {renderStatusState("loading", fillHeight ? "min-h-0 h-full py-8" : "py-14")}
                 </TableCell>
               </TableRow>
             ) : data.length === 0 ? (
@@ -362,22 +391,7 @@ export function SellerShellDataTable<TData, TValue>({
                       : "h-px p-0 text-center whitespace-normal",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "flex w-full flex-col items-center justify-center gap-3 px-4 text-center",
-                      fillHeight ? "min-h-0 h-full py-8" : "py-14",
-                    )}
-                  >
-                    <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                      <EmptyIcon className="size-6" aria-hidden />
-                    </div>
-                    <div className="flex max-w-sm flex-col gap-1">
-                      <p className="text-sm font-medium text-foreground">{emptyState.title}</p>
-                      {emptyState.description ? (
-                        <p className="text-sm text-muted-foreground">{emptyState.description}</p>
-                      ) : null}
-                    </div>
-                  </div>
+                  {renderStatusState("empty", fillHeight ? "min-h-0 h-full py-8" : "py-14")}
                 </TableCell>
               </TableRow>
             ) : rowModelRows.length ? (
@@ -409,28 +423,42 @@ export function SellerShellDataTable<TData, TValue>({
                       : "h-px p-0 text-center whitespace-normal",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "flex w-full flex-col items-center justify-center gap-3 px-4 text-center",
-                      fillHeight ? "min-h-0 h-full py-8" : "py-14",
-                    )}
-                  >
-                    <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                      <Search className="size-6" aria-hidden />
-                    </div>
-                    <div className="flex max-w-sm flex-col gap-1">
-                      <p className="text-sm font-medium text-foreground">No matches</p>
-                      <p className="text-sm text-muted-foreground">
-                        {noFilterMatchMessage ?? defaultNoMatch}
-                      </p>
-                    </div>
-                  </div>
+                  {renderStatusState("no-match", fillHeight ? "min-h-0 h-full py-8" : "py-14")}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
+      {mobileCard ? (
+        <div className="flex flex-col gap-2 md:hidden">
+          {isLoading ? (
+            <div className="rounded-md border bg-background">
+              {renderStatusState("loading", "py-12")}
+            </div>
+          ) : data.length === 0 ? (
+            <div className="rounded-md border bg-background">
+              {renderStatusState("empty", "py-12")}
+            </div>
+          ) : rowModelRows.length ? (
+            rowModelRows.map((row) =>
+              mobileCard({
+                row,
+                renderCell: (columnId) => {
+                  const cell = row
+                    .getVisibleCells()
+                    .find((candidate) => candidate.column.id === columnId);
+                  return cell ? flexRender(cell.column.columnDef.cell, cell.getContext()) : null;
+                },
+              }),
+            )
+          ) : (
+            <div className="rounded-md border bg-background">
+              {renderStatusState("no-match", "py-12")}
+            </div>
+          )}
+        </div>
+      ) : null}
       {showPagination && data.length > 0 ? (
         <div className="flex flex-wrap items-center justify-end gap-2">
           <p className="mr-auto text-sm text-muted-foreground">{plural(filteredCount)}</p>

@@ -250,7 +250,7 @@ export function SellerStorefrontPage() {
   }
 
   return (
-    <div className="@container/main mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 pb-24">
+    <div className="@container/main mx-auto flex w-full max-w-3xl flex-col gap-6 pb-24">
       <header className="flex flex-col gap-2">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -306,7 +306,7 @@ export function SellerStorefrontPage() {
                 type="color"
                 value={form.accentColor}
                 onChange={(e) => updateField("accentColor", e.target.value)}
-                className="size-10 cursor-pointer rounded-md border border-border bg-transparent p-0"
+                className="size-10 cursor-pointer overflow-hidden rounded-full border border-border bg-transparent p-0 [&::-moz-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch-wrapper]:p-0"
                 aria-label="Accent color picker"
               />
               <Input
