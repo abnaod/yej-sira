@@ -24,8 +24,8 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     proxy: {
-      "/api": { target: "http://127.0.0.1:3001", changeOrigin: true },
-      "/static": { target: "http://127.0.0.1:3001", changeOrigin: true },
+      "/api": { target: "http://127.0.0.1:5001", changeOrigin: true },
+      "/static": { target: "http://127.0.0.1:5001", changeOrigin: true },
     },
   },
   plugins: [

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Send, User } from "lucide-react";
@@ -27,6 +27,15 @@ import { ChatHeader } from "./chat-header";
 const THREAD_POLL_MS = 8_000;
 
 type BackRoute = "/$locale/messages" | "/$locale/sell/messages";
+type PreparedMessageKey =
+  | "preparedIsAvailable"
+  | "preparedLastPrice"
+  | "preparedCanDeliver"
+  | "preparedMorePhotos"
+  | "preparedSellerStillAvailable"
+  | "preparedSellerLastPrice"
+  | "preparedSellerDelivery"
+  | "preparedSellerPickup";
 
 function dayKey(iso: string) {
   const d = new Date(iso);
@@ -48,6 +57,7 @@ export function ConversationChatView(props: {
   const { openAuth } = useAuthDialog();
   const userId = session?.user?.id;
   const bottomRef = useRef<HTMLDivElement>(null);
+  const draftInputRef = useRef<HTMLInputElement>(null);
   const isSplit = variant === "split";
 
   const [isLg, setIsLg] = useState(true);
@@ -71,6 +81,23 @@ export function ConversationChatView(props: {
     markConversationReadMutationOptions(queryClient, locale, conversationId),
   );
   const [draft, setDraft] = useState("");
+  const preparedMessages = useMemo<PreparedMessageKey[]>(() => {
+    if (data?.role === "seller") {
+      return [
+        "preparedSellerStillAvailable",
+        "preparedSellerLastPrice",
+        "preparedSellerDelivery",
+        "preparedSellerPickup",
+      ];
+    }
+
+    return [
+      "preparedIsAvailable",
+      "preparedLastPrice",
+      "preparedCanDeliver",
+      "preparedMorePhotos",
+    ];
+  }, [data?.role]);
 
   const lastMessage = data?.messages[data.messages.length - 1];
   useEffect(() => {
@@ -142,6 +169,14 @@ export function ConversationChatView(props: {
     if (!text || send.isPending) return;
     setDraft("");
     send.mutate({ kind: "text", body: text });
+  };
+
+  const onPreparedMessage = (body: string) => {
+    setDraft((current) => {
+      const trimmed = current.trim();
+      return trimmed ? `${trimmed} ${body}` : body;
+    });
+    window.requestAnimationFrame(() => draftInputRef.current?.focus());
   };
 
   const headerSubtitle = backContext === "seller" && isSplit ? data.otherUserName : undefined;
@@ -230,9 +265,15 @@ export function ConversationChatView(props: {
       </div>
 
       <div className={cn("shrink-0", isSplit ? "border-t border-border/60 bg-background p-2 sm:p-3" : "")}>
+        <PreparedMessages
+          messages={preparedMessages.map((key) => t(key))}
+          onSelect={onPreparedMessage}
+          compact={isSplit}
+        />
         {isSplit ? (
           <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-white px-2 py-2 shadow-sm">
             <input
+              ref={draftInputRef}
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -253,6 +294,7 @@ export function ConversationChatView(props: {
         ) : (
           <div className="mt-3 flex items-center gap-2">
             <input
+              ref={draftInputRef}
               type="text"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -273,6 +315,36 @@ export function ConversationChatView(props: {
         )}
       </div>
     </main>
+  );
+}
+
+function PreparedMessages(props: {
+  messages: string[];
+  onSelect: (body: string) => void;
+  compact: boolean;
+}) {
+  const { messages, onSelect, compact } = props;
+  const { t } = useTranslation("common");
+
+  return (
+    <div className={cn("mb-2 min-w-0", !compact && "mt-3")}>
+      <p className="sr-only">{t("preparedMessages")}</p>
+      <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {messages.map((message) => (
+          <button
+            key={message}
+            type="button"
+            onClick={() => onSelect(message)}
+            className={cn(
+              "shrink-0 rounded-full border border-border/80 bg-white px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+              compact && "px-2.5 py-1 text-[11px]",
+            )}
+          >
+            {message}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
