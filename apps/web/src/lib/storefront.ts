@@ -22,6 +22,9 @@ export type PublicStorefrontShop = {
   socialLinks: unknown;
   shippingPolicy: string | null;
   returnsPolicy: string | null;
+  businessCity: string | null;
+  businessSubcity: string | null;
+  businessSpecificLocation: string | null;
 };
 
 export type StorefrontHostContext = {

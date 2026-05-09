@@ -25,6 +25,9 @@ export type PublicStorefrontShop = Pick<
   | "socialLinks"
   | "shippingPolicy"
   | "returnsPolicy"
+  | "businessCity"
+  | "businessSubcity"
+  | "businessSpecificLocation"
 >;
 
 function publicShopSelect() {
@@ -39,6 +42,9 @@ function publicShopSelect() {
     socialLinks: true,
     shippingPolicy: true,
     returnsPolicy: true,
+    businessCity: true,
+    businessSubcity: true,
+    businessSpecificLocation: true,
   } as const;
 }
 
