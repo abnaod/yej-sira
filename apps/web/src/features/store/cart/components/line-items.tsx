@@ -40,7 +40,7 @@ export function LineItems({ items, onUpdateQuantity, onRemove }: LineItemsProps)
       {items.map((item) => (
         <div
           key={item.id}
-          className="flex flex-col gap-3 rounded-lg border border-border bg-white p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4"
+          className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4"
         >
           <div className="flex min-w-0 flex-1 gap-3 sm:contents">
             <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-neutral-50">

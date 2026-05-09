@@ -61,7 +61,7 @@ export function OrderSummary({
   return (
     <div
       className={cn(
-        "h-fit w-full self-start rounded-lg border border-border bg-white p-5",
+        "h-fit w-full self-start rounded-lg border border-border bg-background p-5",
         className,
       )}
     >

@@ -28,7 +28,11 @@ export function getPublicApiOrigin(): string {
         const api = new URL(origin);
         const pageHost = window.location.hostname;
         const apiIsLoopback = api.hostname === "localhost" || api.hostname === "127.0.0.1";
-        const pageIsLoopback = pageHost === "localhost" || pageHost === "127.0.0.1";
+        const pageIsLoopback =
+          pageHost === "localhost" || pageHost === "127.0.0.1" || pageHost === "0.0.0.0";
+        if (pageIsLoopback && !apiIsLoopback) {
+          return window.location.origin;
+        }
         if (apiIsLoopback && !pageIsLoopback) {
           return window.location.origin;
         }
@@ -51,13 +55,21 @@ export function getPublicApiOrigin(): string {
   }
 
   if (typeof window !== "undefined") {
+    const page = new URL(window.location.href);
+    const pageIsLoopback =
+      page.hostname === "localhost" ||
+      page.hostname === "127.0.0.1" ||
+      page.hostname === "0.0.0.0";
+    if (pageIsLoopback && (page.port === "3000" || page.port === "5173")) {
+      return page.origin;
+    }
     // Production bundle without `VITE_API_URL` (e.g. Docker build forgot build args) would
     // otherwise use the web app origin — `/api/*` then returns HTML, not JSON.
     if (import.meta.env.PROD) {
       try {
-        const page = new URL(window.location.href);
         if (page.port === "3000") {
           page.port = "5001";
+          page.protocol = "http:";
           return page.origin;
         }
       } catch {

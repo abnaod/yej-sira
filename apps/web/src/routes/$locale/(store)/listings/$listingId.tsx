@@ -13,16 +13,14 @@ import {
 export const Route = createFileRoute("/$locale/(store)/listings/$listingId")({
   loader: async ({ context, params }) => {
     const locale = params.locale as Locale;
-    const [detail] = await Promise.all([
-      context.queryClient.ensureQueryData(listingDetailQuery(locale, params.listingId)),
-      context.queryClient.ensureQueryData(relatedListingsQuery(locale, params.listingId)),
-      context.queryClient.ensureQueryData(
-        moreFromShopListingsQuery(locale, params.listingId),
-      ),
-      context.queryClient.ensureQueryData(
-        listingReviewsQuery(locale, params.listingId),
-      ),
-    ]);
+    const detail = await context.queryClient.ensureQueryData(
+      listingDetailQuery(locale, params.listingId),
+    );
+    void context.queryClient.prefetchQuery(relatedListingsQuery(locale, params.listingId));
+    void context.queryClient.prefetchQuery(
+      moreFromShopListingsQuery(locale, params.listingId),
+    );
+    void context.queryClient.prefetchQuery(listingReviewsQuery(locale, params.listingId));
     return { detail: detail as ListingDetailResponse };
   },
   head: ({ loaderData }) => {

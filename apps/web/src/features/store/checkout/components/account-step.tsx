@@ -26,7 +26,7 @@ export function AccountStep({ buyer, onBuyerChange, onNext, onBack }: AccountSte
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-white p-5">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-background p-5">
       <div className="min-h-0 flex-1">
         <h3 className="text-base font-semibold">Contact</h3>
         <p className="mt-1 text-sm text-muted-foreground">

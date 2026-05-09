@@ -58,7 +58,7 @@ export function ListingListItem({
   );
 
   const sharedClassName = cn(
-    "flex items-center gap-4 rounded-lg border border-border bg-white px-4 py-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800",
+    "flex items-center gap-4 rounded-lg border border-border bg-background px-4 py-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800",
     className,
   );
 

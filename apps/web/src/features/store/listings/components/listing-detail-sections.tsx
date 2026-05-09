@@ -1,5 +1,5 @@
 import type { Locale } from "@ys/intl";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { ListingCard } from "@/features/store/listings/components/listing-card";
 import type { AddToCartInput } from "@/features/store/cart/cart.queries";
@@ -28,7 +28,7 @@ export function ListingDetailSections({
   attributes,
   onAddToCart,
 }: ListingDetailSectionsProps) {
-  const { data: shopData } = useSuspenseQuery(
+  const { data: shopData, isPending: shopPending, isError: shopError } = useQuery(
     moreFromShopListingsQuery(locale, listingSlug),
   );
 
@@ -68,7 +68,13 @@ export function ListingDetailSections({
 
       <section className="mt-10">
         <h2 className={sectionHeadingClass}>More from this shop</h2>
-        {shopData.listings.length === 0 ? (
+        {shopPending ? (
+          <p className="text-sm text-muted-foreground">Loading more listings…</p>
+        ) : shopError ? (
+          <p className="text-sm text-muted-foreground">
+            More listings from this shop are unavailable.
+          </p>
+        ) : shopData.listings.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No other listings from this shop right now.
           </p>

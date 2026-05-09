@@ -13,7 +13,7 @@
 
 @theme inline {
   /* Slightly off-white canvas (shadcn-style) so borders read softer vs pure #fff */
-  --color-background: oklch(99.2% 0 0);
+  --color-background: #f9f8f4;
   --color-foreground: oklch(14.5% 0 0);
   /* Form field captions: slightly darker than body text for clarity */
   --color-label-foreground: oklch(9% 0 0);
@@ -31,6 +31,7 @@
   --color-destructive: oklch(57.7% 0.215 27);
   --color-destructive-foreground: oklch(100% 0 0);
   --color-ring: oklch(59% 0.2 264);
+  --color-main-container: #f9f8f4;
 
   --color-primary: oklch(30.6% 0.056 160);
   --color-primary-foreground: oklch(100% 0 0);
@@ -157,4 +158,3 @@ body {
   --sidebar-border: hsl(240 3.7% 22%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
 }
-

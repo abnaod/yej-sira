@@ -144,7 +144,7 @@ export function BuyBox({
               isFavorite ? "Remove from favorites" : "Add to favorites"
             }
             className={cn(
-              "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-white transition-colors hover:bg-gray-100 dark:hover:bg-gray-800",
+              "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-background transition-colors hover:bg-gray-100 dark:hover:bg-gray-800",
               isFavorite ? "text-red-600" : "text-muted-foreground hover:text-red-600",
               favoritePending && "opacity-60",
             )}

@@ -121,7 +121,7 @@ export function OrderDetailView({
         </div>
       </div>
 
-      <div className="mt-6 rounded-lg border border-border bg-white p-4 text-sm">
+      <div className="mt-6 rounded-lg border border-border bg-background p-4 text-sm">
         <p className="font-semibold">
           {order.deliveryMethod === "pickup" ? "Pick up at" : "Ship to"}
         </p>
@@ -170,7 +170,7 @@ export function OrderDetailView({
         {order.items.map((item) => (
           <li
             key={item.id}
-            className="flex gap-4 rounded-lg border border-border bg-white p-3"
+            className="flex gap-4 rounded-lg border border-border bg-background p-3"
           >
             {item.imageUrl && (
               <img

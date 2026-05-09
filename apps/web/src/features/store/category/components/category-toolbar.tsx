@@ -70,7 +70,7 @@ export function CategoryToolbar({
             <button
               type="button"
               className={cn(
-                "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full bg-white py-2 pl-4 pr-3 text-sm text-foreground shadow-sm",
+                "inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full bg-background py-2 pl-4 pr-3 text-sm text-foreground shadow-sm",
                 "transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 dark:hover:bg-gray-800",
               )}
               aria-label="Sort listings"

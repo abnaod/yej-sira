@@ -153,7 +153,7 @@ export function DeliveryStep({
       : undefined;
 
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-white p-5">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-background p-5">
       <div className="min-h-0 flex-1">
       <h3 className="text-base font-semibold">Delivery</h3>
       <p className="mt-1 text-sm text-muted-foreground">
@@ -181,7 +181,7 @@ export function DeliveryStep({
             <label
               key={option.id}
               className={cn(
-                "flex h-full cursor-pointer flex-col rounded-md border bg-white p-2.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800",
+                "flex h-full cursor-pointer flex-col rounded-md border bg-background p-2.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800",
                 deliveryMethod === option.id
                   ? "border-primary"
                   : "border-border hover:border-primary/35",

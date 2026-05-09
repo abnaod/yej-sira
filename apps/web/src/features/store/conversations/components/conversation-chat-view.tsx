@@ -278,7 +278,7 @@ export function ConversationChatView(props: {
           compact={isSplit}
         />
         {isSplit ? (
-          <div className="flex items-center gap-2 rounded-xl border border-border/80 bg-white px-2.5 py-1.5 shadow-xs">
+          <div className="flex items-center gap-2 rounded-xl border border-border/80 bg-background px-2.5 py-1.5 shadow-xs">
             <input
               ref={draftInputRef}
               type="text"
@@ -299,7 +299,7 @@ export function ConversationChatView(props: {
             </Button>
           </div>
         ) : (
-          <div className="mt-3 flex items-center gap-2 rounded-xl border border-border/80 bg-white px-2.5 py-1.5 shadow-xs">
+          <div className="mt-3 flex items-center gap-2 rounded-xl border border-border/80 bg-background px-2.5 py-1.5 shadow-xs">
             <input
               ref={draftInputRef}
               type="text"
@@ -374,7 +374,7 @@ function MessageBubble(props: {
         "relative max-w-[min(82%,24rem)] px-3 py-1.5 text-sm leading-relaxed shadow-sm",
         isSelf
           ? "rounded-2xl rounded-br-sm bg-primary text-primary-foreground"
-          : "rounded-2xl rounded-bl-sm bg-white text-foreground ring-1 ring-border/40",
+          : "rounded-2xl rounded-bl-sm bg-background text-foreground ring-1 ring-border/40",
         m.kind === "quick_action" &&
           "border border-dashed border-primary/40 bg-background text-foreground shadow-none",
         m.kind === "intent" &&

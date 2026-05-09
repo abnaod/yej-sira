@@ -1,5 +1,5 @@
 import type { Locale } from "@ys/intl";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi } from "@tanstack/react-router";
 
 import { Breadcrumb } from "@/components/ui/breadcrumb";
@@ -21,7 +21,9 @@ export function ListingPage() {
   const queryClient = useQueryClient();
 
   const { data: listingData } = useSuspenseQuery(listingDetailQuery(locale, listingId));
-  const { data: relatedData } = useSuspenseQuery(relatedListingsQuery(locale, listingId));
+  const { data: relatedData, isPending: relatedPending, isError: relatedError } = useQuery(
+    relatedListingsQuery(locale, listingId),
+  );
 
   const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
   const favorite = useListingFavoriteRow(listingData.listing.slug);
@@ -90,37 +92,45 @@ export function ListingPage() {
         <h2 className="mb-4 text-lg font-semibold tracking-tight text-foreground md:text-xl">
           Related Listings
         </h2>
-        <div
-          className="-mx-1 flex gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
-        >
-          {relatedData.listings.map((p) => (
-            <ListingCard
-              key={p.id}
-              variant="compact"
-              slug={p.slug}
-              defaultVariantId={p.defaultVariantId}
-              name={p.name}
-              price={p.price}
-              originalPrice={p.originalPrice}
-              description={p.description}
-              imageUrl={p.imageUrl}
-              rating={p.rating}
-              reviewCount={p.reviewCount}
-              shop={p.shop}
-              promotion={p.promotion}
-              onAddToCart={
-                p.defaultVariantId
-                  ? () =>
-                      addToCart.mutate({
-                        variantId: p.defaultVariantId!,
-                        quantity: 1,
-                        listingName: p.name,
-                      })
-                  : undefined
-              }
-            />
-          ))}
-        </div>
+        {relatedPending ? (
+          <p className="text-sm text-muted-foreground">Loading related listings…</p>
+        ) : relatedError ? (
+          <p className="text-sm text-muted-foreground">Related listings are unavailable.</p>
+        ) : relatedData.listings.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No related listings right now.</p>
+        ) : (
+          <div
+            className="-mx-1 flex gap-4 overflow-x-auto overflow-y-hidden overscroll-x-contain px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
+          >
+            {relatedData.listings.map((p) => (
+              <ListingCard
+                key={p.id}
+                variant="compact"
+                slug={p.slug}
+                defaultVariantId={p.defaultVariantId}
+                name={p.name}
+                price={p.price}
+                originalPrice={p.originalPrice}
+                description={p.description}
+                imageUrl={p.imageUrl}
+                rating={p.rating}
+                reviewCount={p.reviewCount}
+                shop={p.shop}
+                promotion={p.promotion}
+                onAddToCart={
+                  p.defaultVariantId
+                    ? () =>
+                        addToCart.mutate({
+                          variantId: p.defaultVariantId!,
+                          quantity: 1,
+                          listingName: p.name,
+                        })
+                    : undefined
+                }
+              />
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );

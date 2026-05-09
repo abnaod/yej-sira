@@ -112,7 +112,7 @@ function OrderListRow({ order, locale }: { order: OrderRow; locale: string }) {
         to="/$locale/orders/$orderId"
         params={{ locale, orderId: order.id }}
         className={cn(
-          "flex flex-col gap-3 rounded-lg border border-border bg-white p-4 text-sm transition-colors",
+          "flex flex-col gap-3 rounded-lg border border-border bg-background p-4 text-sm transition-colors",
           "hover:bg-gray-100 sm:flex-row sm:items-center sm:justify-between sm:gap-4 dark:hover:bg-gray-800",
         )}
       >

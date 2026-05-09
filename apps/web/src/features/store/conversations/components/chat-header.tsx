@@ -61,7 +61,7 @@ export function ChatHeader(props: {
   }
 
   return (
-    <div className="flex gap-3 rounded-lg border border-border/80 bg-white p-3 shadow-sm">
+    <div className="flex gap-3 rounded-lg border border-border/80 bg-background p-3 shadow-sm">
       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
         {imageUrl ? <img src={imageUrl} alt="" className="h-full w-full object-cover" /> : null}
       </div>

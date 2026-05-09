@@ -26,7 +26,7 @@ export function StoreLayout() {
   if (tenant.context.isStorefront && !tenant.shop) {
     return (
       <StorefrontTenantProvider value={tenant}>
-        <div className="flex min-h-dvh flex-col">
+        <div className="flex min-h-dvh flex-col bg-main-container">
           <UnavailableStorefront />
         </div>
       </StorefrontTenantProvider>
@@ -36,7 +36,7 @@ export function StoreLayout() {
   if (tenant.context.isStorefront && tenant.shop) {
     return (
       <StorefrontTenantProvider value={tenant}>
-        <div className="flex min-h-dvh flex-col">
+        <div className="flex min-h-dvh flex-col bg-main-container">
           <ShopHeader shop={tenant.shop} />
           <ContentContainer>
             <Outlet />
@@ -51,7 +51,7 @@ export function StoreLayout() {
 
   return (
     <StorefrontTenantProvider value={tenant}>
-      <div className="flex min-h-dvh flex-col">
+      <div className="flex min-h-dvh flex-col bg-main-container">
         <Header />
         <ContentContainer>
           <Outlet />

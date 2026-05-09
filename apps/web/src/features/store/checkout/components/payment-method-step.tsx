@@ -86,7 +86,7 @@ export function PaymentMethodStep({
   ];
 
   return (
-    <div className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-white p-5">
+    <div className="flex h-full min-h-0 flex-col rounded-lg border border-border bg-background p-5">
       <div className="min-h-0 flex-1">
       <h3 className="text-base font-semibold">Payment Method</h3>
       <p className="mt-1 text-sm text-muted-foreground">
@@ -101,7 +101,7 @@ export function PaymentMethodStep({
         {paymentOptions.map((option) => (
           <label
             key={option.id}
-            className={`flex cursor-pointer items-center gap-2.5 rounded-md border bg-white px-3 py-2.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            className={`flex cursor-pointer items-center gap-2.5 rounded-md border bg-background px-3 py-2.5 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
               value === option.id ? "border-primary" : "border-border"
             }`}
           >
