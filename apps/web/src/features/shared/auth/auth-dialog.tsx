@@ -196,41 +196,13 @@ export function AuthDialog({
     setOauthError(null);
     setPending(true);
     try {
-      console.info("[telegram-oauth] start", {
+      const { error: err } = await authClient.signInWithTelegramOIDC({
         callbackURL: oauthCallbackUrl,
-        href: typeof window !== "undefined" ? window.location.href : null,
       });
-      const res = await fetch("/api/auth/sign-in/oauth2", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          providerId: "telegram",
-          callbackURL: oauthCallbackUrl,
-          disableRedirect: true,
-        }),
-      });
-      console.info("[telegram-oauth] response", {
-        url: res.url,
-        status: res.status,
-        redirected: res.redirected,
-      });
-      const data = (await res.json().catch(async () => {
-        const text = await res.text().catch(() => "");
-        return { text };
-      })) as { url?: string; error?: string; message?: string; text?: string };
-      console.info("[telegram-oauth] result", data);
-      if (!res.ok) {
-        setOauthError(data.error ?? data.message ?? res.statusText);
-        return;
+      if (err) {
+        setOauthError(formatAuthError(err));
       }
-      if (data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      setOauthError("Telegram did not return an authorization URL.");
     } catch (err) {
-      console.error("[telegram-oauth] thrown", err);
       setOauthError(formatAuthError(err));
     } finally {
       setPending(false);
