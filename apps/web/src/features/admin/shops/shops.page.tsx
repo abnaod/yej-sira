@@ -408,7 +408,7 @@ function ShopStatusActions({ shop }: { shop: AdminShopListItem }) {
   const copyTelegramMiniAppUrl = () => {
     if (!shop.telegramMiniAppUrl) return;
     void navigator.clipboard.writeText(shop.telegramMiniAppUrl);
-    toast.success("Telegram Mini App link copied");
+    toast.success("Telegram shop link copied");
   };
 
   const sendPasswordReset = () => {
@@ -443,7 +443,7 @@ function ShopStatusActions({ shop }: { shop: AdminShopListItem }) {
             <DropdownMenuItem asChild>
               <a href={shop.telegramMiniAppUrl} target="_blank" rel="noreferrer">
                 <Send className="size-3.5" />
-                Open Telegram Mini App
+                Open Telegram shop link
               </a>
             </DropdownMenuItem>
             <DropdownMenuItem

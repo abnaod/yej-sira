@@ -42,6 +42,11 @@ const rawEnvSchema = z.object({
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   /** Bot @handle without the @ (e.g. my_shop_bot) */
   TELEGRAM_BOT_USERNAME: z.string().optional(),
+  /**
+   * Optional BotFather Mini App short name.
+   * Enables direct `t.me/<bot>/<short_name>?startapp=...` links.
+   */
+  TELEGRAM_MINI_APP_SHORT_NAME: z.string().optional(),
   /** OIDC client ID from BotFather Web Login. Defaults to the numeric bot token prefix when omitted. */
   TELEGRAM_OIDC_CLIENT_ID: z.string().optional(),
   /** OIDC client secret from BotFather Web Login — not the bot token. */
@@ -264,9 +269,20 @@ export function isValidShopSubdomainSlug(slug: string): boolean {
 }
 
 export function getTelegramMiniAppUrl(shopSlug: string): string | null {
-  const username = getEnv().TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
+  const env = getEnv();
+  const username = env.TELEGRAM_BOT_USERNAME?.trim().replace(/^@/, "");
   if (!username || !isValidShopSubdomainSlug(shopSlug)) return null;
-  return `https://t.me/${encodeURIComponent(username)}?startapp=${encodeURIComponent(shopSlug)}`;
+
+  const miniAppShortName = env.TELEGRAM_MINI_APP_SHORT_NAME?.trim();
+  if (miniAppShortName) {
+    return `https://t.me/${encodeURIComponent(username)}/${encodeURIComponent(
+      miniAppShortName,
+    )}?startapp=${encodeURIComponent(shopSlug)}`;
+  }
+
+  return `https://t.me/${encodeURIComponent(username)}?start=${encodeURIComponent(
+    `shop_${shopSlug}`,
+  )}`;
 }
 
 export function getTelegramMiniAppLauncherUrl(shopSlug?: string): string | null {

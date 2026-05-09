@@ -86,7 +86,7 @@ export function SellerDashboardPage() {
   const copyTelegramMiniAppUrl = () => {
     if (!telegramMiniAppUrl) return;
     void navigator.clipboard.writeText(telegramMiniAppUrl);
-    toast.success("Telegram Mini App link copied");
+    toast.success("Telegram shop link copied");
   };
 
   return (
@@ -115,7 +115,7 @@ export function SellerDashboardPage() {
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
               <Send className="size-4 text-muted-foreground" />
-              Telegram Mini App
+              Telegram shop link
             </p>
             <p className="mt-1 break-all text-sm text-muted-foreground">{telegramMiniAppUrl}</p>
           </div>
