@@ -7,6 +7,7 @@ import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { formatMoney } from "@/features/shared/formatters";
 import { StarRating } from "@/features/shared/star-rating";
 import type { ListingPromotionDto } from "@/features/store/home";
 import { useListingFavoriteRow } from "@/features/store/favorites/hooks/use-listing-favorite-row";
@@ -185,7 +186,7 @@ export function ListingCard({
           </Link>
           <div className="flex shrink-0 items-baseline gap-1 whitespace-nowrap">
             <span className={cn("font-semibold", compact ? "text-xs" : "text-sm")}>
-              ${price.toFixed(2)}
+              {formatMoney(price)}
             </span>
             {originalPrice && (
               <span
@@ -194,7 +195,7 @@ export function ListingCard({
                   compact ? "text-[10px]" : "text-xs",
                 )}
               >
-                ${originalPrice.toFixed(2)}
+                {formatMoney(originalPrice)}
               </span>
             )}
           </div>
