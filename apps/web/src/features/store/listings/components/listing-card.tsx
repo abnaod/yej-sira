@@ -3,7 +3,7 @@ import { Heart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { assetUrl } from "@/lib/api";
-import { featureCartCheckout, featureConversations } from "@/lib/features";
+import { featureCartCheckout } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,8 +29,6 @@ export interface ListingCardProps {
   variant?: "default" | "compact";
   /** Hide the “Sold by …” row (e.g. on the shop’s own page). */
   hideShopLine?: boolean;
-  /** Show a direct link to the listing to message the seller (conversation-first). */
-  messageSellerCta?: boolean;
   className?: string;
 }
 
@@ -49,7 +47,6 @@ export function ListingCard({
   onAddToCart,
   variant = "default",
   hideShopLine = false,
-  messageSellerCta = false,
   className,
 }: ListingCardProps) {
   const { t } = useTranslation("common");
@@ -138,18 +135,8 @@ export function ListingCard({
             compact ? "right-1.5 top-1.5 h-7 w-7" : "right-2 top-2 h-8 w-8",
             "transition-[opacity,transform,colors] duration-200 ease-out",
             "hover:bg-gray-100 dark:hover:bg-gray-800",
-            isFavorite
-              ? cn(
-                  "pointer-events-auto translate-y-0 scale-100 opacity-100",
-                  favoritePending && "opacity-60",
-                )
-              : cn(
-                  "pointer-events-none translate-y-1 scale-95 opacity-0",
-                  "group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100",
-                  "group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:scale-100 group-focus-within:opacity-100",
-                  favoritePending &&
-                    "group-hover:opacity-60 group-focus-within:opacity-60",
-                ),
+            "pointer-events-auto translate-y-0 scale-100 opacity-100",
+            favoritePending && "opacity-60",
             isFavorite
               ? "text-red-600"
               : "text-neutral-500 hover:text-red-600",
@@ -233,28 +220,6 @@ export function ListingCard({
           size={compact ? "xs" : "sm"}
           className={compact ? "mt-0.5" : "mt-1"}
         />
-
-        {featureConversations && messageSellerCta ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn(
-              "w-fit border-border text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground",
-              compact
-                ? "mt-1.5 h-7 px-2 text-[11px]"
-                : "mt-2",
-            )}
-            asChild
-          >
-            <Link
-              to="/$locale/listings/$listingId"
-              params={{ locale, listingId: slug }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {t("messageSeller")}
-            </Link>
-          </Button>
-        ) : null}
 
         {featureCartCheckout && onAddToCart ? (
           <Button

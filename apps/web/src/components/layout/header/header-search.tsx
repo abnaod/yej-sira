@@ -2,7 +2,7 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Loader2, Search } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import {
   Command,
@@ -82,10 +82,9 @@ export function HeaderSearch() {
       <Popover open={showPanel} onOpenChange={setPopoverOpen} modal={false}>
         <PopoverAnchor asChild>
           <div className="relative min-w-0 w-full">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t("searchPlaceholder")}
-              className="pl-9 pr-3 text-sm shadow-none"
+              className="rounded-l-none pl-3 pr-3 text-sm shadow-none"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onFocus={() => setPopoverOpen(true)}

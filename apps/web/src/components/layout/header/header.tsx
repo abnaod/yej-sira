@@ -5,9 +5,7 @@ import {
   Heart,
   LogOut,
   MessageSquare,
-  Package,
   Shield,
-  ShoppingCart,
   Store,
   User,
 } from "lucide-react";
@@ -22,10 +20,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cartQuery } from "@/features/store/cart/cart.queries";
 import { currentUserQuery } from "@/features/shared/current-user.queries";
 import { authClient } from "@/lib/auth-client";
-import { featureCartCheckout, featureConversations } from "@/lib/features";
+import { featureConversations } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
 import { BrandLogo } from "../brand-logo";
 import { AnnouncementBar } from "./announcement-bar";
@@ -44,13 +41,6 @@ export function Header() {
     enabled: !!session?.user,
   });
   const isAdmin = meQuery.data?.user.role === "admin";
-
-  const { data: cart } = useQuery({
-    ...cartQuery(locale),
-    enabled: featureCartCheckout,
-  });
-  const cartItemCount =
-    cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
 
   const fullName = session?.user?.name?.trim();
   const displayName =
@@ -73,7 +63,7 @@ export function Header() {
 
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
           <HeaderNav />
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-0">
             <HeaderFilter />
             <HeaderSearch />
           </div>
@@ -100,14 +90,6 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-48">
-                {featureCartCheckout ? (
-                  <DropdownMenuItem asChild>
-                    <Link to="/$locale/orders" params={{ locale }}>
-                      <Package />
-                      {t("orders")}
-                    </Link>
-                  </DropdownMenuItem>
-                ) : null}
                 {featureConversations ? (
                   <DropdownMenuItem asChild>
                     <Link to="/$locale/messages" params={{ locale }}>
@@ -180,28 +162,6 @@ export function Header() {
               <Heart className="h-4 w-4" aria-hidden />
             </Link>
           )}
-          {featureCartCheckout ? (
-            <Link
-              to="/$locale/cart"
-              params={{ locale }}
-              className="relative inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-              aria-label={
-                cartItemCount > 0
-                  ? `${t("cart")} (${cartItemCount})`
-                  : t("cart")
-              }
-            >
-              <ShoppingCart className="h-4 w-4" aria-hidden />
-              {cartItemCount > 0 ? (
-                <span
-                  className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground tabular-nums"
-                  aria-hidden
-                >
-                  {cartItemCount > 99 ? "99+" : cartItemCount}
-                </span>
-              ) : null}
-            </Link>
-          ) : null}
         </div>
       </div>
     </header>

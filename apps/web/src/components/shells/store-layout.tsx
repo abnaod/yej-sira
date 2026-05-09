@@ -1,5 +1,5 @@
 import { Link, Outlet, getRouteApi } from "@tanstack/react-router";
-import { Heart, Package, ShoppingCart, Store, User } from "lucide-react";
+import { Heart, Store, User } from "lucide-react";
 
 import { BottomNav, MobileBottomNavScrollSpacer } from "@/components/layout/bottom-nav";
 import { ContentContainer } from "@/components/layout/content-container";
@@ -111,7 +111,7 @@ function ShopHeader({ shop }: { shop: PublicShop }) {
 
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
           <HeaderNav />
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-0">
             <HeaderFilter />
             <HeaderSearch />
           </div>
@@ -134,22 +134,6 @@ function ShopHeader({ shop }: { shop: PublicShop }) {
             aria-label="Favorites"
           >
             <Heart className="h-4 w-4" aria-hidden />
-          </Link>
-          <Link
-            to="/$locale/orders"
-            params={{ locale }}
-            className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-            aria-label="Orders"
-          >
-            <Package className="h-4 w-4" aria-hidden />
-          </Link>
-          <Link
-            to="/$locale/cart"
-            params={{ locale }}
-            className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-            aria-label="Cart"
-          >
-            <ShoppingCart className="h-4 w-4" aria-hidden />
           </Link>
         </div>
       </div>
@@ -203,13 +187,6 @@ function ShopFooter({ shop }: { shop: PublicShop }) {
 
         <div className="flex flex-col gap-2 text-sm">
           <h3 className="font-semibold">Store</h3>
-          <Link
-            to="/$locale/orders"
-            params={{ locale }}
-            className="text-primary-foreground/80 hover:text-primary-foreground"
-          >
-            Orders
-          </Link>
           <a
             href={marketplaceHref}
             className="inline-flex items-center gap-1 text-primary-foreground/80 hover:text-primary-foreground"

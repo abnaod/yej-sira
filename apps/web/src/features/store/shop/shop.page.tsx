@@ -1,17 +1,20 @@
 import type { Locale } from "@ys/intl";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { getRouteApi, Link, useNavigate } from "@tanstack/react-router";
 import { Clock, MapPin, Package, Percent, Star } from "lucide-react";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { ListingCard } from "@/features/store/listings/components/listing-card";
 import { DataPagination } from "@/features/shared/data-pagination";
 import type { CategorySort } from "@/features/store/category";
+import { CategoryCard } from "@/features/store/home/components/category-card";
+import { categoriesQuery } from "@/features/store/home";
 import { SearchSortToolbar } from "@/features/store/search/components/search-sort-toolbar";
 import { addToCartMutationOptions } from "@/features/store/cart/cart.queries";
 import { assetUrl } from "@/lib/api";
-import { featureCartCheckout, featureConversations } from "@/lib/features";
+import { featureCartCheckout } from "@/lib/features";
 
 import { shopPublicQuery, type ShopPublicResponse } from "./shop.queries";
 
@@ -241,6 +244,7 @@ export function ShopCatalogPage({
   /** Logo + shop details block above the grid. Hidden on subdomain storefront home (already in ShopHeader). */
   showShopHero?: boolean;
 }) {
+  const { t } = useTranslation("common");
   const localQueryClient = useQueryClient();
   const addToCart = useMutation(
     addToCartMutationOptions(queryClient ?? localQueryClient, locale),
@@ -249,6 +253,10 @@ export function ShopCatalogPage({
   const sortValue = sort ?? "relevancy";
 
   const { data } = useSuspenseQuery(shopPublicQuery(locale, shopSlug, page, 24, sortValue));
+  const categoriesQ = useQuery({
+    ...categoriesQuery(locale),
+    enabled: !showShopHero,
+  });
 
   const { shop, listings, totalPages } = data;
 
@@ -265,6 +273,31 @@ export function ShopCatalogPage({
           page={page}
           totalPages={totalPages}
         />
+      ) : null}
+
+      {!showShopHero && categoriesQ.data?.categories.length ? (
+        <section
+          className="mb-7 md:hidden"
+          aria-labelledby="shop-by-category-heading"
+        >
+          <h2
+            id="shop-by-category-heading"
+            className="mb-4 text-lg font-semibold tracking-tight text-foreground"
+          >
+            {t("shopByCategory")}
+          </h2>
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 no-scrollbar">
+            {categoriesQ.data.categories.map((category) => (
+              <CategoryCard
+                key={category.slug}
+                name={category.name}
+                slug={category.slug}
+                imageUrl={category.imageUrl}
+                className="w-20 flex-none"
+              />
+            ))}
+          </div>
+        </section>
       ) : null}
 
       <section
@@ -303,7 +336,6 @@ export function ShopCatalogPage({
               promotion={listing.promotion}
               shop={listing.shop}
               hideShopLine
-              messageSellerCta={featureConversations}
               onAddToCart={
                 featureCartCheckout && listing.defaultVariantId
                   ? () =>

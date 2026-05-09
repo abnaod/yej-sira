@@ -12,23 +12,23 @@ export function ShopByCategorySection() {
   const { data } = useSuspenseQuery(categoriesQuery(locale));
 
   return (
-    <section className="hidden md:block">
-      <div className="text-center">
-        <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
+    <section>
+      <div className="text-left md:text-center">
+        <h2 className="text-base font-semibold tracking-tight md:text-2xl">
           {t("shopByCategory")}
         </h2>
-        <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">
+        <p className="mx-auto mt-2 hidden max-w-lg text-sm leading-relaxed text-muted-foreground md:block">
           {t("shopByCategorySubtitle")}
         </p>
       </div>
-      <div className="mt-8 grid w-full grid-cols-[repeat(3,minmax(0,8.5rem))] justify-center gap-x-5 gap-y-6 sm:mt-10 sm:grid-cols-[repeat(6,minmax(0,8.5rem))]">
+      <div className="mt-3 flex gap-1 overflow-x-auto pb-1 pt-1 no-scrollbar md:mt-8 md:grid md:w-full md:grid-cols-[repeat(3,minmax(0,8.5rem))] md:justify-center md:gap-x-5 md:gap-y-6 md:overflow-visible md:pb-0 md:pt-0 lg:grid-cols-[repeat(6,minmax(0,8.5rem))]">
         {data.categories.map((category) => (
           <CategoryCard
             key={category.slug}
             name={category.name}
             slug={category.slug}
             imageUrl={category.imageUrl}
-            className="w-full"
+            className="w-20 flex-none md:w-full"
           />
         ))}
       </div>

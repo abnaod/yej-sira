@@ -17,7 +17,7 @@ export function FeaturedSection() {
 
   return (
     <section>
-      <h2 className="text-xl font-semibold tracking-tight md:text-2xl">
+      <h2 className="text-lg font-semibold tracking-tight md:text-2xl">
         {t("popularPicks")}
       </h2>
       <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-6 sm:mt-5 sm:grid-cols-3 lg:grid-cols-4">

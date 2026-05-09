@@ -80,6 +80,9 @@ export function getApiOrigin(): string {
     if (internal) {
       return internal.replace(/\/$/, "");
     }
+    if (import.meta.env.DEV) {
+      return "http://localhost:5001";
+    }
   }
 
   return getPublicApiOrigin();

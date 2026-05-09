@@ -2,10 +2,8 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  ChevronRight,
   Heart,
   Home,
-  LayoutGrid,
   LogOut,
   MessageSquare,
   Package,
@@ -25,7 +23,6 @@ import {
 } from "@/components/ui/drawer";
 import { useAuthDialog } from "@/features/shared/auth";
 import { currentUserQuery } from "@/features/shared/current-user.queries";
-import { categoriesQuery } from "@/features/store/home";
 import { authClient } from "@/lib/auth-client";
 import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { useLocale } from "@/lib/locale-path";
@@ -53,18 +50,16 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
 
   const { openAuth } = useAuthDialog();
   const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const showCart = variant === "marketplace" && featureCartCheckout;
   const meQuery = useQuery({
     ...currentUserQuery(),
     enabled: !!session?.user,
   });
   const isAdmin = meQuery.data?.user.role === "admin";
 
-  const [categoriesOpen, setCategoriesOpen] = React.useState(false);
   const [accountOpen, setAccountOpen] = React.useState(false);
 
   const isHomeActive = pathname === `/${locale}` || pathname === `/${locale}/`;
-  const isCategoriesActive =
-    pathname.startsWith(`/${locale}/categories`) || categoriesOpen;
   const isFavoritesActive = pathname.startsWith(`/${locale}/favorites`);
   const isMessagesActive = pathname.startsWith(`/${locale}/messages`);
   const isCartActive = pathname.startsWith(`/${locale}/cart`);
@@ -73,11 +68,6 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
     pathname.startsWith(`/${locale}/sell`) ||
     pathname.startsWith(`/${locale}/admin`) ||
     accountOpen;
-
-  const categoriesQ = useQuery({
-    ...categoriesQuery(locale),
-    enabled: categoriesOpen,
-  });
 
   const handleAccountClick = () => {
     if (isSessionPending) return;
@@ -112,11 +102,11 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
         <ul
           className={cn(
             "grid h-14",
-            featureCartCheckout && featureConversations
-              ? "grid-cols-6"
-              : featureCartCheckout || featureConversations
-                ? "grid-cols-5"
-                : "grid-cols-4",
+            showCart && featureConversations
+              ? "grid-cols-5"
+              : showCart || featureConversations
+                ? "grid-cols-4"
+                : "grid-cols-3",
           )}
         >
           <NavSlot>
@@ -129,21 +119,6 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
               <Home className="size-4" aria-hidden />
               <span className="text-[11px] leading-none">{t("home")}</span>
             </Link>
-          </NavSlot>
-
-          <NavSlot>
-            <button
-              type="button"
-              onClick={() => setCategoriesOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={categoriesOpen}
-              className={navItemClass(isCategoriesActive)}
-            >
-              <LayoutGrid className="size-4" aria-hidden />
-              <span className="text-[11px] leading-none">
-                {t("categories")}
-              </span>
-            </button>
           </NavSlot>
 
           <NavSlot>
@@ -172,7 +147,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
             </NavSlot>
           ) : null}
 
-          {featureCartCheckout ? (
+          {showCart ? (
             <NavSlot>
               <Link
                 to="/$locale/cart"
@@ -203,59 +178,6 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
         </ul>
       </nav>
 
-      <Drawer open={categoriesOpen} onOpenChange={setCategoriesOpen}>
-        <DrawerContent className="max-h-[80dvh] gap-0">
-          <DrawerHeader className="border-b border-border text-left">
-            <DrawerTitle>{t("categories")}</DrawerTitle>
-          </DrawerHeader>
-          <div className="overflow-y-auto pb-[env(safe-area-inset-bottom)]">
-            {categoriesQ.isPending ? (
-              <p className="px-4 py-6 text-sm text-muted-foreground">
-                {t("categoriesLoading")}
-              </p>
-            ) : categoriesQ.isError ? (
-              <p className="px-4 py-6 text-sm text-destructive">
-                {t("categoriesError")}
-              </p>
-            ) : !categoriesQ.data?.categories.length ? (
-              <p className="px-4 py-6 text-sm text-muted-foreground">
-                {t("categoriesEmpty")}
-              </p>
-            ) : (
-              <ul className="flex flex-col">
-                {categoriesQ.data.categories.map((cat) => (
-                  <li
-                    key={cat.id}
-                    className="border-b border-border last:border-none"
-                  >
-                    <DrawerClose asChild>
-                      <Link
-                        to="/$locale/categories/$categoryId"
-                        params={{ locale, categoryId: cat.slug }}
-                        search={{
-                          sort: "relevancy",
-                          tagSlugs: "",
-                          promotionSlug: undefined,
-                          attributeDefinitionKey: undefined,
-                          allowedValueKey: undefined,
-                        }}
-                        className="flex items-center justify-between gap-3 px-4 py-3.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/50"
-                      >
-                        <span className="truncate">{cat.name}</span>
-                        <ChevronRight
-                          className="size-4 shrink-0 text-muted-foreground"
-                          aria-hidden
-                        />
-                      </Link>
-                    </DrawerClose>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </DrawerContent>
-      </Drawer>
-
       <Drawer open={accountOpen} onOpenChange={setAccountOpen}>
         <DrawerContent className="max-h-[80dvh] gap-0">
           <DrawerHeader className="border-b border-border text-left">
@@ -266,18 +188,20 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
             </DrawerTitle>
           </DrawerHeader>
           <ul className="flex flex-col py-1 pb-[env(safe-area-inset-bottom)]">
-            <li>
-              <DrawerClose asChild>
-                <Link
-                  to="/$locale/orders"
-                  params={{ locale }}
-                  className={accountItemClass}
-                >
-                  <Package className="size-4" aria-hidden />
-                  {t("orders")}
-                </Link>
-              </DrawerClose>
-            </li>
+            {variant === "marketplace" && (
+              <li>
+                <DrawerClose asChild>
+                  <Link
+                    to="/$locale/orders"
+                    params={{ locale }}
+                    className={accountItemClass}
+                  >
+                    <Package className="size-4" aria-hidden />
+                    {t("orders")}
+                  </Link>
+                </DrawerClose>
+              </li>
+            )}
             {variant === "marketplace" && (
               <li>
                 <DrawerClose asChild>
