@@ -1,5 +1,5 @@
-import { Link, Outlet, getRouteApi } from "@tanstack/react-router";
-import { Heart, Store, User } from "lucide-react";
+import { Link, Outlet, getRouteApi, useNavigate } from "@tanstack/react-router";
+import { ChevronDown, Heart, LogOut, Store, User } from "lucide-react";
 
 import { BottomNav, MobileBottomNavScrollSpacer } from "@/components/layout/bottom-nav";
 import { ContentContainer } from "@/components/layout/content-container";
@@ -10,8 +10,16 @@ import { HeaderFilter } from "@/components/layout/header/header-filter";
 import { HeaderNav } from "@/components/layout/header/header-nav";
 import { HeaderSearch } from "@/components/layout/header/header-search";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuthDialog } from "@/features/shared/auth";
 import { assetUrl } from "@/lib/api";
+import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import { StorefrontTenantProvider } from "@/lib/storefront-context";
 import { marketplaceUrl } from "@/lib/storefront";
@@ -93,7 +101,14 @@ function ShopLogo({ shop }: { shop: PublicShop }) {
 
 function ShopHeader({ shop }: { shop: PublicShop }) {
   const locale = useLocale();
+  const navigate = useNavigate();
   const { openAuth } = useAuthDialog();
+  const { data: session, isPending } = authClient.useSession();
+  const fullName = session?.user?.name?.trim();
+  const displayName =
+    fullName?.split(/\s+/)[0] ||
+    session?.user?.email?.split("@")[0] ||
+    "Account";
 
   return (
     <header className="border-b border-border bg-white">
@@ -101,12 +116,10 @@ function ShopHeader({ shop }: { shop: PublicShop }) {
         <Link
           to="/$locale"
           params={{ locale }}
-          className="flex min-w-0 shrink-0 items-center gap-2"
+          className="flex shrink-0 items-center"
+          aria-label={`${shop.name} home`}
         >
           <ShopLogo shop={shop} />
-          <span className="max-w-36 truncate text-sm font-semibold text-foreground sm:max-w-52">
-            {shop.name}
-          </span>
         </Link>
 
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
@@ -117,24 +130,79 @@ function ShopHeader({ shop }: { shop: PublicShop }) {
           </div>
         </div>
 
-        <div className="hidden shrink-0 items-center gap-1 md:flex">
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-auto px-1.5 py-1 text-sm font-normal text-foreground hover:text-primary"
-            onClick={() => openAuth()}
-            aria-label="Account"
-          >
-            <User className="h-4 w-4" />
-          </Button>
-          <Link
-            to="/$locale/favorites"
-            params={{ locale }}
-            className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-            aria-label="Favorites"
-          >
-            <Heart className="h-4 w-4" aria-hidden />
-          </Link>
+        <div className="flex shrink-0 items-center gap-1">
+          {isPending ? (
+            <span className="flex h-9 items-center gap-1.5 px-2 text-sm text-muted-foreground">
+              <User className="h-5 w-5" />
+              <span className="hidden sm:inline">Sign in</span>
+            </span>
+          ) : session?.user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="h-9 gap-1.5 px-2 text-sm font-normal text-foreground hover:text-primary"
+                >
+                  <User className="h-5 w-5" />
+                  <span className="hidden max-w-28 truncate sm:inline">
+                    {displayName}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-44">
+                <DropdownMenuItem asChild>
+                  <Link to="/$locale/favorites" params={{ locale }}>
+                    <Heart />
+                    Favorites
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    void authClient.signOut(
+                      {},
+                      {
+                        onSuccess: () => {
+                          void navigate({ to: "/$locale", params: { locale } });
+                        },
+                      },
+                    );
+                  }}
+                >
+                  <LogOut />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-9 gap-1.5 px-2 text-sm font-normal text-foreground hover:text-primary"
+              onClick={() => openAuth()}
+              aria-label="Sign in"
+            >
+              <User className="h-5 w-5" />
+              <span className="hidden sm:inline">Sign in</span>
+            </Button>
+          )}
+          {!isPending && session?.user ? (
+            <Button
+              variant="ghost"
+              className="hidden h-9 w-9 p-0 text-foreground hover:text-primary md:inline-flex"
+              asChild
+            >
+              <Link
+                to="/$locale/favorites"
+                params={{ locale }}
+                aria-label="Favorites"
+              >
+                <Heart className="h-5 w-5" aria-hidden />
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
     </header>

@@ -63,6 +63,7 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
   const isFavoritesActive = pathname.startsWith(`/${locale}/favorites`);
   const isMessagesActive = pathname.startsWith(`/${locale}/messages`);
   const isCartActive = pathname.startsWith(`/${locale}/cart`);
+  const isShopInfoActive = pathname.startsWith(`/${locale}/shop`);
   const isAccountActive =
     pathname.startsWith(`/${locale}/orders`) ||
     pathname.startsWith(`/${locale}/sell`) ||
@@ -161,20 +162,36 @@ export function BottomNav({ variant = "marketplace" }: { variant?: BottomNavVari
             </NavSlot>
           ) : null}
 
-          <NavSlot>
-            <button
-              type="button"
-              onClick={handleAccountClick}
-              aria-haspopup={session?.user ? "dialog" : undefined}
-              aria-expanded={session?.user ? accountOpen : undefined}
-              className={navItemClass(isAccountActive)}
-            >
-              <User className="size-4" aria-hidden />
-              <span className="text-[11px] leading-none">
-                {session?.user ? t("account") : t("signIn")}
-              </span>
-            </button>
-          </NavSlot>
+          {variant === "shop" ? (
+            <NavSlot>
+              <Link
+                to="/$locale/shop"
+                params={{ locale }}
+                className={navItemClass(isShopInfoActive)}
+                aria-current={isShopInfoActive ? "page" : undefined}
+              >
+                <Store className="size-4" aria-hidden />
+                <span className="text-[11px] leading-none">
+                  {t("shopInfo", { defaultValue: "Shop" })}
+                </span>
+              </Link>
+            </NavSlot>
+          ) : (
+            <NavSlot>
+              <button
+                type="button"
+                onClick={handleAccountClick}
+                aria-haspopup={session?.user ? "dialog" : undefined}
+                aria-expanded={session?.user ? accountOpen : undefined}
+                className={navItemClass(isAccountActive)}
+              >
+                <User className="size-4" aria-hidden />
+                <span className="text-[11px] leading-none">
+                  {session?.user ? t("account") : t("signIn")}
+                </span>
+              </button>
+            </NavSlot>
+          )}
         </ul>
       </nav>
 

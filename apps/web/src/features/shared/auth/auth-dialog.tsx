@@ -10,17 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { authClient } from "@/lib/auth-client";
 import { useLocale } from "@/lib/locale-path";
 import type { Locale } from "@ys/intl";
@@ -128,7 +120,6 @@ export function AuthDialog({
   const [error, setError] = React.useState<string | null>(null);
   const [oauthError, setOauthError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState(false);
-  const isMobile = useIsMobile();
 
   React.useEffect(() => {
     if (!open) {
@@ -435,25 +426,9 @@ export function AuthDialog({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[92dvh] gap-0">
-          <DrawerHeader className="border-b border-border text-left">
-            <DrawerTitle>{title}</DrawerTitle>
-            {!isCheckout && <DrawerDescription>{description}</DrawerDescription>}
-          </DrawerHeader>
-          <div className="overflow-y-auto px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-            {body}
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md gap-6 p-8 pb-6">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-6 overflow-hidden p-6 pb-5 sm:max-w-md sm:p-8 sm:pb-6">
         <DialogHeader className="gap-1.5">
           <DialogTitle>{title}</DialogTitle>
           {!isCheckout && (
@@ -461,7 +436,7 @@ export function AuthDialog({
           )}
         </DialogHeader>
 
-        <DialogBody className="flex-none max-h-[85dvh] py-2">
+        <DialogBody className="flex-none overflow-y-auto py-2">
           {body}
         </DialogBody>
       </DialogContent>

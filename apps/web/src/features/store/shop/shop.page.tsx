@@ -282,7 +282,7 @@ export function ShopCatalogPage({
         >
           <h2
             id="shop-by-category-heading"
-            className="mb-4 text-lg font-semibold tracking-tight text-foreground"
+            className="mb-4 text-base font-semibold tracking-tight text-foreground"
           >
             {t("shopByCategory")}
           </h2>
@@ -307,11 +307,11 @@ export function ShopCatalogPage({
         <div className="mb-6 flex items-center justify-between gap-3">
           <h2
             id="shop-featured-heading"
-            className="min-w-0 truncate text-xl font-semibold tracking-tight md:text-2xl"
+            className="min-w-0 truncate text-lg font-semibold tracking-tight md:text-2xl"
           >
             Featured items
           </h2>
-          {onSortChange ? (
+          {showShopHero && onSortChange ? (
             <SearchSortToolbar
               sort={sortValue}
               onSortChange={onSortChange}

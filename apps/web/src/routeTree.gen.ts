@@ -19,6 +19,7 @@ import { Route as LocalestoreIndexRouteImport } from './routes/$locale/(store)/i
 import { Route as LocaleAuthVerifyEmailRouteImport } from './routes/$locale/auth/verify-email'
 import { Route as LocaleAuthResetPasswordRouteImport } from './routes/$locale/auth/reset-password'
 import { Route as LocaleAuthForgotPasswordRouteImport } from './routes/$locale/auth/forgot-password'
+import { Route as LocalestoreShopRouteImport } from './routes/$locale/(store)/shop'
 import { Route as LocalesellerSellRouteRouteImport } from './routes/$locale/(seller)/sell/route'
 import { Route as LocaleadminAdminRouteRouteImport } from './routes/$locale/(admin)/admin/route'
 import { Route as LocalestoreSearchIndexRouteImport } from './routes/$locale/(store)/search/index'
@@ -112,6 +113,11 @@ const LocaleAuthForgotPasswordRoute =
     path: '/auth/forgot-password',
     getParentRoute: () => LocaleRoute,
   } as any)
+const LocalestoreShopRoute = LocalestoreShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => LocalestoreRouteRoute,
+} as any)
 const LocalesellerSellRouteRoute = LocalesellerSellRouteRouteImport.update({
   id: '/sell',
   path: '/sell',
@@ -371,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/tg': typeof TgRoute
   '/$locale/admin': typeof LocaleadminAdminRouteRouteWithChildren
   '/$locale/sell': typeof LocalesellerSellRouteRouteWithChildren
+  '/$locale/shop': typeof LocalestoreShopRoute
   '/$locale/auth/forgot-password': typeof LocaleAuthForgotPasswordRoute
   '/$locale/auth/reset-password': typeof LocaleAuthResetPasswordRoute
   '/$locale/auth/verify-email': typeof LocaleAuthVerifyEmailRoute
@@ -422,6 +429,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$locale': typeof LocalestoreIndexRoute
   '/tg': typeof TgRoute
+  '/$locale/shop': typeof LocalestoreShopRoute
   '/$locale/auth/forgot-password': typeof LocaleAuthForgotPasswordRoute
   '/$locale/auth/reset-password': typeof LocaleAuthResetPasswordRoute
   '/$locale/auth/verify-email': typeof LocaleAuthVerifyEmailRoute
@@ -477,6 +485,7 @@ export interface FileRoutesById {
   '/$locale/(store)': typeof LocalestoreRouteRouteWithChildren
   '/$locale/(admin)/admin': typeof LocaleadminAdminRouteRouteWithChildren
   '/$locale/(seller)/sell': typeof LocalesellerSellRouteRouteWithChildren
+  '/$locale/(store)/shop': typeof LocalestoreShopRoute
   '/$locale/auth/forgot-password': typeof LocaleAuthForgotPasswordRoute
   '/$locale/auth/reset-password': typeof LocaleAuthResetPasswordRoute
   '/$locale/auth/verify-email': typeof LocaleAuthVerifyEmailRoute
@@ -532,6 +541,7 @@ export interface FileRouteTypes {
     | '/tg'
     | '/$locale/admin'
     | '/$locale/sell'
+    | '/$locale/shop'
     | '/$locale/auth/forgot-password'
     | '/$locale/auth/reset-password'
     | '/$locale/auth/verify-email'
@@ -583,6 +593,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$locale'
     | '/tg'
+    | '/$locale/shop'
     | '/$locale/auth/forgot-password'
     | '/$locale/auth/reset-password'
     | '/$locale/auth/verify-email'
@@ -637,6 +648,7 @@ export interface FileRouteTypes {
     | '/$locale/(store)'
     | '/$locale/(admin)/admin'
     | '/$locale/(seller)/sell'
+    | '/$locale/(store)/shop'
     | '/$locale/auth/forgot-password'
     | '/$locale/auth/reset-password'
     | '/$locale/auth/verify-email'
@@ -762,6 +774,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$locale/auth/forgot-password'
       preLoaderRoute: typeof LocaleAuthForgotPasswordRouteImport
       parentRoute: typeof LocaleRoute
+    }
+    '/$locale/(store)/shop': {
+      id: '/$locale/(store)/shop'
+      path: '/shop'
+      fullPath: '/$locale/shop'
+      preLoaderRoute: typeof LocalestoreShopRouteImport
+      parentRoute: typeof LocalestoreRouteRoute
     }
     '/$locale/(seller)/sell': {
       id: '/$locale/(seller)/sell'
@@ -1180,6 +1199,7 @@ const LocalesellerRouteRouteWithChildren =
   LocalesellerRouteRoute._addFileChildren(LocalesellerRouteRouteChildren)
 
 interface LocalestoreRouteRouteChildren {
+  LocalestoreShopRoute: typeof LocalestoreShopRoute
   LocalestoreIndexRoute: typeof LocalestoreIndexRoute
   LocalestoreCategoriesCategoryIdRoute: typeof LocalestoreCategoriesCategoryIdRoute
   LocalestoreLegalPrivacyRoute: typeof LocalestoreLegalPrivacyRoute
@@ -1203,6 +1223,7 @@ interface LocalestoreRouteRouteChildren {
 }
 
 const LocalestoreRouteRouteChildren: LocalestoreRouteRouteChildren = {
+  LocalestoreShopRoute: LocalestoreShopRoute,
   LocalestoreIndexRoute: LocalestoreIndexRoute,
   LocalestoreCategoriesCategoryIdRoute: LocalestoreCategoriesCategoryIdRoute,
   LocalestoreLegalPrivacyRoute: LocalestoreLegalPrivacyRoute,

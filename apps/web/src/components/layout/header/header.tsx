@@ -72,7 +72,7 @@ export function Header() {
         <div className="hidden shrink-0 items-center gap-1 md:flex">
           {isPending ? (
             <span className="flex items-center gap-1.5 px-1.5 py-1 text-sm text-muted-foreground">
-              <User className="h-4 w-4" />
+              <User className="h-5 w-5" />
               <span className="hidden sm:inline">{t("signIn")}</span>
             </span>
           ) : session?.user ? (
@@ -80,9 +80,9 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="h-auto gap-1.5 px-1.5 py-1 text-sm font-normal text-foreground hover:text-primary"
+                  className="h-9 gap-1.5 px-2 text-sm font-normal text-foreground hover:text-primary"
                 >
-                  <User className="h-4 w-4" />
+                  <User className="h-5 w-5" />
                   <span className="hidden max-w-40 truncate sm:inline">
                     {displayName}
                   </span>
@@ -135,32 +135,42 @@ export function Header() {
             <Button
               type="button"
               variant="ghost"
-              className="h-auto gap-1.5 px-1.5 py-1 text-sm font-normal text-foreground hover:text-primary"
+              className="h-9 gap-1.5 px-2 text-sm font-normal text-foreground hover:text-primary"
               onClick={() => openAuth()}
             >
-              <User className="h-4 w-4" />
+              <User className="h-5 w-5" />
               <span className="hidden sm:inline">{t("signIn")}</span>
             </Button>
           )}
           {!isPending && session?.user && featureConversations && (
-            <Link
-              to="/$locale/messages"
-              params={{ locale }}
-              className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-              aria-label={t("messages")}
+            <Button
+              variant="ghost"
+              className="h-9 w-9 p-0 text-foreground hover:text-primary"
+              asChild
             >
-              <MessageSquare className="h-4 w-4" aria-hidden />
-            </Link>
+              <Link
+                to="/$locale/messages"
+                params={{ locale }}
+                aria-label={t("messages")}
+              >
+                <MessageSquare className="h-5 w-5" aria-hidden />
+              </Link>
+            </Button>
           )}
           {!isPending && session?.user && (
-            <Link
-              to="/$locale/favorites"
-              params={{ locale }}
-              className="inline-flex items-center justify-center rounded-md p-1.5 text-foreground transition-colors hover:text-primary"
-              aria-label={t("favorites")}
+            <Button
+              variant="ghost"
+              className="h-9 w-9 p-0 text-foreground hover:text-primary"
+              asChild
             >
-              <Heart className="h-4 w-4" aria-hidden />
-            </Link>
+              <Link
+                to="/$locale/favorites"
+                params={{ locale }}
+                aria-label={t("favorites")}
+              >
+                <Heart className="h-5 w-5" aria-hidden />
+              </Link>
+            </Button>
           )}
         </div>
       </div>
