@@ -31,20 +31,20 @@ export default defineConfig(({ mode }) => {
       port,
       strictPort: true,
       proxy: {
-        "/api": { target: "http://127.0.0.1:3001", changeOrigin: true },
-        "/static": { target: "http://127.0.0.1:3001", changeOrigin: true },
+        "/api": { target: "http://127.0.0.1:5001", changeOrigin: true },
+        "/static": { target: "http://127.0.0.1:5001", changeOrigin: true },
       },
     },
     plugins: [
       nitro({
         rollupConfig: { external: [/^@sentry\//] },
-        /** Hashed Vite assets are safe to cache forever; improves repeat visits (Lighthouse “cache lifetimes”). */
+        /** Hashed Vite assets are safe to cache forever; improves repeat visits (Lighthouse "cache lifetimes"). */
         routeRules: {
           "/api/**": {
-            proxy: "http://127.0.0.1:3001/api/**",
+            proxy: "http://127.0.0.1:5001/api/**",
           },
           "/static/**": {
-            proxy: "http://127.0.0.1:3001/static/**",
+            proxy: "http://127.0.0.1:5001/static/**",
           },
           "/assets/**": {
             headers: { "cache-control": "public, max-age=31536000, immutable" },

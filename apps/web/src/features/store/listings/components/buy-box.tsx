@@ -8,6 +8,7 @@ import type { Locale } from "@ys/intl";
 
 import type { AddToCartInput } from "@/features/store/cart/cart.queries";
 import { useAuthDialog } from "@/features/shared/auth";
+import { formatMoney } from "@/features/shared/formatters";
 import { createConversationMutationOptions } from "@/features/store/conversations/conversations.queries";
 import { featureCartCheckout, featureConversations } from "@/lib/features";
 import { authClient } from "@/lib/auth-client";
@@ -189,12 +190,7 @@ export function BuyBox({
 
       <div>
         <div className="flex items-baseline gap-2">
-          <span className="text-xl font-bold">${price.toFixed(2)}</span>
-          {monthlyPrice && (
-            <span className="text-sm text-muted-foreground">
-              or {monthlyPrice.toFixed(2)}/month
-            </span>
-          )}
+          <span className="text-xl font-bold">{formatMoney(price)}</span>
         </div>
         {financingNote && (
           <p className="mt-0.5 text-xs text-muted-foreground">

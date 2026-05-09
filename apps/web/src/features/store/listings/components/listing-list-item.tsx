@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { assetUrl } from "@/lib/api";
 import { useLocale } from "@/lib/locale-path";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/features/shared/formatters";
 import { StarRating } from "@/features/shared/star-rating";
 
 interface ListingListItemProps {
@@ -46,10 +47,10 @@ export function ListingListItem({
       <StarRating rating={rating} reviewCount={reviewCount} />
 
       <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-        <span className="text-sm font-semibold">${price.toFixed(2)}</span>
+        <span className="text-sm font-semibold">{formatMoney(price)}</span>
         {originalPrice && (
           <span className="text-xs text-muted-foreground line-through">
-            ${originalPrice.toFixed(2)}
+            {formatMoney(originalPrice)}
           </span>
         )}
       </div>
