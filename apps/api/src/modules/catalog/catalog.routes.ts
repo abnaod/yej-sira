@@ -137,19 +137,19 @@ catalogRouter.get("/categories", async (c) => {
     locale === "en"
       ? null
       : ({
-          where: { locale },
-        } as const);
+        where: { locale },
+      } as const);
 
   const rows = await prisma.category.findMany({
     where: storefrontShop
       ? {
-          listings: {
-            some: {
-              shopId: storefrontShop.id,
-              ...publicListingVisibilityWhere,
-            },
+        listings: {
+          some: {
+            shopId: storefrontShop.id,
+            ...publicListingVisibilityWhere,
           },
-        }
+        },
+      }
       : undefined,
     orderBy: { sortOrder: "asc" },
     include: tr ? { translations: tr } : undefined,
@@ -179,8 +179,8 @@ catalogRouter.get("/categories/:slug", async (c) => {
     locale === "en"
       ? null
       : ({
-          where: { locale },
-        } as const);
+        where: { locale },
+      } as const);
 
   const row = await prisma.category.findUnique({
     where: { slug },
@@ -226,21 +226,21 @@ catalogRouter.get("/tags", async (c) => {
     locale === "en"
       ? null
       : ({
-          where: { locale },
-        } as const);
+        where: { locale },
+      } as const);
 
   const rows = await prisma.tag.findMany({
     where: storefrontShop
       ? {
-          listingTags: {
-            some: {
-              listing: {
-                shopId: storefrontShop.id,
-                ...publicListingVisibilityWhere,
-              },
+        listingTags: {
+          some: {
+            listing: {
+              shopId: storefrontShop.id,
+              ...publicListingVisibilityWhere,
             },
           },
-        }
+        },
+      }
       : undefined,
     orderBy: { name: "asc" },
     select: {
@@ -777,13 +777,13 @@ catalogRouter.get("/listings/:slug", async (c) => {
       }),
       promotion: promotionPick
         ? {
-            slug: promotionPick.slug,
-            badgeLabel:
-              locale === "en"
-                ? promotionPick.badgeLabel
-                : (promotionPick.translations?.[0]?.badgeLabel ?? promotionPick.badgeLabel),
-            endsAt: promotionPick.endsAt.toISOString(),
-          }
+          slug: promotionPick.slug,
+          badgeLabel:
+            locale === "en"
+              ? promotionPick.badgeLabel
+              : (promotionPick.translations?.[0]?.badgeLabel ?? promotionPick.badgeLabel),
+          endsAt: promotionPick.endsAt.toISOString(),
+        }
         : undefined,
       attributes,
       isViewerShopOwner,

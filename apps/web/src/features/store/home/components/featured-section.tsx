@@ -5,13 +5,13 @@ import { ListingCard } from "@/features/store/listings/components/listing-card";
 import { addToCartMutationOptions } from "@/features/store/cart/cart.queries";
 import { useLocale } from "@/lib/locale-path";
 
-import { featuredListingsQuery } from "../home.queries";
+import { FEATURED_LISTINGS_LIMIT, featuredListingsQuery } from "../home.queries";
 
 export function FeaturedSection() {
   const { t } = useTranslation("common");
   const locale = useLocale();
   const queryClient = useQueryClient();
-  const { data } = useSuspenseQuery(featuredListingsQuery(locale, 12));
+  const { data } = useSuspenseQuery(featuredListingsQuery(locale, FEATURED_LISTINGS_LIMIT));
 
   const addToCart = useMutation(addToCartMutationOptions(queryClient, locale));
 
@@ -38,11 +38,11 @@ export function FeaturedSection() {
             onAddToCart={
               listing.defaultVariantId
                 ? () =>
-                    addToCart.mutate({
-                      variantId: listing.defaultVariantId!,
-                      quantity: 1,
-                      listingName: listing.name,
-                    })
+                  addToCart.mutate({
+                    variantId: listing.defaultVariantId!,
+                    quantity: 1,
+                    listingName: listing.name,
+                  })
                 : undefined
             }
           />

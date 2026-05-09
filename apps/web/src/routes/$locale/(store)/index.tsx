@@ -4,6 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   HomePage,
   categoriesQuery,
+  FEATURED_LISTINGS_LIMIT,
   featuredListingsQuery,
 } from "@/features/store/home";
 import { ShopCatalogPage } from "@/features/store/shop/shop.page";
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/$locale/(store)/")({
     const locale = params.locale as Locale;
     return Promise.all([
       context.queryClient.ensureQueryData(categoriesQuery(locale)),
-      context.queryClient.ensureQueryData(featuredListingsQuery(locale, 12)),
+      context.queryClient.ensureQueryData(featuredListingsQuery(locale, FEATURED_LISTINGS_LIMIT)),
       context.queryClient.ensureQueryData(promotionsListQuery(locale)),
     ]);
   },

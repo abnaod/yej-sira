@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { type ColumnDef } from "@tanstack/react-table";
+import { useState } from "react";
 import {
   ArrowUpDown,
   Eye,
@@ -37,6 +38,12 @@ export type SellerListingTableActions = {
   lowStockThreshold: number;
 };
 
+type ListingActionsCellProps = {
+  locale: Locale;
+  row: SellerListingListItem;
+  actions: SellerListingTableActions;
+};
+
 function formatMoney(n: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -44,6 +51,85 @@ function formatMoney(n: number) {
     currencyDisplay: "code",
     minimumFractionDigits: 2,
   }).format(n);
+}
+
+function ListingActionsCell({ locale, row, actions }: ListingActionsCellProps) {
+  const [open, setOpen] = useState(false);
+  const id = row.id;
+  const slug = row.slug;
+  const isPublished = row.isPublished;
+  const isDeleting = actions.deletingListingId === id;
+  const isPublishing = actions.publishingListingId === id;
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-42">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem asChild onSelect={() => setOpen(false)}>
+          {isPublished ? (
+            <Link
+              to="/$locale/listings/$listingId"
+              params={{ locale, listingId: slug }}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Eye />
+              Preview
+            </Link>
+          ) : (
+            <Link
+              to="/$locale/preview/listings/$listingId"
+              params={{ locale, listingId: id }}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Eye />
+              Preview
+            </Link>
+          )}
+        </DropdownMenuItem>
+        {!isPublished && (
+          <DropdownMenuItem
+            disabled={isPublishing}
+            onSelect={() => setOpen(false)}
+            onClick={() => actions.onPublishListing(id)}
+          >
+            {isPublishing ? <Loader2 className="animate-spin" /> : <Rocket />}
+            {isPublishing ? "Publishing…" : "Publish"}
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          onSelect={() => setOpen(false)}
+          onClick={() => actions.onManageStock(id)}
+        >
+          <PackageCheck />
+          Update stock
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild onSelect={() => setOpen(false)}>
+          <Link to="/$locale/sell/listings" params={{ locale }} search={{ new: false, edit: id }}>
+            <Pencil />
+            Edit
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          disabled={isDeleting}
+          onSelect={() => setOpen(false)}
+          onClick={() => actions.onDeleteListing(id)}
+        >
+          {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
+          {isDeleting ? "Deleting…" : "Delete"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }
 
 export function getSellerListingColumns(
@@ -172,77 +258,7 @@ export function getSellerListingColumns(
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => {
-        const id = row.original.id;
-        const slug = row.original.slug;
-        const isPublished = row.original.isPublished;
-        const isDeleting = actions.deletingListingId === id;
-        const isPublishing = actions.publishingListingId === id;
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-42">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                {isPublished ? (
-                  <Link
-                    to="/$locale/listings/$listingId"
-                    params={{ locale, listingId: slug }}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Eye />
-                    Preview
-                  </Link>
-                ) : (
-                  <Link
-                    to="/$locale/preview/listings/$listingId"
-                    params={{ locale, listingId: id }}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Eye />
-                    Preview
-                  </Link>
-                )}
-              </DropdownMenuItem>
-              {!isPublished && (
-                <DropdownMenuItem
-                  disabled={isPublishing}
-                  onClick={() => actions.onPublishListing(id)}
-                >
-                  {isPublishing ? <Loader2 className="animate-spin" /> : <Rocket />}
-                  {isPublishing ? "Publishing…" : "Publish"}
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem onClick={() => actions.onManageStock(id)}>
-                <PackageCheck />
-                Update stock
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/$locale/sell/listings" params={{ locale }} search={{ new: false, edit: id }}>
-                  <Pencil />
-                  Edit
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                variant="destructive"
-                disabled={isDeleting}
-                onClick={() => actions.onDeleteListing(id)}
-              >
-                {isDeleting ? <Loader2 className="animate-spin" /> : <Trash2 />}
-                {isDeleting ? "Deleting…" : "Delete"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      },
+      cell: ({ row }) => <ListingActionsCell locale={locale} row={row.original} actions={actions} />,
       enableSorting: false,
       enableHiding: false,
     },

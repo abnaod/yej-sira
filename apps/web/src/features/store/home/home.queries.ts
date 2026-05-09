@@ -60,7 +60,9 @@ export type ListingCardDto = {
 
 export type FeaturedListingsResponse = { listings: ListingCardDto[] };
 
-export const featuredListingsQuery = (locale: Locale, limit = 12) =>
+export const FEATURED_LISTINGS_LIMIT = 16;
+
+export const featuredListingsQuery = (locale: Locale, limit = FEATURED_LISTINGS_LIMIT) =>
   queryOptions({
     queryKey: ["listings", "featured", locale, limit] as const,
     queryFn: () =>
